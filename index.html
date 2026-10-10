@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Кликер Нубини Пицанини</title>
-    <!-- Подключаем Telegram Web App JS -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -86,4 +85,75 @@
     <h1>🍕 Кликер Нубини</h1>
     <div id="username">Игрок</div>
 
-    <div class="
+    <div class="score-box">💰 Монеты: <span id="score">0</span></div>
+    <div class="energy-box">⚡ Энергия: <span id="energy">100</span>/100</div>
+
+    <button class="clicker-btn" id="clickBtn">КЛИК!</button>
+
+    <div class="cases-section">
+        <h3>🎁 Кейсы</h3>
+        <p>Открыть кейс: 50 монет</p>
+        <button class="case-btn" id="openCaseBtn">Открыть кейс</button>
+        <p id="caseResult" style="margin-top: 10px; font-size: 14px; color: #ffcc00;"></p>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
+        if (user && user.first_name) {
+            document.getElementById('username').innerText = `Привет, ${user.first_name}!`;
+        }
+
+        // Загружаем монеты из памяти телефона (сохраняются навсегда)
+        let score = parseInt(localStorage.getItem('player_score')) || 0;
+        let energy = 100;
+        const maxEnergy = 100;
+
+        const scoreElement = document.getElementById('score');
+        const energyElement = document.getElementById('energy');
+        const clickBtn = document.getElementById('clickBtn');
+        const openCaseBtn = document.getElementById('openCaseBtn');
+        const caseResult = document.getElementById('caseResult');
+
+        scoreElement.innerText = score;
+
+        function saveScore() {
+            localStorage.setItem('player_score', score);
+        }
+
+        clickBtn.addEventListener('click', () => {
+            if (energy > 0) {
+                score += 1;
+                energy -= 1;
+                scoreElement.innerText = score;
+                energyElement.innerText = energy;
+                saveScore();
+            } else {
+                alert('Энергия закончилась! Подожди немного.');
+            }
+        });
+
+        setInterval(() => {
+            if (energy < maxEnergy) {
+                energy += 1;
+                energyElement.innerText = energy;
+            }
+        }, 1000);
+
+        openCaseBtn.addEventListener('click', () => {
+            if (score >= 50) {
+                score -= 50;
+                const reward = Math.floor(Math.random() * 80) + 10;
+                score += reward;
+                scoreElement.innerText = score;
+                caseResult.innerText = `🎉 Вы выиграли +${reward} монет!`;
+                saveScore();
+            } else {
+                caseResult.innerText = '❌ Недостаточно монет (нужно 50)!';
+            }
+        });
+    </script>
+</body>
+</html>
