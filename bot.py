@@ -1,77 +1,69 @@
-from threading import Thread
-import time
+import os
+import threading
 from flask import Flask
 import requests
 
-# Твой новый токен
+# Токен твоего бота
 TOKEN = "8830829115:AAE1t8lqMI2ARzog7IPsO5fLKoNptbrw1wI"
 
-# Укажи ссылку на твои GitHub Pages (если репозиторий новый, измени ссылку на актуальную)
-WEB_APP_URL = "https://pbakitkan-hash.github.io/New-agme-2/"
+# Твоя ссылка на GitHub Pages
+WEB_APP_URL = "https://pbakitkan-hash.github.io/New-agme-3/"
 
-TELEGRAM_API = f"https://api.telegram.org/bot{TOKEN}"
-
-# 1. Веб-сервер Flask (чтобы Render считал сервис активным)
+# Инициализация Flask для Render Web Service
 app = Flask(__name__)
 
-
-@app.route("/")
+@app.route('/')
 def home():
-  return "Бот работает 24/7!"
+    return "Бот работает 24/7!"
 
-
-# 2. Функция отправки сообщения с кнопкой Mini App
-def send_message(chat_id, first_name):
-  url = f"{TELEGRAM_API}/sendMessage"
-  payload = {
-      "chat_id": chat_id,
-      "text": (
-          f"Привет, {first_name}!\nНажимай на кнопку ниже, чтобы запустить"
-          " кликер:"
-      ),
-      "reply_markup": {
-          "inline_keyboard": [[
-              {"text": "🎮 Играть в кликер", "web_app": {"url": WEB_APP_URL}}
-          ]]
-      },
-  }
-  try:
-    requests.post(url, json=payload)
-  except Exception as e:
-    print(f"Ошибка при отправке сообщения: {e}")
-
-
-# 3. Основной цикл опроса Telegram (Polling)
-def run_bot():
-  offset = 0
-  print("=== БОТ ЗАПУЩЕН ЧЕРЕЗ WEB SERVICE ===")
-  while True:
+def send_telegram_request(method, payload):
+    url = f"https://api.telegram.org/bot{TOKEN}/{method}"
     try:
-      response = requests.get(
-          f"{TELEGRAM_API}/getUpdates",
-          params={"offset": offset, "timeout": 30},
-      ).json()
-
-      for result in response.get("result", []):
-        offset = result["update_id"] + 1
-        if "message" in result:
-          message = result["message"]
-          chat_id = message["chat"]["id"]
-          text = message.get("text", "")
-          first_name = message["from"].get("first_name", "Игрок")
-
-          if text.startswith("/start"):
-            send_message(chat_id, first_name)
+        requests.post(url, json=payload, timeout=10)
     except Exception as e:
-      print(f"Ошибка получения обновлений: {e}")
-      time.sleep(5)
+        print(f"Ошибка запроса: {e}")
 
+def run_bot():
+    print("=== БОТ ЗАПУЩЕН ЧЕРЕЗ WEB SERVICE ===")
+    offset = 0
+    while True:
+        try:
+            url = f"https://api.telegram.org/bot{TOKEN}/getUpdates?offset={offset}&timeout=30"
+            response = requests.get(url, timeout=35)
+            data = response.json()
 
-# 4. Запуск фонового потока бота и Flask-сервера
+            if data.get("ok"):
+                for result in data.get("result", []):
+                    offset = result["update_id"] + 1
+                    message = result.get("message")
+                    
+                    if message and "text" in message:
+                        chat_id = message["chat"]["id"]
+                        text = message["text"]
+
+                        if text == "/start":
+                            keyboard = {
+                                "inline_keyboard": [[
+                                    {
+                                        "text": "🎮 Играть в кликер",
+                                        "web_app": {"url": WEB_APP_URL}
+                                    }
+                                ]]
+                            }
+                            payload = {
+                                "chat_id": chat_id,
+                                "text": "Привет! Нажми кнопку ниже, чтобы запустить кликер:",
+                                "reply_markup": keyboard
+                            }
+                            send_telegram_request("sendMessage", payload)
+        except Exception as e:
+            print(f"Ошибка polling: {e}")
+
 if __name__ == "__main__":
-  bot_thread = Thread(target=run_bot)
-  bot_thread.daemon = True
-  bot_thread.start()
+    # Запуск фонового потока для бота Telegram
+    bot_thread = threading.Thread(target=run_bot, daemon=True)
+    bot_thread.start()
 
-  # Render передает порт по умолчанию или используем 10000
-  app.run(host="0.0.0.0", port=10000)
+    # Запуск Flask на сервере Render
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
