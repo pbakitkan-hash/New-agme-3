@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кликер Нубини Пицанини</title>
+    <!-- Подключаем Telegram Web App JS -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        h1 {
+            margin-bottom: 5px;
+            color: #ffcc00;
+        }
+        #username {
+            font-size: 18px;
+            color: #00ffcc;
+            margin-bottom: 20px;
+        }
+        .score-box {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .energy-box {
+            font-size: 16px;
+            color: #ff9900;
+            margin-bottom: 20px;
+        }
+        .clicker-btn {
+            background: linear-gradient(135deg, #ff9900, #ff3300);
+            border: none;
+            border-radius: 50%;
+            width: 180px;
+            height: 180px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255, 102, 0, 0.4);
+            transition: transform 0.1s, box-shadow 0.1s;
+            outline: none;
+        }
+        .clicker-btn:active {
+            transform: scale(0.92);
+            box-shadow: 0 4px 10px rgba(255, 102, 0, 0.3);
+        }
+        .cases-section {
+            margin-top: 30px;
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 300px;
+        }
+        .case-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .case-btn:active {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🍕 Кликер Нубини</h1>
+    <div id="username">Игрок</div>
+
+    <div class="
