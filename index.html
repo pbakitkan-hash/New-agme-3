@@ -128,9 +128,21 @@
         .admin-panel { display: none; width: 100%; background: #141722; border: 1px dashed #f39c12; border-radius: 14px; padding: 14px; margin-top: 15px; }
         .admin-panel.show { display: block; }
 
-        /* КНОПКИ МУЛЬТИ-ОТКРЫТИЯ */
-        .case-buttons-group { display: flex; gap: 8px; width: 100%; margin-bottom: 20px; }
+        /* КНОПКИ МУЛЬТИ-ОТКРЫТИЯ И АВТО-ПРОДАЖА */
+        .case-buttons-group { display: flex; gap: 8px; width: 100%; margin-bottom: 15px; }
         .case-buttons-group .btn { flex: 1; padding: 12px 6px; font-size: 14px; text-align: center; }
+        
+        .autosell-toggle-box {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 10px;
+            padding: 10px 14px; margin-bottom: 15px; font-size: 14px; font-weight: bold;
+        }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #23283d; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #f39c12; }
+        input:checked + .slider:before { transform: translateX(20px); }
 
         /* АНИМАЦИЯ РУЛЕТКИ КЕЙСА */
         .roulette-container { display: none; width: 100%; flex-direction: column; align-items: center; margin-top: 10px; }
@@ -205,10 +217,16 @@
 
         <!-- ГЛАВНЫЙ ЭКРАН: КЕЙСЫ -->
         <div id="view-cases" class="view active">
-            <h2>Линейные кейсы</h2>
-            <div class="card" onclick="openCaseDetails('Линейный кейс', 59)" style="cursor: pointer;">
-                <div><b>Линейный кейс</b><br><small style="color:#8b93b0">8 предметов • 59 BC</small></div>
-                <button class="btn" onclick="event.stopPropagation(); openCaseDetails('Линейный кейс', 59)">Смотреть</button>
+            <h2>Доступные кейсы</h2>
+            
+            <div class="card" onclick="openCaseDetails('linear')" style="cursor: pointer;">
+                <div><b>Линейный кейс</b><br><small style="color:#8b93b0">4 предмета • 59 BC</small></div>
+                <button class="btn" onclick="event.stopPropagation(); openCaseDetails('linear')">Смотреть</button>
+            </div>
+
+            <div class="card" onclick="openCaseDetails('all_or_nothing')" style="cursor: pointer; border-color: #e74c3c;">
+                <div><b>Всё или ничего</b> 🔥<br><small style="color:#e74c3c">0.01% Клубничный слон • 100 BC</small></div>
+                <button class="btn" style="background: #e74c3c;" onclick="event.stopPropagation(); openCaseDetails('all_or_nothing')">Смотреть</button>
             </div>
         </div>
 
@@ -218,8 +236,17 @@
             <h2 id="detail-case-title">Кейс</h2>
             
             <div id="case-main-box" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-                <div style="font-size: 60px; margin: 10px 0;">📦</div>
+                <div style="font-size: 60px; margin: 10px 0;" id="case-box-icon">📦</div>
                 
+                <!-- АВТО-ПРОДАЖА ПЕРЕКЛЮЧАТЕЛЬ -->
+                <div class="autosell-toggle-box">
+                    <span>⚡ Авто-продажа выпавшего</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autosell-checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
                 <!-- КНОПКИ ОТКРЫТИЯ Х1, Х3, Х5 -->
                 <div class="case-buttons-group">
                     <button class="btn" onclick="openCases(1)">Открыть х1<br><span style="font-size:11px; font-weight:normal;" id="price-x1">59 BC</span></button>
@@ -240,19 +267,14 @@
 
             <!-- ВЫИГРАННЫЕ ПРИЗЫ -->
             <div id="roulette-results-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
-                <h3 style="color: #f39c12; margin: 5px 0;">🎉 Вы выиграли:</h3>
+                <h3 style="color: #f39c12; margin: 5px 0;" id="results-title">🎉 Вы выиграли:</h3>
                 <div class="roulette-results-list" id="won-prizes-list"></div>
                 <button class="btn" style="width: 100%; margin-top: 15px;" onclick="resetCaseView()">Забрать призы</button>
             </div>
 
             <div id="case-prizes-info" style="width: 100%;">
                 <div style="width: 100%; text-align: left; font-weight: bold; font-size: 16px; margin-top: 5px;">Возможные призы:</div>
-                <div class="prizes-grid" id="prizes-grid">
-                    <div class="prize-card"><div class="prize-icon">🍕</div><div class="prize-title">Noobini Pizzanini</div><div class="prize-chance">Шанс: 50%</div></div>
-                    <div class="prize-card"><div class="prize-icon">🎅</div><div class="prize-title">Noobini Santanini</div><div class="prize-chance">Шанс: 30%</div></div>
-                    <div class="prize-card"><div class="prize-icon">🤖</div><div class="prize-title">Skibidi Bot</div><div class="prize-chance">Шанс: 15%</div></div>
-                    <div class="prize-card"><div class="prize-icon">👑</div><div class="prize-title">Golden Raccoon</div><div class="prize-chance">Шанс: 5%</div></div>
-                </div>
+                <div class="prizes-grid" id="prizes-grid"></div>
             </div>
         </div>
 
@@ -338,18 +360,34 @@
         };
 
         let maxEnergy = 100;
+        let activeCaseKey = 'linear';
         let currentCasePrice = 59;
-        let currentCaseName = 'Линейный кейс';
         let currentWonPrizes = [];
         let rouletteTimeout = null;
 
-        // Список возможных предметов в кейсе с шансами
-        const caseItems = [
-            { name: "Noobini Pizzanini", icon: "🍕", chance: 50, priceValue: 30 },
-            { name: "Noobini Santanini", icon: "🎅", chance: 30, priceValue: 70 },
-            { name: "Skibidi Bot", icon: "🤖", chance: 15, priceValue: 150 },
-            { name: "Golden Raccoon", icon: "👑", chance: 5, priceValue: 500 }
-        ];
+        // БАЗА ДАННЫХ ВСЕХ КЕЙСОВ С УКАЗАНИЕМ ЦЕНЫ ПРОДАЖИ ПРЕДМЕТА
+        const casesDatabase = {
+            'linear': {
+                name: 'Линейный кейс',
+                price: 59,
+                icon: '📦',
+                items: [
+                    { name: "Noobini Pizzanini", icon: "🍕", chance: 50, sellPrice: 20 },
+                    { name: "Noobini Santanini", icon: "🎅", chance: 30, sellPrice: 45 },
+                    { name: "Skibidi Bot",       icon: "🤖", chance: 15, sellPrice: 120 },
+                    { name: "Golden Raccoon",   icon: "👑", chance: 5,  sellPrice: 400 }
+                ]
+            },
+            'all_or_nothing': {
+                name: 'Всё или ничего',
+                price: 100,
+                icon: '🔥',
+                items: [
+                    { name: "Noobini Pizzanini", icon: "🍕", chance: 99.99, sellPrice: 5 },
+                    { name: "Strawberry Elephant", icon: "🐘", chance: 0.01, sellPrice: 50000 }
+                ]
+            }
+        };
 
         const BC_IMG = "https://i.imgur.com/8X8v35a.png";
         const el = (id) => document.getElementById(id);
@@ -417,28 +455,45 @@
             }
         }
 
-        function openCaseDetails(name, price) {
-            currentCaseName = name;
-            currentCasePrice = price;
-            el('detail-case-title').innerText = `Кейс: ${name}`;
-            el('price-x1').innerText = `${price} BC`;
-            el('price-x3').innerText = `${price * 3} BC`;
-            el('price-x5').innerText = `${price * 5} BC`;
+        function openCaseDetails(caseKey) {
+            activeCaseKey = caseKey;
+            let caseData = casesDatabase[caseKey];
+            currentCasePrice = caseData.price;
+            
+            el('detail-case-title').innerText = `Кейс: ${caseData.name}`;
+            el('case-box-icon').innerText = caseData.icon;
+            el('price-x1').innerText = `${caseData.price} BC`;
+            el('price-x3').innerText = `${caseData.price * 3} BC`;
+            el('price-x5').innerText = `${caseData.price * 5} BC`;
+            
+            let grid = el('prizes-grid');
+            grid.innerHTML = '';
+            caseData.items.forEach(item => {
+                grid.innerHTML += `
+                    <div class="prize-card">
+                        <div class="prize-icon">${item.icon}</div>
+                        <div class="prize-title">${item.name}</div>
+                        <div class="prize-chance">Шанс: ${item.chance}%</div>
+                        <div style="font-size: 10px; color: #f39c12; margin-top:2px;">Продажа: +${item.sellPrice} BC</div>
+                    </div>
+                `;
+            });
+
             resetCaseView();
             switchView('case-detail', null);
         }
 
         function getRandomItem() {
+            let caseData = casesDatabase[activeCaseKey];
             let rand = Math.random() * 100;
             let current = 0;
-            for (let item of caseItems) {
+            for (let item of caseData.items) {
                 current += item.chance;
                 if (rand <= current) return item;
             }
-            return caseItems[0];
+            return caseData.items[0];
         }
 
-        /* ОТКРЫТИЕ КЕЙСОВ (Х1, Х3, Х5) */
         function openCases(count) {
             let totalCost = currentCasePrice * count;
             if (player.score < totalCost) {
@@ -456,7 +511,6 @@
                 currentWonPrizes.push(getRandomItem());
             }
 
-            // Прячем меню кейса, показываем рулетку
             el('case-main-box').style.display = 'none';
             el('case-prizes-info').style.display = 'none';
             el('back-to-cases-btn').style.display = 'none';
@@ -471,7 +525,6 @@
             track.style.transform = 'translateX(0px)';
             track.innerHTML = '';
 
-            // Генерируем 40 элементов ленты, где победный элемент на 32 позиции
             let itemsCount = 40;
             let winningIndex = 32;
             let html = '';
@@ -485,17 +538,14 @@
             }
             track.innerHTML = html;
 
-            // Запускаем плавную анимацию прокрутки рулетки через микропаузу
             setTimeout(() => {
                 track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
-                // Центрируем 32-й элемент под красный маркер
-                let itemWidth = 112; // 100px ширина + 12px маржа
+                let itemWidth = 112; 
                 let containerWidth = el('roulette-container').clientWidth;
                 let targetOffset = (winningIndex * itemWidth) - (containerWidth / 2) + (itemWidth / 2);
                 track.style.transform = `translateX(-${targetOffset}px)`;
             }, 50);
 
-            // По окончании анимации рулетки показываем призы
             rouletteTimeout = setTimeout(() => {
                 showWonResults();
             }, 4100);
@@ -511,14 +561,35 @@
             let resultsList = el('won-prizes-list');
             resultsList.innerHTML = '';
 
+            let isAutoSell = el('autosell-checkbox').checked;
+            let totalSoldBC = 0;
+
             currentWonPrizes.forEach(prize => {
+                if (isAutoSell) {
+                    totalSoldBC += prize.sellPrice;
+                } else {
+                    player.inventory.push(prize);
+                }
+
                 resultsList.innerHTML += `
                     <div class="prize-card" style="width: 110px;">
                         <div class="prize-icon">${prize.icon}</div>
                         <div class="prize-title">${prize.name}</div>
+                        ${isAutoSell ? `<div style="font-size:11px; color:#27ae60; font-weight:bold; margin-top:3px;">+${prize.sellPrice} BC</div>` : ''}
                     </div>
                 `;
             });
+
+            if (isAutoSell) {
+                player.score += totalSoldBC;
+                player.score = Math.round(player.score * 100) / 100;
+                el('results-title').innerHTML = `⚡ Авто-продано на <span style="color:#27ae60">+${totalSoldBC} BC</span>:`;
+                updateUI();
+                saveGame();
+            } else {
+                el('results-title').innerHTML = `🎉 Вы выиграли:`;
+                saveGame();
+            }
 
             el('roulette-results-view').style.display = 'flex';
         }
