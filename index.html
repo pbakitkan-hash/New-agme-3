@@ -14,72 +14,86 @@
             display: flex; justify-content: center;
             height: 100vh; overflow: hidden;
         }
-        /* Обертка для ПК и мобилок (центрирование, макс ширина) */
         .app-wrapper {
             width: 100%; max-width: 480px; height: 100%;
             background: #0d0f18; display: flex; flex-direction: column;
             box-shadow: 0 0 30px rgba(0,0,0,0.8); position: relative;
         }
-        /* Шапка */
+
+        /* LIVE ДОСКА ДРОПОВ СВЕРХУ */
+        .live-bar {
+            background: #141722; border-bottom: 1px solid #23283d;
+            padding: 6px 12px; display: flex; align-items: center; gap: 8px;
+            font-size: 12px; overflow-x: auto; white-space: nowrap;
+        }
+        .live-tag { background: #e74c3c; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; }
+        .live-item { display: inline-flex; align-items: center; background: #1a1d29; border: 1px solid #2a2e43; padding: 3px 8px; border-radius: 6px; gap: 6px; margin-right: 6px; }
+
+        /* ШАПКА */
         .header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 16px 20px; background: #141722; border-bottom: 1px solid #23283d;
+            padding: 12px 16px; background: #141722; border-bottom: 1px solid #23283d;
         }
-        .header-left { display: flex; align-items: center; gap: 14px; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; }
-        .menu-btn { background: #23283d; border: none; color: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 20px; transition: background 0.2s; }
-        .menu-btn:hover { background: #2d344d; }
+        .header-left { font-weight: bold; font-size: 18px; letter-spacing: 0.5px; color: #fff; }
         
-        /* Валюта с картинкой BC */
+        .header-right { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .balance-badge {
-            background: #1a1d29; border: 1px solid #2a2e43; padding: 6px 14px; border-radius: 20px;
-            color: #f39c12; font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 6px;
+            background: #1a1d29; border: 1px solid #2a2e43; padding: 5px 10px; border-radius: 20px;
+            color: #f39c12; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 5px;
         }
-        .bc-icon {
-            width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+        .bc-icon { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+        .profile-avatar-btn {
+            width: 36px; height: 36px; background: #23283d; border: 2px solid #f39c12; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-weight: bold; color: #f39c12; font-size: 14px;
         }
         
-        /* Контент */
-        .content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        /* КОНТЕНТ */
+        .content { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; align-items: center; }
         .view { display: none; width: 100%; flex-direction: column; align-items: center; }
         .view.active { display: flex; }
 
-        /* Выпадающее меню */
+        /* ВЫПАДАЮЩЕЕ МЕНЮ ИЗ ПРОФИЛЯ */
         .drawer {
-            position: absolute; top: 0; left: -100%; width: 300px; height: 100%;
-            background: #141722; border-right: 1px solid #23283d; z-index: 1000;
-            transition: left 0.3s ease; display: flex; flex-direction: column; padding: 24px;
+            position: absolute; top: 0; right: -100%; width: 280px; height: 100%;
+            background: #141722; border-left: 1px solid #23283d; z-index: 1000;
+            transition: right 0.3s ease; display: flex; flex-direction: column; padding: 20px; overflow-y: auto;
         }
-        .drawer.open { left: 0; }
-        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 20px; font-weight: bold; }
+        .drawer.open { right: 0; }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 18px; font-weight: bold; }
+        .menu-close-btn { background: #23283d; border: none; color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+        
         .drawer-item {
-            background: none; border: none; color: #8b93b0; font-size: 18px; text-align: left;
-            padding: 16px 0; cursor: pointer; border-bottom: 1px solid #1a1d29; display: flex; justify-content: space-between;
-            transition: color 0.2s;
+            background: #1a1d29; border: 1px solid #2a2e43; color: #fff; font-size: 15px; text-align: left;
+            padding: 12px 14px; border-radius: 10px; cursor: pointer; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+            transition: background 0.2s;
         }
-        .drawer-item:hover, .drawer-item.active { color: #f39c12; font-weight: bold; }
+        .drawer-item:hover { background: #252a3d; }
+        .drawer-item.active { border-color: #f39c12; color: #f39c12; font-weight: bold; }
+        .badge-new { background: #e74c3c; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+
         .overlay {
             position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6);
             z-index: 900; display: none;
         }
         .overlay.show { display: block; }
 
-        /* Ферма */
+        /* ФЕРМА (НУБИНИ ПИЦЦАНИНИ) */
         .farm-stats { display: flex; justify-content: space-around; width: 100%; background: #1a1d29; border-radius: 14px; padding: 14px; margin-bottom: 20px; border: 1px solid #2a2e43; }
-        .farm-stat-item { text-align: center; font-size: 14px; color: #8b93b0; }
-        .farm-stat-value { font-size: 18px; font-weight: bold; color: #fff; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .farm-stat-item { text-align: center; font-size: 13px; color: #8b93b0; }
+        .farm-stat-value { font-size: 16px; font-weight: bold; color: #fff; margin-top: 4px; }
         
         .energy-box { width: 100%; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 12px; padding: 14px; margin-bottom: 25px; }
         .energy-info { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #8b93b0; }
         .energy-bar-bg { width: 100%; height: 12px; background: #0d0f18; border-radius: 6px; overflow: hidden; }
         .energy-bar-fill { height: 100%; width: 100%; background: #f39c12; transition: width 0.2s; }
 
-        .character-container { position: relative; margin: 20px 0; cursor: pointer; text-align: center; }
-        .character-avatar { font-size: 130px; transition: transform 0.05s; display: inline-block; }
-        .character-avatar:active { transform: scale(0.92); }
-        .char-name { font-size: 24px; font-weight: bold; font-style: italic; margin-top: 15px; color: #f39c12; }
+        .character-container { position: relative; margin: 15px 0; cursor: pointer; text-align: center; }
+        .character-img { width: 160px; height: 160px; object-fit: contain; transition: transform 0.05s; display: inline-block; filter: drop-shadow(0 0 15px rgba(243,156,18,0.3)); }
+        .character-img:active { transform: scale(0.92); }
+        .char-name { font-size: 22px; font-weight: bold; font-style: italic; margin-top: 10px; color: #f39c12; }
         
         .floating-num {
-            position: absolute; font-size: 28px; font-weight: bold; color: #f39c12;
+            position: absolute; font-size: 26px; font-weight: bold; color: #f39c12;
             pointer-events: none; animation: floatUp 0.7s ease-out forwards; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
             display: flex; align-items: center; gap: 4px;
         }
@@ -88,54 +102,96 @@
             100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
         }
 
-        /* Карточки */
-        .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 18px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+        /* КАРТОЧКИ И КЕЙСЫ */
+        .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 16px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; cursor: pointer; transition: border-color 0.2s; }
+        .card:hover { border-color: #f39c12; }
         .btn { background: #f39c12; border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
         .btn:hover { background: #e08e0b; }
-        .btn:disabled { background: #33384f; color: #666; cursor: not-allowed; }
-        h2 { margin-top: 0; font-size: 26px; }
+        h2 { margin-top: 0; font-size: 24px; }
         .currency-inline { width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; display: inline-block; object-fit: cover; }
+
+        .back-btn { background: #23283d; border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; align-self: flex-start; font-weight: bold; }
+        .prizes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 15px; }
+        .prize-card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; text-align: center; }
+        .prize-icon { font-size: 32px; margin-bottom: 5px; }
+        .prize-title { font-size: 13px; font-weight: bold; }
+        .prize-chance { font-size: 11px; color: #8b93b0; margin-top: 3px; }
     </style>
 </head>
 <body>
 
 <div class="app-wrapper">
 
+    <!-- LIVE ДОСКА ДРОПОВ -->
+    <div class="live-bar">
+        <span class="live-tag">LIVE</span>
+        <div class="live-item"><span>🍕</span> <b>Antonio</b> <span style="color:#f39c12">5040 BC</span></div>
+        <div class="live-item"><span>🤖</span> <b>KilyX</b> <span style="color:#f39c12">500 BC</span></div>
+        <div class="live-item"><span>👑</span> <b>Leonid</b> <span style="color:#f39c12">1500 BC</span></div>
+    </div>
+
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
+    <!-- ВЫПАДАЮЩЕЕ МЕНЮ ИЗ ПРОФИЛЯ -->
     <div class="drawer" id="drawer">
         <div class="drawer-header">
             <span>МЕНЮ</span>
-            <button class="menu-btn" onclick="toggleMenu()">✕</button>
+            <button class="menu-close-btn" onclick="toggleMenu()">✕</button>
         </div>
-        <button class="drawer-item active" onclick="switchView('farm', this)">🌿 Ферма</button>
-        <button class="drawer-item" onclick="switchView('cases', this)">🎁 Кейсы</button>
-        <button class="drawer-item" onclick="switchView('shop', this)">🛒 Магазин</button>
         <button class="drawer-item" onclick="switchView('profile', this)">👤 Профиль</button>
+        <button class="drawer-item active" onclick="switchView('cases', this)">🎁 Кейсы <span class="badge-new">ТОП</span></button>
+        <button class="drawer-item" onclick="switchView('farm', this)">🌿 Ферма (Нубини)</button>
+        <button class="drawer-item" onclick="switchView('shop', this)">🛒 Магазин</button>
+        <button class="drawer-item" onclick="alert('Режим в разработке!')">🚀 Ракета</button>
+        <button class="drawer-item" onclick="alert('Режим в разработке!')">💣 Мины</button>
+        <button class="drawer-item" onclick="alert('Режим в разработке!')">⚡ Фьюз <span class="badge-new">NEW</span></button>
     </div>
 
+    <!-- ШАПКА -->
     <div class="header">
-        <div class="header-left">
-            <button class="menu-btn" onclick="toggleMenu()">☰</button>
-            <span>BRAINROT CASE</span>
-        </div>
-        <div class="balance-badge">
-            <img src="https://i.imgur.com/8X8v35a.png" class="bc-icon" id="bc-logo-header" alt="BC"> 
-            <span id="balance">3.08</span>
+        <div class="header-left">BRAINROT CASE</div>
+        <div class="header-right" onclick="toggleMenu()">
+            <div class="balance-badge">
+                <img src="https://i.imgur.com/8X8v35a.png" class="bc-icon" alt="BC"> 
+                <span id="balance">3.08</span>
+            </div>
+            <div class="profile-avatar-btn">P</div>
         </div>
     </div>
 
+    <!-- КОНТЕНТ -->
     <div class="content">
 
-        <!-- ФЕРМА -->
-        <div id="view-farm" class="view active">
+        <!-- ГЛАВНЫЙ ЭКРАН: КЕЙСЫ -->
+        <div id="view-cases" class="view active">
+            <h2>Линейные кейсы</h2>
+            <div class="card" onclick="openCaseDetails('Линейный кейс', 59)">
+                <div><b>Линейный кейс</b><br><small style="color:#8b93b0">8 предметов • 59 BC</small></div>
+                <button class="btn" onclick="event.stopPropagation(); openCaseDetails('Линейный кейс', 59)">Смотреть</button>
+            </div>
+        </div>
+
+        <!-- ДЕТАЛИ И СОДЕРЖИМОЕ КЕЙСА -->
+        <div id="view-case-detail" class="view">
+            <button class="back-btn" onclick="switchView('cases', null)">← Назад</button>
+            <h2 id="detail-case-title">Кейс</h2>
+            <div style="font-size: 60px; margin: 10px 0;">📦</div>
+            <button class="btn" id="buy-case-btn" style="width: 100%; padding: 14px; font-size: 18px; margin-bottom: 20px;" onclick="buySelectedCase()">Открыть кейс</button>
+            
+            <div style="width: 100%; text-align: left; font-weight: bold; font-size: 16px;">Возможные призы:</div>
+            <div class="prizes-grid" id="prizes-grid">
+                <div class="prize-card"><div class="prize-icon">🍕</div><div class="prize-title">Noobini Pizzanini</div><div class="prize-chance">Шанс: 50%</div></div>
+                <div class="prize-card"><div class="prize-icon">🎅</div><div class="prize-title">Noobini Santanini</div><div class="prize-chance">Шанс: 30%</div></div>
+                <div class="prize-card"><div class="prize-icon">🤖</div><div class="prize-title">Skibidi Bot</div><div class="prize-chance">Шанс: 15%</div></div>
+                <div class="prize-card"><div class="prize-icon">👑</div><div class="prize-title">Golden Raccoon</div><div class="prize-chance">Шанс: 5%</div></div>
+            </div>
+        </div>
+
+        <!-- ФЕРМА (НУБИНИ ПИЦЦАНИНИ) -->
+        <div id="view-farm" class="view">
             <div class="farm-stats">
                 <div class="farm-stat-item">Уровень<div class="farm-stat-value" id="level">11</div></div>
-                <div class="farm-stat-item">Баланс
-                    <div class="farm-stat-value">
-                        <span id="coins">3.08</span>
-                    </div>
-                </div>
+                <div class="farm-stat-item">Баланс<div class="farm-stat-value" id="coins">3.08</div></div>
                 <div class="farm-stat-item">Энергия<div class="farm-stat-value"><span id="energy">100</span>/100</div></div>
             </div>
 
@@ -145,26 +201,9 @@
             </div>
 
             <div class="character-container" id="click-target">
-                <div class="character-avatar">🐒</div>
-                <div class="char-name">Raccooni Jandelini</div>
-                <div style="color: #8b93b0; font-size: 15px; margin-top: 8px;">+ 538 / 770 HP</div>
-            </div>
-        </div>
-
-        <!-- КЕЙСЫ -->
-        <div id="view-cases" class="view">
-            <h2>Линейные кейсы</h2>
-            <div class="card">
-                <div><b>Тетрадь</b><br><small style="color:#8b93b0">8 предм. • 59 BC</small></div>
-                <button class="btn" onclick="openCase(59)">Открыть</button>
-            </div>
-            <div class="card">
-                <div><b>Звонок</b><br><small style="color:#8b93b0">12 предм. • 179 BC</small></div>
-                <button class="btn" onclick="openCase(179)">Открыть</button>
-            </div>
-            <div class="card">
-                <div><b>Школа</b><br><small style="color:#8b93b0">13 предм. • 399 BC</small></div>
-                <button class="btn" onclick="openCase(399)">Открыть</button>
+                <img src="https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png" class="character-img" alt="Noobini Pizzanini" onerror="this.src='https://i.imgur.com/2X3K3r2.png'">
+                <div class="char-name">Noobini Pizzanini</div>
+                <div style="color: #8b93b0; font-size: 14px; margin-top: 5px;">Тапай, чтобы фармить BC!</div>
             </div>
         </div>
 
@@ -199,10 +238,10 @@
         let score = 3.08;
         let energy = 100;
         let maxEnergy = 100;
+        let currentCasePrice = 59;
+        let currentCaseName = 'Линейный кейс';
 
-        // Ссылка на твою картинку валюты BC из запроса
-        const BC_IMG = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4QBaRXhpZgAATU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAAExAAIAAAARAAAATgAAAAAAAABIAAAAAQAAAEgAAAABcGFnZSAxLzEgKHBh77+9U+-_ve-_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";
-
+        const BC_IMG = "https://i.imgur.com/8X8v35a.png";
         const el = (id) => document.getElementById(id);
 
         function loadGame() {
@@ -226,11 +265,35 @@
 
         function switchView(viewName, btn) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.drawer-item').forEach(i => i.classList.remove('active'));
+            if(btn && btn.classList.contains('drawer-item')) {
+                document.querySelectorAll('.drawer-item').forEach(i => i.classList.remove('active'));
+                btn.classList.add('active');
+            }
 
             el('view-' + viewName).classList.add('active');
-            btn.classList.add('active');
-            toggleMenu();
+            if(el('drawer').classList.contains('open')) {
+                toggleMenu();
+            }
+        }
+
+        function openCaseDetails(name, price) {
+            currentCaseName = name;
+            currentCasePrice = price;
+            el('detail-case-title').innerText = `Кейс: ${name}`;
+            el('buy-case-btn').innerText = `Открыть за ${price} BC`;
+            switchView('case-detail', null);
+        }
+
+        function buySelectedCase() {
+            if(score >= currentCasePrice) {
+                score -= currentCasePrice;
+                score = Math.round(score * 100) / 100;
+                alert(`Кейс успешно открыт! 🎉`);
+                updateUI();
+                saveGame();
+            } else {
+                alert('Не хватает BC! 💰');
+            }
         }
 
         el('click-target').onclick = (e) => {
@@ -253,18 +316,6 @@
                 saveGame();
             }
         };
-
-        function openCase(cost) {
-            if(score >= cost) {
-                score -= cost;
-                score = Math.round(score * 100) / 100;
-                alert('Кейс успешно открыт! 🎉');
-                updateUI();
-                saveGame();
-            } else {
-                alert('Не хватает BC! 💰');
-            }
-        }
 
         setInterval(() => {
             if(energy < maxEnergy) {
