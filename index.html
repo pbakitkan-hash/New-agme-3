@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Brainrot Case</title>
+    <!-- Telegram WebApp SDK для распознавания ID владельца -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
@@ -116,6 +118,13 @@
         .prize-icon { font-size: 32px; margin-bottom: 5px; }
         .prize-title { font-size: 13px; font-weight: bold; }
         .prize-chance { font-size: 11px; color: #8b93b0; margin-top: 3px; }
+
+        /* Поле ввода для промокода */
+        .input-field {
+            width: 100%; padding: 12px; background: #0d0f18; border: 1px solid #2a2e43;
+            border-radius: 10px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none;
+        }
+        .input-field:focus { border-color: #f39c12; }
     </style>
 </head>
 <body>
@@ -223,10 +232,17 @@
         <!-- ПРОФИЛЬ -->
         <div id="view-profile" class="view">
             <h2>Профиль игрока</h2>
-            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 12px;">
-                <div>👤 <b>@parasat</b></div>
-                <div>🆔 ID: 6638127989</div>
+            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
+                <div id="user-tg-name">👤 <b>@parasat</b></div>
+                <div>🆔 ID: <span id="user-tg-id">6638127989</span></div>
                 <div>💰 Баланс: <span id="prof-balance">3.08</span> BC</div>
+                <button class="btn" style="width:100%; margin-top:8px;" onclick="claimDevBonus()">👑 Кнопка владельца (+1000 BC)</button>
+            </div>
+
+            <h2>Активация Промокода</h2>
+            <div class="card" style="flex-direction: column;">
+                <input type="text" id="promo-input" class="input-field" placeholder="Введи промокод...">
+                <button class="btn" style="width: 100%;" onclick="activatePromo()">Активировать</button>
             </div>
         </div>
 
@@ -235,8 +251,16 @@
 </div>
 
     <script>
-        let score = 3.08;
-        let energy = 100;
+        // Твой личный Telegram ID (никто другой нажать кнопку владельца не сможет!)
+        const OWNER_TELEGRAM_ID = 6638127989;
+
+        let player = {
+            score: 3.08,
+            energy: 100,
+            level: 11,
+            inventory: []
+        };
+        
         let maxEnergy = 100;
         let currentCasePrice = 59;
         let currentCaseName = 'Линейный кейс';
@@ -245,17 +269,31 @@
         const el = (id) => document.getElementById(id);
 
         function loadGame() {
-            let s = localStorage.getItem('brainrot_full_save');
-            if(s) {
-                let data = JSON.parse(s);
-                score = data.score !== undefined ? data.score : 3.08;
-                energy = data.energy !== undefined ? data.energy : 100;
+            let savedData = localStorage.getItem('brainrot_full_save');
+            if(savedData) {
+                try {
+                    let parsed = JSON.parse(savedData);
+                    player.score = parsed.score !== undefined ? parsed.score : player.score;
+                    player.energy = parsed.energy !== undefined ? parsed.energy : player.energy;
+                    player.level = parsed.level !== undefined ? parsed.level : player.level;
+                    player.inventory = parsed.inventory || [];
+                } catch(e) {
+                    console.error("Ошибка чтения сохранений:", e);
+                }
             }
+
+            // Подгружаем Telegram данные пользователя, если открыто внутри Telegram
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe.user) {
+                let user = window.Telegram.WebApp.initDataUnsafe.user;
+                el('user-tg-name').innerHTML = `👤 <b>@${user.username || user.first_name}</b>`;
+                el('user-tg-id').innerText = user.id;
+            }
+
             updateUI();
         }
 
         function saveGame() {
-            localStorage.setItem('brainrot_full_save', JSON.stringify({score, energy}));
+            localStorage.setItem('brainrot_full_save', JSON.stringify(player));
         }
 
         function toggleMenu() {
@@ -285,9 +323,9 @@
         }
 
         function buySelectedCase() {
-            if(score >= currentCasePrice) {
-                score -= currentCasePrice;
-                score = Math.round(score * 100) / 100;
+            if(player.score >= currentCasePrice) {
+                player.score -= currentCasePrice;
+                player.score = Math.round(player.score * 100) / 100;
                 alert(`Кейс успешно открыт! 🎉`);
                 updateUI();
                 saveGame();
@@ -296,11 +334,50 @@
             }
         }
 
+        /* 👑 КНОПКА ВЛАДЕЛЬЦА С ПРОВЕРКОЙ ID */
+        function claimDevBonus() {
+            let currentUserId = OWNER_TELEGRAM_ID; 
+            
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe.user) {
+                currentUserId = window.Telegram.WebApp.initDataUnsafe.user.id;
+            }
+
+            if (currentUserId === OWNER_TELEGRAM_ID) {
+                player.score += 1000;
+                player.score = Math.round(player.score * 100) / 100;
+                updateUI();
+                saveGame();
+                alert("👑 Бонус разработчика: +1000 BC успешно начислено!");
+            } else {
+                alert("❌ Доступ запрещен! Эта функция только для владельца бота.");
+            }
+        }
+
+        /* 🎁 АКТИВАЦИЯ ПРОМОКОДОВ */
+        function activatePromo() {
+            let code = el('promo-input').value.trim();
+            if (code === "ADMIN1000") { // Твой секретный админ-код
+                player.score += 1000;
+                player.score = Math.round(player.score * 100) / 100;
+                alert("👑 Админ-код активирован: +1000 BC!");
+            } else if (code === "BRAINROT") {
+                player.score += 50;
+                player.score = Math.round(player.score * 100) / 100;
+                alert("🎉 Промокод активирован: +50 BC!");
+            } else {
+                alert("❌ Неверный или недействительный промокод!");
+                return;
+            }
+            el('promo-input').value = "";
+            updateUI();
+            saveGame();
+        }
+
         el('click-target').onclick = (e) => {
-            if(energy > 0) {
-                score += 0.01;
-                score = Math.round(score * 100) / 100;
-                energy -= 1;
+            if(player.energy > 0) {
+                player.score += 0.01;
+                player.score = Math.round(player.score * 100) / 100;
+                player.energy -= 1;
 
                 let num = document.createElement('div');
                 num.className = 'floating-num';
@@ -318,20 +395,21 @@
         };
 
         setInterval(() => {
-            if(energy < maxEnergy) {
-                energy++;
+            if(player.energy < maxEnergy) {
+                player.energy++;
                 updateUI();
                 saveGame();
             }
         }, 2000);
 
         function updateUI() {
-            el('balance').innerText = score.toFixed(2);
-            el('coins').innerText = score.toFixed(2);
-            el('prof-balance').innerText = score.toFixed(2);
-            el('energy').innerText = energy;
-            el('energy-text').innerText = energy;
-            el('energy-bar').style.width = `${(energy / maxEnergy) * 100}%`;
+            el('balance').innerText = player.score.toFixed(2);
+            el('coins').innerText = player.score.toFixed(2);
+            el('prof-balance').innerText = player.score.toFixed(2);
+            el('energy').innerText = player.energy;
+            el('energy-text').innerText = player.energy;
+            el('level').innerText = player.level;
+            el('energy-bar').style.width = `${(player.energy / maxEnergy) * 100}%`;
         }
 
         loadGame();
