@@ -22,14 +22,14 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.8); position: relative;
         }
 
-        /* LIVE ДОСКА ДРОПОВ (СВЕРХУ) */
+        /* LIVE ДОСКА ДРОПОВ */
         .live-bar {
             background: #141722; border-bottom: 1px solid #23283d;
             padding: 6px 12px; display: flex; align-items: center; gap: 8px;
             font-size: 12px; overflow-x: auto; white-space: nowrap; scroll-behavior: smooth;
         }
         .live-tag { background: #e74c3c; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; flex-shrink: 0; }
-        .live-feed { display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+        .live-feed { display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; min-height: 24px; }
         .live-feed::-webkit-scrollbar { display: none; }
         .live-item { display: inline-flex; align-items: center; background: #1a1d29; border: 1px solid #2a2e43; padding: 3px 8px; border-radius: 6px; gap: 6px; font-size: 11px; flex-shrink: 0; animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
@@ -120,6 +120,7 @@
         .prize-card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; text-align: center; position: relative; }
         .prize-icon { font-size: 32px; margin-bottom: 5px; }
         .prize-title { font-size: 13px; font-weight: bold; }
+        .prize-count-badge { position: absolute; top: 6px; right: 6px; background: #e74c3c; color: #fff; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 6px; }
         .prize-chance { font-size: 11px; color: #8b93b0; margin-top: 3px; }
 
         .input-field {
@@ -178,13 +179,11 @@
 
 <div class="app-wrapper">
 
-    <!-- LIVE ДОСКА ДРОПОВ (СВЕРХУ) -->
+    <!-- LIVE ДОСКА ДРОПОВ (ТОЛЬКО РЕАЛЬНЫЕ ИГРОКИ) -->
     <div class="live-bar">
         <span class="live-tag">LIVE</span>
         <div class="live-feed" id="live-feed">
-            <div class="live-item"><span>🍕</span> <b>Antonio</b> <span style="color:#f39c12">20 BC</span></div>
-            <div class="live-item"><span>🤖</span> <b>KilyX</b> <span style="color:#f39c12">120 BC</span></div>
-            <div class="live-item"><span>👑</span> <b>Leonid</b> <span style="color:#f39c12">400 BC</span></div>
+            <span id="no-drops-msg" style="color: #8b93b0; font-size: 11px;">Ожидание первых дропов...</span>
         </div>
     </div>
 
@@ -256,7 +255,7 @@
                     <button class="btn" onclick="openCases(1)">х1<br><span style="font-size:10px;" id="price-x1">59 BC</span></button>
                     <button class="btn" onclick="openCases(3)" style="background: #9b59b6;">х3<br><span style="font-size:10px;" id="price-x3">177 BC</span></button>
                     <button class="btn" onclick="openCases(5)" style="background: #e67e22;">х5<br><span style="font-size:10px;" id="price-x5">295 BC</span></button>
-                    <button class="btn plus-btn" onclick="openCustomAmountCases()" title="Открыть свое количество">+</button>
+                    <button class="btn plus-btn" onclick="openCustomAmountCases()" title="Открыть свое количество (до 999)">+</button>
                 </div>
             </div>
 
@@ -300,7 +299,7 @@
                 <div id="inventory-empty-msg" style="color:#8b93b0; text-align:center; padding: 10px; display:none; font-size: 14px;">
                     Инвентарь пуст! Открывай кейсы, чтобы выбивать брейнротов.
                 </div>
-                <div class="prizes-grid" id="inventory-grid" style="width: 100%; max-height: 220px; overflow-y: auto;"></div>
+                <div class="prizes-grid" id="inventory-grid" style="width: 100%; max-height: 260px; overflow-y: auto;"></div>
             </div>
 
             <!-- 3. ПРОМОКОДЫ -->
@@ -325,7 +324,9 @@
                 <input type="number" id="grant-amount" class="input-field" placeholder="Сумма BC (например: 500)">
                 <button class="btn" style="width: 100%; background: #2980b9; margin-bottom: 15px;" onclick="grantBalanceToUser()">💳 Начислить BC игроку</button>
 
-                <button class="btn" style="width: 100%; background: #e74c3c;" onclick="resetPlayerAccount()">🗑 Сбросить (обнулить) свой аккаунт</button>
+                <div style="font-size: 12px; font-weight: bold; color: #8b93b0; margin-bottom: 6px;">3. Сброс аккаунта по ID:</div>
+                <input type="number" id="reset-target-id" class="input-field" placeholder="Telegram ID игрока для сброса">
+                <button class="btn" style="width: 100%; background: #e74c3c;" onclick="resetAccountById()">🗑 Сбросить аккаунт по ID</button>
             </div>
         </div>
 
@@ -443,6 +444,16 @@
                 player.username = tgUser?.username || tgUser?.first_name || `Player_${player.id.toString().slice(-4)}`;
             }
 
+            // Проверка сброса по ID
+            let pendingReset = localStorage.getItem(`pending_reset_${player.id}`);
+            if (pendingReset) {
+                player.score = 0;
+                player.inventory = [];
+                localStorage.removeItem(`pending_reset_${player.id}`);
+                alert("⚠️ Ваш аккаунт был полностью сброшен администратором.");
+            }
+
+            // Проверка бонуса по ID
             let pendingBonus = localStorage.getItem(`pending_bonus_${player.id}`);
             if (pendingBonus) {
                 player.score += parseFloat(pendingBonus);
@@ -463,7 +474,6 @@
 
             renderInventory();
             updateUI();
-            startFakeLiveDrops();
         }
 
         function saveGame() {
@@ -471,9 +481,13 @@
             localStorage.setItem('brainrot_promos_db', JSON.stringify(promoCodes));
         }
 
+        /* ПОПОЛНЕНИЕ ЛЕНТЫ ТОЛЬКО РЕАЛЬНЫМИ ДРОПАМИ */
         function addLiveDrop(username, item) {
             let feed = el('live-feed');
             if (!feed) return;
+
+            let emptyMsg = el('no-drops-msg');
+            if (emptyMsg) emptyMsg.remove();
 
             let itemEl = document.createElement('div');
             itemEl.className = 'live-item';
@@ -484,17 +498,6 @@
             if (feed.children.length > 10) {
                 feed.removeChild(feed.lastChild);
             }
-        }
-
-        function startFakeLiveDrops() {
-            const fakeUsers = ["Antonio", "KilyX", "Leonid", "Sasha_Pro", "DogeMaster", "SkibidiKing", "Robloxian"];
-            setInterval(() => {
-                let randomUser = fakeUsers[Math.floor(Math.random() * fakeUsers.length)];
-                let randomCase = Math.random() > 0.5 ? 'linear' : 'all_or_nothing';
-                let caseData = casesDatabase[randomCase];
-                let randomItem = caseData.items[Math.floor(Math.random() * caseData.items.length)];
-                addLiveDrop(randomUser, randomItem);
-            }, 6000);
         }
 
         function toggleMenu() {
@@ -557,12 +560,16 @@
         }
 
         function openCustomAmountCases() {
-            let amount = prompt("Сколько кейсов открыть?", "100");
+            let amount = prompt("Сколько кейсов открыть? (Максимум 999)", "100");
             if (amount === null) return;
             amount = parseInt(amount);
             if (isNaN(amount) || amount <= 0) {
                 alert("❌ Введи корректное число!");
                 return;
+            }
+            if (amount > 999) {
+                alert("⚠️ Максимальное количество для единовременного открытия: 999 кейсов!");
+                amount = 999;
             }
             openCases(amount);
         }
@@ -583,6 +590,8 @@
             for (let i = 0; i < count; i++) {
                 let wonItem = getRandomItem();
                 currentWonPrizes.push(wonItem);
+                
+                // Публикуем ТОЛЬКО реальный дроп игрока в LIVE-доску
                 addLiveDrop(player.username, wonItem);
             }
 
@@ -643,18 +652,27 @@
             let isAutoSell = el('autosell-checkbox').checked;
             let totalSoldBC = 0;
 
+            let groupedResults = {};
             currentWonPrizes.forEach(prize => {
+                if (!groupedResults[prize.name]) {
+                    groupedResults[prize.name] = { ...prize, count: 0 };
+                }
+                groupedResults[prize.name].count++;
+
                 if (isAutoSell) {
                     totalSoldBC += prize.sellPrice;
                 } else {
                     player.inventory.push(prize);
                 }
+            });
 
+            Object.values(groupedResults).forEach(group => {
                 resultsList.innerHTML += `
-                    <div class="prize-card" style="width: 100px;">
-                        <div class="prize-icon">${prize.icon}</div>
-                        <div class="prize-title">${prize.name}</div>
-                        ${isAutoSell ? `<div style="font-size:10px; color:#27ae60; font-weight:bold;">+${prize.sellPrice} BC</div>` : ''}
+                    <div class="prize-card" style="width: 110px;">
+                        <span class="prize-count-badge">×${group.count}</span>
+                        <div class="prize-icon">${group.icon}</div>
+                        <div class="prize-title">${group.name}</div>
+                        ${isAutoSell ? `<div style="font-size:10px; color:#27ae60; font-weight:bold;">+${group.sellPrice * group.count} BC</div>` : ''}
                     </div>
                 `;
             });
@@ -693,22 +711,54 @@
             }
             el('inventory-empty-msg').style.display = 'none';
 
-            player.inventory.forEach((item, index) => {
+            let groupedInventory = {};
+            player.inventory.forEach((item) => {
+                if (!groupedInventory[item.name]) {
+                    groupedInventory[item.name] = { ...item, count: 0 };
+                }
+                groupedInventory[item.name].count++;
+            });
+
+            Object.values(groupedInventory).forEach((group) => {
+                let totalPrice = group.sellPrice * group.count;
                 grid.innerHTML += `
                     <div class="prize-card">
-                        <div class="prize-icon">${item.icon}</div>
-                        <div class="prize-title">${item.name}</div>
-                        <button class="btn" style="padding:4px 6px; font-size:10px; margin-top:6px; width:100%;" onclick="sellInventoryItem(${index})">Продать (+${item.sellPrice} BC)</button>
+                        <span class="prize-count-badge">×${group.count}</span>
+                        <div class="prize-icon">${group.icon}</div>
+                        <div class="prize-title">${group.name}</div>
+                        <div style="font-size:10px; color:#f39c12; margin-top:3px;">1 шт = +${group.sellPrice} BC</div>
+                        
+                        <div style="display:flex; gap:4px; margin-top:6px;">
+                            <button class="btn" style="padding:4px 2px; font-size:10px; flex:1;" onclick="sellOneFromInventory('${group.name}')">Продать 1</button>
+                            <button class="btn" style="padding:4px 2px; font-size:10px; flex:1; background:#27ae60;" onclick="sellAllGroupFromInventory('${group.name}')">Все (+${totalPrice})</button>
+                        </div>
                     </div>
                 `;
             });
         }
 
-        function sellInventoryItem(index) {
-            let item = player.inventory[index];
-            player.score += item.sellPrice;
+        function sellOneFromInventory(itemName) {
+            let index = player.inventory.findIndex(item => item.name === itemName);
+            if (index !== -1) {
+                let item = player.inventory[index];
+                player.score += item.sellPrice;
+                player.score = Math.round(player.score * 100) / 100;
+                player.inventory.splice(index, 1);
+                updateUI();
+                saveGame();
+                renderInventory();
+            }
+        }
+
+        function sellAllGroupFromInventory(itemName) {
+            let itemsToSell = player.inventory.filter(item => item.name === itemName);
+            let totalGain = itemsToSell.reduce((sum, item) => sum + item.sellPrice, 0);
+
+            player.score += totalGain;
             player.score = Math.round(player.score * 100) / 100;
-            player.inventory.splice(index, 1);
+            
+            player.inventory = player.inventory.filter(item => item.name !== itemName);
+
             updateUI();
             saveGame();
             renderInventory();
@@ -739,17 +789,31 @@
             el('grant-amount').value = "";
         }
 
-        function resetPlayerAccount() {
-            let confirmReset = confirm("⚠️ Вы уверены, что хотите полностью сбросить свой аккаунт?");
-            if (confirmReset) {
+        function resetAccountById() {
+            let targetIdInput = el('reset-target-id').value.trim();
+            let targetId = parseInt(targetIdInput);
+
+            if (isNaN(targetId) || targetId <= 0) {
+                alert("❌ Введи правильный Telegram ID!");
+                return;
+            }
+
+            let confirmReset = confirm(`⚠️ Вы точно хотите полностью сбросить аккаунт игрока с ID ${targetId}?`);
+            if (!confirmReset) return;
+
+            if (targetId === player.id) {
                 player.score = 0;
                 player.inventory = [];
                 saveGame();
                 renderInventory();
                 updateUI();
-                alert("🗑 Аккаунт успешно обнулен!");
-                location.reload();
+                alert("🗑 Ваш аккаунт успешно обнулен!");
+            } else {
+                localStorage.setItem(`pending_reset_${targetId}`, 'true');
+                alert(`✅ Запрос на сброс аккаунта отправлен для игрока с ID ${targetId}!`);
             }
+
+            el('reset-target-id').value = "";
         }
 
         function claimDevBonus() {
