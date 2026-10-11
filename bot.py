@@ -7,7 +7,8 @@ import requests
 TOKEN = "8830829115:AAE1t8lqMI2ARzog7IPsO5fLKoNptbrw1wI"
 
 # Твоя ссылка на GitHub Pages
-WEB_APP_URL = "https://pbakitkan-hash.github.io/New-agme-3/?v=2
+WEB_APP_URL = "https://pbakitkan-hash.github.io/New-agme-3/?v=2"
+
 
 # Инициализация Flask для Render Web Service
 app = Flask(__name__)
