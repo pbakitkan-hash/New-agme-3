@@ -105,11 +105,11 @@
         }
 
         /* КАРТОЧКИ И КЕЙСЫ */
-        .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 16px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; cursor: pointer; transition: border-color 0.2s; }
+        .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 16px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; transition: border-color 0.2s; }
         .card:hover { border-color: #f39c12; }
         .btn { background: #f39c12; border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
         .btn:hover { background: #e08e0b; }
-        h2 { margin-top: 0; font-size: 24px; }
+        h2 { margin-top: 0; font-size: 24px; width: 100%; text-align: left; }
         .currency-inline { width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; display: inline-block; object-fit: cover; }
 
         .back-btn { background: #23283d; border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; align-self: flex-start; font-weight: bold; }
@@ -124,6 +124,39 @@
             border-radius: 10px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none;
         }
         .input-field:focus { border-color: #f39c12; }
+        
+        .admin-panel { display: none; width: 100%; background: #141722; border: 1px dashed #f39c12; border-radius: 14px; padding: 14px; margin-top: 15px; }
+        .admin-panel.show { display: block; }
+
+        /* КНОПКИ МУЛЬТИ-ОТКРЫТИЯ */
+        .case-buttons-group { display: flex; gap: 8px; width: 100%; margin-bottom: 20px; }
+        .case-buttons-group .btn { flex: 1; padding: 12px 6px; font-size: 14px; text-align: center; }
+
+        /* АНИМАЦИЯ РУЛЕТКИ КЕЙСА */
+        .roulette-container { display: none; width: 100%; flex-direction: column; align-items: center; margin-top: 10px; }
+        .roulette-container.show { display: flex; }
+        
+        .roulette-window {
+            width: 100%; height: 130px; background: #141722; border: 2px solid #f39c12;
+            border-radius: 14px; position: relative; overflow: hidden; display: flex; align-items: center;
+        }
+        .roulette-pointer {
+            position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: #e74c3c;
+            transform: translateX(-50%); z-index: 10; box-shadow: 0 0 10px #e74c3c;
+        }
+        .roulette-track {
+            display: flex; position: absolute; left: 0; will-change: transform;
+            transition: transform 4s cubic-bezier(0.15, 0.85, 0.25, 1);
+        }
+        .roulette-item {
+            min-width: 100px; height: 110px; background: #1a1d29; border: 1px solid #2a2e43;
+            border-radius: 10px; margin: 0 6px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; padding: 8px;
+        }
+        .roulette-item-icon { font-size: 36px; margin-bottom: 6px; }
+        .roulette-item-title { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+        
+        .roulette-results-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 15px; width: 100%; }
     </style>
 </head>
 <body>
@@ -173,7 +206,7 @@
         <!-- ГЛАВНЫЙ ЭКРАН: КЕЙСЫ -->
         <div id="view-cases" class="view active">
             <h2>Линейные кейсы</h2>
-            <div class="card" onclick="openCaseDetails('Линейный кейс', 59)">
+            <div class="card" onclick="openCaseDetails('Линейный кейс', 59)" style="cursor: pointer;">
                 <div><b>Линейный кейс</b><br><small style="color:#8b93b0">8 предметов • 59 BC</small></div>
                 <button class="btn" onclick="event.stopPropagation(); openCaseDetails('Линейный кейс', 59)">Смотреть</button>
             </div>
@@ -181,17 +214,45 @@
 
         <!-- ДЕТАЛИ И СОДЕРЖИМОЕ КЕЙСА -->
         <div id="view-case-detail" class="view">
-            <button class="back-btn" onclick="switchView('cases', null)">← Назад</button>
+            <button class="back-btn" onclick="switchView('cases', null)" id="back-to-cases-btn">← Назад</button>
             <h2 id="detail-case-title">Кейс</h2>
-            <div style="font-size: 60px; margin: 10px 0;">📦</div>
-            <button class="btn" id="buy-case-btn" style="width: 100%; padding: 14px; font-size: 18px; margin-bottom: 20px;" onclick="buySelectedCase()">Открыть кейс</button>
             
-            <div style="width: 100%; text-align: left; font-weight: bold; font-size: 16px;">Возможные призы:</div>
-            <div class="prizes-grid" id="prizes-grid">
-                <div class="prize-card"><div class="prize-icon">🍕</div><div class="prize-title">Noobini Pizzanini</div><div class="prize-chance">Шанс: 50%</div></div>
-                <div class="prize-card"><div class="prize-icon">🎅</div><div class="prize-title">Noobini Santanini</div><div class="prize-chance">Шанс: 30%</div></div>
-                <div class="prize-card"><div class="prize-icon">🤖</div><div class="prize-title">Skibidi Bot</div><div class="prize-chance">Шанс: 15%</div></div>
-                <div class="prize-card"><div class="prize-icon">👑</div><div class="prize-title">Golden Raccoon</div><div class="prize-chance">Шанс: 5%</div></div>
+            <div id="case-main-box" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                <div style="font-size: 60px; margin: 10px 0;">📦</div>
+                
+                <!-- КНОПКИ ОТКРЫТИЯ Х1, Х3, Х5 -->
+                <div class="case-buttons-group">
+                    <button class="btn" onclick="openCases(1)">Открыть х1<br><span style="font-size:11px; font-weight:normal;" id="price-x1">59 BC</span></button>
+                    <button class="btn" onclick="openCases(3)" style="background: #9b59b6;">Открыть х3<br><span style="font-size:11px; font-weight:normal;" id="price-x3">177 BC</span></button>
+                    <button class="btn" onclick="openCases(5)" style="background: #e67e22;">Открыть х5<br><span style="font-size:11px; font-weight:normal;" id="price-x5">295 BC</span></button>
+                </div>
+            </div>
+
+            <!-- АНИМАЦИЯ РУЛЕТКИ -->
+            <div class="roulette-container" id="roulette-container">
+                <div class="roulette-window">
+                    <div class="roulette-pointer"></div>
+                    <div class="roulette-track" id="roulette-track"></div>
+                </div>
+                <!-- КНОПКА ПРОПУСКА АНИМАЦИИ -->
+                <button class="btn" style="margin-top: 15px; background: #e74c3c; width: 100%;" onclick="skipRouletteAnimation()">⏭ Пропустить</button>
+            </div>
+
+            <!-- ВЫИГРАННЫЕ ПРИЗЫ -->
+            <div id="roulette-results-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
+                <h3 style="color: #f39c12; margin: 5px 0;">🎉 Вы выиграли:</h3>
+                <div class="roulette-results-list" id="won-prizes-list"></div>
+                <button class="btn" style="width: 100%; margin-top: 15px;" onclick="resetCaseView()">Забрать призы</button>
+            </div>
+
+            <div id="case-prizes-info" style="width: 100%;">
+                <div style="width: 100%; text-align: left; font-weight: bold; font-size: 16px; margin-top: 5px;">Возможные призы:</div>
+                <div class="prizes-grid" id="prizes-grid">
+                    <div class="prize-card"><div class="prize-icon">🍕</div><div class="prize-title">Noobini Pizzanini</div><div class="prize-chance">Шанс: 50%</div></div>
+                    <div class="prize-card"><div class="prize-icon">🎅</div><div class="prize-title">Noobini Santanini</div><div class="prize-chance">Шанс: 30%</div></div>
+                    <div class="prize-card"><div class="prize-icon">🤖</div><div class="prize-title">Skibidi Bot</div><div class="prize-chance">Шанс: 15%</div></div>
+                    <div class="prize-card"><div class="prize-icon">👑</div><div class="prize-title">Golden Raccoon</div><div class="prize-chance">Шанс: 5%</div></div>
+                </div>
             </div>
         </div>
 
@@ -240,8 +301,17 @@
 
             <h2>Активация Промокода</h2>
             <div class="card" style="flex-direction: column;">
-                <input type="text" id="promo-input" class="input-field" placeholder="Введи промокод...">
+                <input type="text" id="promo-input" class="input-field" placeholder="Введи промокод (например: Uuu)...">
                 <button class="btn" style="width: 100%;" onclick="activatePromo()">Активировать</button>
+            </div>
+
+            <!-- ПАНЕЛЬ СОЗДАНИЯ ПРОМОКОДОВ ДЛЯ АДМИНА -->
+            <div class="admin-panel" id="admin-promo-panel">
+                <h3 style="margin-top:0; color:#f39c12; font-size:16px;">⚙️ Создать промокод (Админ)</h3>
+                <input type="text" id="new-code-name" class="input-field" placeholder="Код (например: Uuu)">
+                <input type="number" id="new-code-reward" class="input-field" placeholder="Награда в BC (например: 100)">
+                <input type="number" id="new-code-limit" class="input-field" placeholder="Лимит активаций (например: 50)">
+                <button class="btn" style="width: 100%; background: #27ae60;" onclick="createNewPromo()">Создать промокод</button>
             </div>
         </div>
 
@@ -250,7 +320,6 @@
 </div>
 
     <script>
-        // Твой личный Telegram ID владельца (для кнопки +1000 BC)
         const OWNER_TELEGRAM_ID = 6638127989;
 
         let player = {
@@ -262,17 +331,37 @@
             inventory: []
         };
         
+        let promoCodes = {
+            "Uuu": { reward: 100, maxUses: 50, usedBy: [] },
+            "ADMIN1000": { reward: 1000, maxUses: 9999, usedBy: [] },
+            "BRAINROT": { reward: 50, maxUses: 9999, usedBy: [] }
+        };
+
         let maxEnergy = 100;
         let currentCasePrice = 59;
         let currentCaseName = 'Линейный кейс';
+        let currentWonPrizes = [];
+        let rouletteTimeout = null;
+
+        // Список возможных предметов в кейсе с шансами
+        const caseItems = [
+            { name: "Noobini Pizzanini", icon: "🍕", chance: 50, priceValue: 30 },
+            { name: "Noobini Santanini", icon: "🎅", chance: 30, priceValue: 70 },
+            { name: "Skibidi Bot", icon: "🤖", chance: 15, priceValue: 150 },
+            { name: "Golden Raccoon", icon: "👑", chance: 5, priceValue: 500 }
+        ];
 
         const BC_IMG = "https://i.imgur.com/8X8v35a.png";
         const el = (id) => document.getElementById(id);
 
         function loadGame() {
             let savedData = localStorage.getItem('brainrot_full_save');
+            let savedPromos = localStorage.getItem('brainrot_promos_db');
             
-            // Проверяем Telegram WebApp данные
+            if (savedPromos) {
+                try { promoCodes = JSON.parse(savedPromos); } catch(e) {}
+            }
+
             let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
             if (savedData) {
@@ -288,23 +377,26 @@
                     console.error("Ошибка чтения сохранений:", e);
                 }
             } else {
-                // Если зашли впервые, генерируем уникальный локальный ID и ник
                 player.id = tgUser?.id || Math.floor(100000000 + Math.random() * 900000000);
                 player.username = tgUser?.username || tgUser?.first_name || `Player_${player.id.toString().slice(-4)}`;
             }
 
-            saveGame(); // Сразу сохраняем уникальные данные игрока
+            saveGame();
 
-            // Отображаем профиль
             el('user-tg-name').innerHTML = `👤 <b>@${player.username}</b>`;
             el('user-tg-id').innerText = player.id;
             el('header-avatar').innerText = player.username.charAt(0).toUpperCase();
+
+            if (player.id === OWNER_TELEGRAM_ID || tgUser?.id === OWNER_TELEGRAM_ID) {
+                el('admin-promo-panel').classList.add('show');
+            }
 
             updateUI();
         }
 
         function saveGame() {
             localStorage.setItem('brainrot_full_save', JSON.stringify(player));
+            localStorage.setItem('brainrot_promos_db', JSON.stringify(promoCodes));
         }
 
         function toggleMenu() {
@@ -329,25 +421,120 @@
             currentCaseName = name;
             currentCasePrice = price;
             el('detail-case-title').innerText = `Кейс: ${name}`;
-            el('buy-case-btn').innerText = `Открыть за ${price} BC`;
+            el('price-x1').innerText = `${price} BC`;
+            el('price-x3').innerText = `${price * 3} BC`;
+            el('price-x5').innerText = `${price * 5} BC`;
+            resetCaseView();
             switchView('case-detail', null);
         }
 
-        function buySelectedCase() {
-            if(player.score >= currentCasePrice) {
-                player.score -= currentCasePrice;
-                player.score = Math.round(player.score * 100) / 100;
-                alert(`Кейс успешно открыт! 🎉`);
-                updateUI();
-                saveGame();
-            } else {
-                alert('Не хватает BC! 💰');
+        function getRandomItem() {
+            let rand = Math.random() * 100;
+            let current = 0;
+            for (let item of caseItems) {
+                current += item.chance;
+                if (rand <= current) return item;
             }
+            return caseItems[0];
         }
 
-        /* 👑 КНОПКА ВЛАДЕЛЬЦА С ПРОВЕРКОЙ ID */
+        /* ОТКРЫТИЕ КЕЙСОВ (Х1, Х3, Х5) */
+        function openCases(count) {
+            let totalCost = currentCasePrice * count;
+            if (player.score < totalCost) {
+                alert('Не хватает BC! 💰');
+                return;
+            }
+
+            player.score -= totalCost;
+            player.score = Math.round(player.score * 100) / 100;
+            updateUI();
+            saveGame();
+
+            currentWonPrizes = [];
+            for (let i = 0; i < count; i++) {
+                currentWonPrizes.push(getRandomItem());
+            }
+
+            // Прячем меню кейса, показываем рулетку
+            el('case-main-box').style.display = 'none';
+            el('case-prizes-info').style.display = 'none';
+            el('back-to-cases-btn').style.display = 'none';
+            el('roulette-container').classList.add('show');
+
+            buildRouletteTrack(currentWonPrizes[0]);
+        }
+
+        function buildRouletteTrack(winningItem) {
+            let track = el('roulette-track');
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0px)';
+            track.innerHTML = '';
+
+            // Генерируем 40 элементов ленты, где победный элемент на 32 позиции
+            let itemsCount = 40;
+            let winningIndex = 32;
+            let html = '';
+
+            for (let i = 0; i < itemsCount; i++) {
+                let item = (i === winningIndex) ? winningItem : getRandomItem();
+                html += `<div class="roulette-item">
+                            <div class="roulette-item-icon">${item.icon}</div>
+                            <div class="roulette-item-title">${item.name}</div>
+                         </div>`;
+            }
+            track.innerHTML = html;
+
+            // Запускаем плавную анимацию прокрутки рулетки через микропаузу
+            setTimeout(() => {
+                track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
+                // Центрируем 32-й элемент под красный маркер
+                let itemWidth = 112; // 100px ширина + 12px маржа
+                let containerWidth = el('roulette-container').clientWidth;
+                let targetOffset = (winningIndex * itemWidth) - (containerWidth / 2) + (itemWidth / 2);
+                track.style.transform = `translateX(-${targetOffset}px)`;
+            }, 50);
+
+            // По окончании анимации рулетки показываем призы
+            rouletteTimeout = setTimeout(() => {
+                showWonResults();
+            }, 4100);
+        }
+
+        function skipRouletteAnimation() {
+            if (rouletteTimeout) clearTimeout(rouletteTimeout);
+            showWonResults();
+        }
+
+        function showWonResults() {
+            el('roulette-container').classList.remove('show');
+            let resultsList = el('won-prizes-list');
+            resultsList.innerHTML = '';
+
+            currentWonPrizes.forEach(prize => {
+                resultsList.innerHTML += `
+                    <div class="prize-card" style="width: 110px;">
+                        <div class="prize-icon">${prize.icon}</div>
+                        <div class="prize-title">${prize.name}</div>
+                    </div>
+                `;
+            });
+
+            el('roulette-results-view').style.display = 'flex';
+        }
+
+        function resetCaseView() {
+            if (rouletteTimeout) clearTimeout(rouletteTimeout);
+            el('roulette-results-view').style.display = 'none';
+            el('roulette-container').classList.remove('show');
+            el('case-main-box').style.display = 'flex';
+            el('case-prizes-info').style.display = 'block';
+            el('back-to-cases-btn').style.display = 'block';
+        }
+
         function claimDevBonus() {
-            if (player.id === OWNER_TELEGRAM_ID || (window.Telegram?.WebApp?.initDataUnsafe?.user?.id === OWNER_TELEGRAM_ID)) {
+            let tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || player.id;
+            if (tgId === OWNER_TELEGRAM_ID) {
                 player.score += 1000;
                 player.score = Math.round(player.score * 100) / 100;
                 updateUI();
@@ -358,24 +545,53 @@
             }
         }
 
-        /* 🎁 АКТИВАЦИЯ ПРОМОКОДОВ */
         function activatePromo() {
             let code = el('promo-input').value.trim();
-            if (code === "ADMIN1000") {
-                player.score += 1000;
-                player.score = Math.round(player.score * 100) / 100;
-                alert("👑 Админ-код активирован: +1000 BC!");
-            } else if (code === "BRAINROT") {
-                player.score += 50;
-                player.score = Math.round(player.score * 100) / 100;
-                alert("🎉 Промокод активирован: +50 BC!");
-            } else {
+            if (!promoCodes[code]) {
                 alert("❌ Неверный или недействительный промокод!");
                 return;
             }
+            let promo = promoCodes[code];
+            if (promo.usedBy.includes(player.id)) {
+                alert("⚠️ Вы уже активировали этот промокод ранее!");
+                return;
+            }
+            if (promo.usedBy.length >= promo.maxUses) {
+                alert("❌ У этого промокода закончились лимиты активаций!");
+                return;
+            }
+
+            player.score += promo.reward;
+            player.score = Math.round(player.score * 100) / 100;
+            promo.usedBy.push(player.id);
+
+            alert(`🎉 Успешно! Промокод активирован: +${promo.reward} BC!`);
             el('promo-input').value = "";
             updateUI();
             saveGame();
+        }
+
+        function createNewPromo() {
+            let codeName = el('new-code-name').value.trim();
+            let reward = parseInt(el('new-code-reward').value);
+            let limit = parseInt(el('new-code-limit').value);
+
+            if (!codeName || isNaN(reward) || isNaN(limit) || reward <= 0 || limit <= 0) {
+                alert("❌ Заполни все поля корректными значениями!");
+                return;
+            }
+            if (promoCodes[codeName]) {
+                alert("⚠️ Такой промокод уже существует!");
+                return;
+            }
+
+            promoCodes[codeName] = { reward: reward, maxUses: limit, usedBy: [] };
+            saveGame();
+            alert(`✅ Промокод "${codeName}" на ${reward} BC (лимит: ${limit} раз) успешно создан!`);
+            
+            el('new-code-name').value = "";
+            el('new-code-reward').value = "";
+            el('new-code-limit').value = "";
         }
 
         el('click-target').onclick = (e) => {
