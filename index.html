@@ -72,4 +72,149 @@
             transform: scale(0.92);
         }
         .card {
-            background: #1a
+            background: #1a1d29;
+            border: 1px solid #2a2e43;
+            padding: 12px;
+            border-radius: 12px;
+            margin: 6px 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        .action-btn {
+            background: #f39c12;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .action-btn:disabled {
+            background: #4a4f68;
+            cursor: not-allowed;
+            color: #8b93b0;
+        }
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #141722;
+            border-top: 1px solid #23283d;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 5px;
+            z-index: 100;
+            box-sizing: border-box;
+        }
+        .nav-item {
+            background: none;
+            border: none;
+            color: #8b93b0;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .nav-item.active {
+            color: #f39c12;
+        }
+        .nav-item span {
+            font-size: 18px;
+        }
+        h2 { margin: 10px 0; font-size: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="content">
+        <!-- Главная вкладка (Кликер) -->
+        <div id="tab-clicker" class="tab-content active">
+            <h2>Brainrot Farm</h2>
+            <div class="stats">
+                <div>💰 <span id="score">0</span></div>
+                <div>⚡ <span id="per-click">1</span> за клик</div>
+            </div>
+            
+            <div class="clicker-target" id="click-btn">
+                🪙
+            </div>
+        </div>
+
+        <!-- Вкладка улучшений -->
+        <div id="tab-boosts" class="tab-content">
+            <h2>Улучшения</h2>
+            <div class="card">
+                <div style="text-align: left;">
+                    <b>Сила клика</b><br>
+                    <small>Цена: <span id="upgrade-cost">10</span> 💰</small>
+                </div>
+                <button class="action-btn" id="buy-upgrade">Купить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя навигация -->
+    <div class="nav-bar">
+        <button class="nav-item active" onclick="switchTab('clicker', this)">
+            <span>🪙</span> Клик
+        </button>
+        <button class="nav-item" onclick="switchTab('boosts', this)">
+            <span>🚀</span> Бусты
+        </button>
+    </div>
+
+    <script>
+        let score = 0;
+        let clickPower = 1;
+        let upgradeCost = 10;
+
+        const scoreEl = document.getElementById('score');
+        const perClickEl = document.getElementById('per-click');
+        const clickBtn = document.getElementById('click-btn');
+        const buyUpgradeBtn = document.getElementById('buy-upgrade');
+        const upgradeCostEl = document.getElementById('upgrade-cost');
+
+        // Клик по монете
+        clickBtn.addEventListener('click', () => {
+            score += clickPower;
+            updateUI();
+        });
+
+        // Покупка улучшений
+        buyUpgradeBtn.addEventListener('click', () => {
+            if (score >= upgradeCost) {
+                score -= upgradeCost;
+                clickPower += 1;
+                upgradeCost = Math.floor(upgradeCost * 1.5);
+                updateUI();
+            }
+        });
+
+        function updateUI() {
+            scoreEl.innerText = score;
+            perClickEl.innerText = clickPower;
+            upgradeCostEl.innerText = upgradeCost;
+            
+            if (score >= upgradeCost) {
+                buyUpgradeBtn.removeAttribute('disabled');
+            } else {
+                buyUpgradeBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        // Переключение вкладок
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            document.getElementById('tab-' + tabName).classList.add('active');
+            element.classList.add('active');
+        }
+    </script>
+</body>
+</html>
