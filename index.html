@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Brainrot Case</title>
-    <!-- Telegram WebApp SDK для распознавания ID владельца -->
+    <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -119,7 +119,6 @@
         .prize-title { font-size: 13px; font-weight: bold; }
         .prize-chance { font-size: 11px; color: #8b93b0; margin-top: 3px; }
 
-        /* Поле ввода для промокода */
         .input-field {
             width: 100%; padding: 12px; background: #0d0f18; border: 1px solid #2a2e43;
             border-radius: 10px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none;
@@ -164,7 +163,7 @@
                 <img src="https://i.imgur.com/8X8v35a.png" class="bc-icon" alt="BC"> 
                 <span id="balance">3.08</span>
             </div>
-            <div class="profile-avatar-btn">P</div>
+            <div class="profile-avatar-btn" id="header-avatar">P</div>
         </div>
     </div>
 
@@ -233,8 +232,8 @@
         <div id="view-profile" class="view">
             <h2>Профиль игрока</h2>
             <div class="card" style="flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px;">
-                <div id="user-tg-name">👤 <b>@parasat</b></div>
-                <div>🆔 ID: <span id="user-tg-id">6638127989</span></div>
+                <div id="user-tg-name">👤 <b>@Player</b></div>
+                <div>🆔 ID: <span id="user-tg-id">123456789</span></div>
                 <div>💰 Баланс: <span id="prof-balance">3.08</span> BC</div>
                 <button class="btn" style="width:100%; margin-top:8px;" onclick="claimDevBonus()">👑 Кнопка владельца (+1000 BC)</button>
             </div>
@@ -251,10 +250,12 @@
 </div>
 
     <script>
-        // Твой личный Telegram ID (никто другой нажать кнопку владельца не сможет!)
+        // Твой личный Telegram ID владельца (для кнопки +1000 BC)
         const OWNER_TELEGRAM_ID = 6638127989;
 
         let player = {
+            id: null,
+            username: null,
             score: 3.08,
             energy: 100,
             level: 11,
@@ -270,24 +271,34 @@
 
         function loadGame() {
             let savedData = localStorage.getItem('brainrot_full_save');
-            if(savedData) {
+            
+            // Проверяем Telegram WebApp данные
+            let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+
+            if (savedData) {
                 try {
                     let parsed = JSON.parse(savedData);
                     player.score = parsed.score !== undefined ? parsed.score : player.score;
                     player.energy = parsed.energy !== undefined ? parsed.energy : player.energy;
                     player.level = parsed.level !== undefined ? parsed.level : player.level;
                     player.inventory = parsed.inventory || [];
+                    player.id = parsed.id || tgUser?.id || Math.floor(100000000 + Math.random() * 900000000);
+                    player.username = parsed.username || tgUser?.username || tgUser?.first_name || `Player_${player.id.toString().slice(-4)}`;
                 } catch(e) {
                     console.error("Ошибка чтения сохранений:", e);
                 }
+            } else {
+                // Если зашли впервые, генерируем уникальный локальный ID и ник
+                player.id = tgUser?.id || Math.floor(100000000 + Math.random() * 900000000);
+                player.username = tgUser?.username || tgUser?.first_name || `Player_${player.id.toString().slice(-4)}`;
             }
 
-            // Подгружаем Telegram данные пользователя, если открыто внутри Telegram
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe.user) {
-                let user = window.Telegram.WebApp.initDataUnsafe.user;
-                el('user-tg-name').innerHTML = `👤 <b>@${user.username || user.first_name}</b>`;
-                el('user-tg-id').innerText = user.id;
-            }
+            saveGame(); // Сразу сохраняем уникальные данные игрока
+
+            // Отображаем профиль
+            el('user-tg-name').innerHTML = `👤 <b>@${player.username}</b>`;
+            el('user-tg-id').innerText = player.id;
+            el('header-avatar').innerText = player.username.charAt(0).toUpperCase();
 
             updateUI();
         }
@@ -336,13 +347,7 @@
 
         /* 👑 КНОПКА ВЛАДЕЛЬЦА С ПРОВЕРКОЙ ID */
         function claimDevBonus() {
-            let currentUserId = OWNER_TELEGRAM_ID; 
-            
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe.user) {
-                currentUserId = window.Telegram.WebApp.initDataUnsafe.user.id;
-            }
-
-            if (currentUserId === OWNER_TELEGRAM_ID) {
+            if (player.id === OWNER_TELEGRAM_ID || (window.Telegram?.WebApp?.initDataUnsafe?.user?.id === OWNER_TELEGRAM_ID)) {
                 player.score += 1000;
                 player.score = Math.round(player.score * 100) / 100;
                 updateUI();
@@ -356,7 +361,7 @@
         /* 🎁 АКТИВАЦИЯ ПРОМОКОДОВ */
         function activatePromo() {
             let code = el('promo-input').value.trim();
-            if (code === "ADMIN1000") { // Твой секретный админ-код
+            if (code === "ADMIN1000") {
                 player.score += 1000;
                 player.score = Math.round(player.score * 100) / 100;
                 alert("👑 Админ-код активирован: +1000 BC!");
