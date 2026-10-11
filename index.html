@@ -2,13 +2,18 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Brainrot Farm</title>
     <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
         body {
             background-color: #0d0f18;
             color: #ffffff;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
             display: flex;
@@ -40,63 +45,149 @@
             flex-direction: column;
             align-items: center;
         }
-        .stats {
-            font-size: 18px;
-            margin-bottom: 12px;
-            background: #1a1d29;
-            padding: 10px 16px;
-            border-radius: 12px;
-            border: 1px solid #2a2e43;
+        /* Шапка со статистикой */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
             width: 100%;
-            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #1a1d29;
+            border: 1px solid #2a2e43;
+            border-radius: 14px;
+            padding: 10px;
             display: flex;
-            justify-content: space-around;
+            flex-direction: column;
+            align-items: center;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #8b93b0;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #f39c12;
+        }
+        /* Главная монета для клика */
+        .clicker-container {
+            position: relative;
+            margin: 20px 0;
         }
         .clicker-target {
-            width: 160px;
-            height: 160px;
-            background: #252a3d;
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, #2c334e 0%, #1a1d29 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 4px solid #f39c12;
-            user-select: none;
-            transition: transform 0.1s;
-            margin: 15px 0;
-            font-size: 50px;
+            box-shadow: 0 0 30px rgba(243, 156, 18, 0.3), inset 0 0 15px rgba(255,255,255,0.05);
+            border: 6px solid #f39c12;
+            transition: transform 0.08s ease;
+            font-size: 90px;
         }
         .clicker-target:active {
-            transform: scale(0.92);
+            transform: scale(0.93);
         }
+        /* Вылетающие цифры клика */
+        .floating-number {
+            position: absolute;
+            font-size: 28px;
+            font-weight: bold;
+            color: #f39c12;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+        }
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-80px) scale(1.2);
+            }
+        }
+        /* Шкала энергии */
+        .energy-container {
+            width: 100%;
+            background: #1a1d29;
+            border: 1px solid #2a2e43;
+            border-radius: 12px;
+            padding: 10px 15px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .energy-bar-bg {
+            flex: 1;
+            height: 12px;
+            background: #0d0f18;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .energy-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #f39c12, #f1c40f);
+            border-radius: 6px;
+            transition: width 0.2s ease;
+        }
+        .energy-text {
+            font-size: 14px;
+            font-weight: bold;
+            min-width: 80px;
+        }
+        /* Карточки прокачки */
         .card {
             background: #1a1d29;
             border: 1px solid #2a2e43;
-            padding: 12px;
-            border-radius: 12px;
-            margin: 6px 0;
+            padding: 14px;
+            border-radius: 14px;
+            margin: 8px 0;
             width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
         }
+        .card-info {
+            text-align: left;
+        }
+        .card-title {
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .card-desc {
+            font-size: 12px;
+            color: #8b93b0;
+        }
         .action-btn {
             background: #f39c12;
             border: none;
-            padding: 8px 14px;
-            border-radius: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
             color: #fff;
             font-weight: bold;
+            font-size: 13px;
             cursor: pointer;
+            transition: background 0.2s;
         }
         .action-btn:disabled {
-            background: #4a4f68;
+            background: #33384f;
             cursor: not-allowed;
-            color: #8b93b0;
+            color: #666c87;
         }
+        /* Нижняя навигация */
         .nav-bar {
             position: fixed;
             bottom: 0;
@@ -118,15 +209,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
+            gap: 4px;
         }
         .nav-item.active {
             color: #f39c12;
         }
         .nav-item span {
-            font-size: 18px;
+            font-size: 20px;
         }
-        h2 { margin: 10px 0; font-size: 20px; }
+        h2 { margin: 5px 0 15px 0; font-size: 22px; }
     </style>
 </head>
 <body>
@@ -135,25 +226,59 @@
         <!-- Главная вкладка (Кликер) -->
         <div id="tab-clicker" class="tab-content active">
             <h2>Brainrot Farm</h2>
-            <div class="stats">
-                <div>💰 <span id="score">0</span></div>
-                <div>⚡ <span id="per-click">1</span> за клик</div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Баланс</span>
+                    <span class="stat-value">💰 <span id="score">0</span></span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Прибыль в сек.</span>
+                    <span class="stat-value">⏳ +<span id="pps">0</span>/с</span>
+                </div>
             </div>
             
-            <div class="clicker-target" id="click-btn">
-                🪙
+            <div class="clicker-container">
+                <div class="clicker-target" id="click-btn">
+                    🧠
+                </div>
+            </div>
+
+            <div class="energy-container">
+                <span>⚡</span>
+                <div class="energy-bar-bg">
+                    <div class="energy-bar-fill" id="energy-fill"></div>
+                </div>
+                <span class="energy-text"><span id="energy">1000</span> / <span id="max-energy">1000</span></span>
             </div>
         </div>
 
         <!-- Вкладка улучшений -->
         <div id="tab-boosts" class="tab-content">
             <h2>Улучшения</h2>
+            
             <div class="card">
-                <div style="text-align: left;">
-                    <b>Сила клика</b><br>
-                    <small>Цена: <span id="upgrade-cost">10</span> 💰</small>
+                <div class="card-info">
+                    <div class="card-title">👆 Мультиклик (+1 за клик)</div>
+                    <div class="card-desc">Цена: <b id="cost-click">10</b> 💰</div>
                 </div>
-                <button class="action-btn" id="buy-upgrade">Купить</button>
+                <button class="action-btn" id="btn-click" onclick="buyUpgrade('click')">Купить</button>
+            </div>
+
+            <div class="card">
+                <div class="card-info">
+                    <div class="card-title">🤖 Авто-Ферма (+1 в сек)</div>
+                    <div class="card-desc">Цена: <b id="cost-farm">50</b> 💰</div>
+                </div>
+                <button class="action-btn" id="btn-farm" onclick="buyUpgrade('farm')">Купить</button>
+            </div>
+
+            <div class="card">
+                <div class="card-info">
+                    <div class="card-title">🔋 Макс. Энергия (+500)</div>
+                    <div class="card-desc">Цена: <b id="cost-energy">100</b> 💰</div>
+                </div>
+                <button class="action-btn" id="btn-energy" onclick="buyUpgrade('energy')">Купить</button>
             </div>
         </div>
     </div>
@@ -161,7 +286,7 @@
     <!-- Нижняя навигация -->
     <div class="nav-bar">
         <button class="nav-item active" onclick="switchTab('clicker', this)">
-            <span>🪙</span> Клик
+            <span>🧠</span> Ферма
         </button>
         <button class="nav-item" onclick="switchTab('boosts', this)">
             <span>🚀</span> Бусты
@@ -171,40 +296,103 @@
     <script>
         let score = 0;
         let clickPower = 1;
-        let upgradeCost = 10;
+        let pps = 0; // profit per second
+        let energy = 1000;
+        let maxEnergy = 1000;
+
+        let costs = {
+            click: 10,
+            farm: 50,
+            energy: 100
+        };
 
         const scoreEl = document.getElementById('score');
-        const perClickEl = document.getElementById('per-click');
+        const ppsEl = document.getElementById('pps');
+        const energyEl = document.getElementById('energy');
+        const maxEnergyEl = document.getElementById('max-energy');
+        const energyFill = document.getElementById('energy-fill');
         const clickBtn = document.getElementById('click-btn');
-        const buyUpgradeBtn = document.getElementById('buy-upgrade');
-        const upgradeCostEl = document.getElementById('upgrade-cost');
 
-        // Клик по монете
-        clickBtn.addEventListener('click', () => {
-            score += clickPower;
-            updateUI();
-        });
-
-        // Покупка улучшений
-        buyUpgradeBtn.addEventListener('click', () => {
-            if (score >= upgradeCost) {
-                score -= upgradeCost;
-                clickPower += 1;
-                upgradeCost = Math.floor(upgradeCost * 1.5);
+        // Обработка клика по монете
+        clickBtn.addEventListener('click', (e) => {
+            if (energy >= clickPower) {
+                score += clickPower;
+                energy -= clickPower;
+                
+                // Создание вылетающего числа +X
+                createFloatingNumber(e, `+${clickPower}`);
                 updateUI();
             }
         });
 
+        function createFloatingNumber(e, text) {
+            const num = document.createElement('div');
+            num.className = 'floating-number';
+            num.innerText = text;
+            
+            const rect = clickBtn.getBoundingClientRect();
+            const x = e.clientX ? (e.clientX - rect.left) : (rect.width / 2);
+            const y = e.clientY ? (e.clientY - rect.top) : (rect.height / 2);
+
+            num.style.left = `${x}px`;
+            num.style.top = `${y}px`;
+
+            clickBtn.appendChild(num);
+            setTimeout(() => num.remove(), 800);
+        }
+
+        // Покупка апгрейдов
+        function buyUpgrade(type) {
+            if (score >= costs[type]) {
+                score -= costs[type];
+                
+                if (type === 'click') {
+                    clickPower += 1;
+                    costs.click = Math.floor(costs.click * 1.6);
+                } else if (type === 'farm') {
+                    pps += 1;
+                    costs.farm = Math.floor(costs.farm * 1.5);
+                } else if (type === 'energy') {
+                    maxEnergy += 500;
+                    energy += 500;
+                    costs.energy = Math.floor(costs.energy * 1.8);
+                }
+
+                updateUI();
+            }
+        }
+
+        // Автоматическое начисление дохода и восстановление энергии (каждую секунду)
+        setInterval(() => {
+            // Пассивный доход
+            if (pps > 0) {
+                score += pps;
+            }
+            // Регенерация энергии (+3 в секунду)
+            if (energy < maxEnergy) {
+                energy = Math.min(maxEnergy, energy + 3);
+            }
+            updateUI();
+        }, 1000);
+
         function updateUI() {
             scoreEl.innerText = score;
-            perClickEl.innerText = clickPower;
-            upgradeCostEl.innerText = upgradeCost;
-            
-            if (score >= upgradeCost) {
-                buyUpgradeBtn.removeAttribute('disabled');
-            } else {
-                buyUpgradeBtn.setAttribute('disabled', 'true');
-            }
+            ppsEl.innerText = pps;
+            energyEl.innerText = energy;
+            maxEnergyEl.innerText = maxEnergy;
+
+            // Обновление полосы энергии
+            const energyPercent = (energy / maxEnergy) * 100;
+            energyFill.style.width = `${energyPercent}%`;
+
+            // Обновление цен и доступности кнопок
+            document.getElementById('cost-click').innerText = costs.click;
+            document.getElementById('cost-farm').innerText = costs.farm;
+            document.getElementById('cost-energy').innerText = costs.energy;
+
+            document.getElementById('btn-click').disabled = score < costs.click;
+            document.getElementById('btn-farm').disabled = score < costs.farm;
+            document.getElementById('btn-energy').disabled = score < costs.energy;
         }
 
         // Переключение вкладок
@@ -215,6 +403,8 @@
             document.getElementById('tab-' + tabName).classList.add('active');
             element.classList.add('active');
         }
+
+        updateUI();
     </script>
 </body>
 </html>
