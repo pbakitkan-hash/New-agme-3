@@ -3,408 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Brainrot Farm</title>
+    <title>Brainrot Case</title>
     <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
             background-color: #0d0f18;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            height: 100vh;
-            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center;
+            height: 100vh; overflow: hidden;
         }
-        .content {
-            flex: 1;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            overflow-y: auto;
-            padding-top: 15px;
-            padding-bottom: 80px;
+        /* Обертка для ПК и мобилок (центрирование, макс ширина) */
+        .app-wrapper {
+            width: 100%; max-width: 480px; height: 100%;
+            background: #0d0f18; display: flex; flex-direction: column;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8); position: relative;
         }
-        .tab-content {
-            display: none;
-            width: 92%;
-            max-width: 420px;
-            text-align: center;
+        /* Шапка */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px; background: #141722; border-bottom: 1px solid #23283d;
         }
-        .tab-content.active {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .header-left { display: flex; align-items: center; gap: 14px; font-weight: bold; font-size: 18px; letter-spacing: 0.5px; }
+        .menu-btn { background: #23283d; border: none; color: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-size: 20px; transition: background 0.2s; }
+        .menu-btn:hover { background: #2d344d; }
+        
+        /* Валюта с картинкой BC */
+        .balance-badge {
+            background: #1a1d29; border: 1px solid #2a2e43; padding: 6px 14px; border-radius: 20px;
+            color: #f39c12; font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 6px;
         }
-        /* Шапка со статистикой */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
-            margin-bottom: 20px;
+        .bc-icon {
+            width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
         }
-        .stat-card {
-            background: #1a1d29;
-            border: 1px solid #2a2e43;
-            border-radius: 14px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        
+        /* Контент */
+        .content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .view { display: none; width: 100%; flex-direction: column; align-items: center; }
+        .view.active { display: flex; }
+
+        /* Выпадающее меню */
+        .drawer {
+            position: absolute; top: 0; left: -100%; width: 300px; height: 100%;
+            background: #141722; border-right: 1px solid #23283d; z-index: 1000;
+            transition: left 0.3s ease; display: flex; flex-direction: column; padding: 24px;
         }
-        .stat-label {
-            font-size: 12px;
-            color: #8b93b0;
-            margin-bottom: 4px;
+        .drawer.open { left: 0; }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 20px; font-weight: bold; }
+        .drawer-item {
+            background: none; border: none; color: #8b93b0; font-size: 18px; text-align: left;
+            padding: 16px 0; cursor: pointer; border-bottom: 1px solid #1a1d29; display: flex; justify-content: space-between;
+            transition: color 0.2s;
         }
-        .stat-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #f39c12;
+        .drawer-item:hover, .drawer-item.active { color: #f39c12; font-weight: bold; }
+        .overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6);
+            z-index: 900; display: none;
         }
-        /* Главная монета для клика */
-        .clicker-container {
-            position: relative;
-            margin: 20px 0;
-        }
-        .clicker-target {
-            width: 220px;
-            height: 220px;
-            background: radial-gradient(circle, #2c334e 0%, #1a1d29 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 0 30px rgba(243, 156, 18, 0.3), inset 0 0 15px rgba(255,255,255,0.05);
-            border: 6px solid #f39c12;
-            transition: transform 0.08s ease;
-            font-size: 90px;
-        }
-        .clicker-target:active {
-            transform: scale(0.93);
-        }
-        /* Вылетающие цифры клика */
-        .floating-number {
-            position: absolute;
-            font-size: 28px;
-            font-weight: bold;
-            color: #f39c12;
-            pointer-events: none;
-            animation: floatUp 0.8s ease-out forwards;
-            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+        .overlay.show { display: block; }
+
+        /* Ферма */
+        .farm-stats { display: flex; justify-content: space-around; width: 100%; background: #1a1d29; border-radius: 14px; padding: 14px; margin-bottom: 20px; border: 1px solid #2a2e43; }
+        .farm-stat-item { text-align: center; font-size: 14px; color: #8b93b0; }
+        .farm-stat-value { font-size: 18px; font-weight: bold; color: #fff; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        
+        .energy-box { width: 100%; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 12px; padding: 14px; margin-bottom: 25px; }
+        .energy-info { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #8b93b0; }
+        .energy-bar-bg { width: 100%; height: 12px; background: #0d0f18; border-radius: 6px; overflow: hidden; }
+        .energy-bar-fill { height: 100%; width: 100%; background: #f39c12; transition: width 0.2s; }
+
+        .character-container { position: relative; margin: 20px 0; cursor: pointer; text-align: center; }
+        .character-avatar { font-size: 130px; transition: transform 0.05s; display: inline-block; }
+        .character-avatar:active { transform: scale(0.92); }
+        .char-name { font-size: 24px; font-weight: bold; font-style: italic; margin-top: 15px; color: #f39c12; }
+        
+        .floating-num {
+            position: absolute; font-size: 28px; font-weight: bold; color: #f39c12;
+            pointer-events: none; animation: floatUp 0.7s ease-out forwards; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            display: flex; align-items: center; gap: 4px;
         }
         @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-80px) scale(1.2);
-            }
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
         }
-        /* Шкала энергии */
-        .energy-container {
-            width: 100%;
-            background: #1a1d29;
-            border: 1px solid #2a2e43;
-            border-radius: 12px;
-            padding: 10px 15px;
-            box-sizing: border-box;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .energy-bar-bg {
-            flex: 1;
-            height: 12px;
-            background: #0d0f18;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        .energy-bar-fill {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, #f39c12, #f1c40f);
-            border-radius: 6px;
-            transition: width 0.2s ease;
-        }
-        .energy-text {
-            font-size: 14px;
-            font-weight: bold;
-            min-width: 80px;
-        }
-        /* Карточки прокачки */
-        .card {
-            background: #1a1d29;
-            border: 1px solid #2a2e43;
-            padding: 14px;
-            border-radius: 14px;
-            margin: 8px 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-        }
-        .card-info {
-            text-align: left;
-        }
-        .card-title {
-            font-weight: bold;
-            font-size: 15px;
-            margin-bottom: 4px;
-        }
-        .card-desc {
-            font-size: 12px;
-            color: #8b93b0;
-        }
-        .action-btn {
-            background: #f39c12;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 10px;
-            color: #fff;
-            font-weight: bold;
-            font-size: 13px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .action-btn:disabled {
-            background: #33384f;
-            cursor: not-allowed;
-            color: #666c87;
-        }
-        /* Нижняя навигация */
-        .nav-bar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: #141722;
-            border-top: 1px solid #23283d;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 5px;
-            z-index: 100;
-            box-sizing: border-box;
-        }
-        .nav-item {
-            background: none;
-            border: none;
-            color: #8b93b0;
-            font-size: 11px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-        .nav-item.active {
-            color: #f39c12;
-        }
-        .nav-item span {
-            font-size: 20px;
-        }
-        h2 { margin: 5px 0 15px 0; font-size: 22px; }
+
+        /* Карточки */
+        .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 18px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+        .btn { background: #f39c12; border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
+        .btn:hover { background: #e08e0b; }
+        .btn:disabled { background: #33384f; color: #666; cursor: not-allowed; }
+        h2 { margin-top: 0; font-size: 26px; }
+        .currency-inline { width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; display: inline-block; object-fit: cover; }
     </style>
 </head>
 <body>
 
+<div class="app-wrapper">
+
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <span>МЕНЮ</span>
+            <button class="menu-btn" onclick="toggleMenu()">✕</button>
+        </div>
+        <button class="drawer-item active" onclick="switchView('farm', this)">🌿 Ферма</button>
+        <button class="drawer-item" onclick="switchView('cases', this)">🎁 Кейсы</button>
+        <button class="drawer-item" onclick="switchView('shop', this)">🛒 Магазин</button>
+        <button class="drawer-item" onclick="switchView('profile', this)">👤 Профиль</button>
+    </div>
+
+    <div class="header">
+        <div class="header-left">
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
+            <span>BRAINROT CASE</span>
+        </div>
+        <div class="balance-badge">
+            <img src="https://i.imgur.com/8X8v35a.png" class="bc-icon" id="bc-logo-header" alt="BC"> 
+            <span id="balance">3.08</span>
+        </div>
+    </div>
+
     <div class="content">
-        <!-- Главная вкладка (Кликер) -->
-        <div id="tab-clicker" class="tab-content active">
-            <h2>Brainrot Farm</h2>
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <span class="stat-label">Баланс</span>
-                    <span class="stat-value">💰 <span id="score">0</span></span>
+
+        <!-- ФЕРМА -->
+        <div id="view-farm" class="view active">
+            <div class="farm-stats">
+                <div class="farm-stat-item">Уровень<div class="farm-stat-value" id="level">11</div></div>
+                <div class="farm-stat-item">Баланс
+                    <div class="farm-stat-value">
+                        <span id="coins">3.08</span>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <span class="stat-label">Прибыль в сек.</span>
-                    <span class="stat-value">⏳ +<span id="pps">0</span>/с</span>
-                </div>
-            </div>
-            
-            <div class="clicker-container">
-                <div class="clicker-target" id="click-btn">
-                    🧠
-                </div>
+                <div class="farm-stat-item">Энергия<div class="farm-stat-value"><span id="energy">100</span>/100</div></div>
             </div>
 
-            <div class="energy-container">
-                <span>⚡</span>
-                <div class="energy-bar-bg">
-                    <div class="energy-bar-fill" id="energy-fill"></div>
-                </div>
-                <span class="energy-text"><span id="energy">1000</span> / <span id="max-energy">1000</span></span>
+            <div class="energy-box">
+                <div class="energy-info"><span>Энергия</span><span><span id="energy-text">100</span>/100</span></div>
+                <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-bar"></div></div>
+            </div>
+
+            <div class="character-container" id="click-target">
+                <div class="character-avatar">🐒</div>
+                <div class="char-name">Raccooni Jandelini</div>
+                <div style="color: #8b93b0; font-size: 15px; margin-top: 8px;">+ 538 / 770 HP</div>
             </div>
         </div>
 
-        <!-- Вкладка улучшений -->
-        <div id="tab-boosts" class="tab-content">
-            <h2>Улучшения</h2>
-            
+        <!-- КЕЙСЫ -->
+        <div id="view-cases" class="view">
+            <h2>Линейные кейсы</h2>
             <div class="card">
-                <div class="card-info">
-                    <div class="card-title">👆 Мультиклик (+1 за клик)</div>
-                    <div class="card-desc">Цена: <b id="cost-click">10</b> 💰</div>
-                </div>
-                <button class="action-btn" id="btn-click" onclick="buyUpgrade('click')">Купить</button>
+                <div><b>Тетрадь</b><br><small style="color:#8b93b0">8 предм. • 59 BC</small></div>
+                <button class="btn" onclick="openCase(59)">Открыть</button>
             </div>
-
             <div class="card">
-                <div class="card-info">
-                    <div class="card-title">🤖 Авто-Ферма (+1 в сек)</div>
-                    <div class="card-desc">Цена: <b id="cost-farm">50</b> 💰</div>
-                </div>
-                <button class="action-btn" id="btn-farm" onclick="buyUpgrade('farm')">Купить</button>
+                <div><b>Звонок</b><br><small style="color:#8b93b0">12 предм. • 179 BC</small></div>
+                <button class="btn" onclick="openCase(179)">Открыть</button>
             </div>
-
             <div class="card">
-                <div class="card-info">
-                    <div class="card-title">🔋 Макс. Энергия (+500)</div>
-                    <div class="card-desc">Цена: <b id="cost-energy">100</b> 💰</div>
-                </div>
-                <button class="action-btn" id="btn-energy" onclick="buyUpgrade('energy')">Купить</button>
+                <div><b>Школа</b><br><small style="color:#8b93b0">13 предм. • 399 BC</small></div>
+                <button class="btn" onclick="openCase(399)">Открыть</button>
             </div>
         </div>
+
+        <!-- МАГАЗИН -->
+        <div id="view-shop" class="view">
+            <h2>Магазин питомцев</h2>
+            <div class="card">
+                <div><b>Garama and Madundung</b><br><small style="color:#f39c12">50 BC</small></div>
+                <button class="btn">Купить</button>
+            </div>
+            <div class="card">
+                <div><b>Dragon Canneloni</b><br><small style="color:#f39c12">924 BC</small></div>
+                <button class="btn">Купить</button>
+            </div>
+        </div>
+
+        <!-- ПРОФИЛЬ -->
+        <div id="view-profile" class="view">
+            <h2>Профиль игрока</h2>
+            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+                <div>👤 <b>@parasat</b></div>
+                <div>🆔 ID: 6638127989</div>
+                <div>💰 Баланс: <span id="prof-balance">3.08</span> BC</div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Нижняя навигация -->
-    <div class="nav-bar">
-        <button class="nav-item active" onclick="switchTab('clicker', this)">
-            <span>🧠</span> Ферма
-        </button>
-        <button class="nav-item" onclick="switchTab('boosts', this)">
-            <span>🚀</span> Бусты
-        </button>
-    </div>
+</div>
 
     <script>
-        let score = 0;
-        let clickPower = 1;
-        let pps = 0; // profit per second
-        let energy = 1000;
-        let maxEnergy = 1000;
+        let score = 3.08;
+        let energy = 100;
+        let maxEnergy = 100;
 
-        let costs = {
-            click: 10,
-            farm: 50,
-            energy: 100
-        };
+        // Ссылка на твою картинку валюты BC из запроса
+        const BC_IMG = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4QBaRXhpZgAATU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAAExAAIAAAARAAAATgAAAAAAAABIAAAAAQAAAEgAAAABcGFnZSAxLzEgKHBh77+9U+-_ve-_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";
 
-        const scoreEl = document.getElementById('score');
-        const ppsEl = document.getElementById('pps');
-        const energyEl = document.getElementById('energy');
-        const maxEnergyEl = document.getElementById('max-energy');
-        const energyFill = document.getElementById('energy-fill');
-        const clickBtn = document.getElementById('click-btn');
+        const el = (id) => document.getElementById(id);
 
-        // Обработка клика по монете
-        clickBtn.addEventListener('click', (e) => {
-            if (energy >= clickPower) {
-                score += clickPower;
-                energy -= clickPower;
-                
-                // Создание вылетающего числа +X
-                createFloatingNumber(e, `+${clickPower}`);
-                updateUI();
-            }
-        });
-
-        function createFloatingNumber(e, text) {
-            const num = document.createElement('div');
-            num.className = 'floating-number';
-            num.innerText = text;
-            
-            const rect = clickBtn.getBoundingClientRect();
-            const x = e.clientX ? (e.clientX - rect.left) : (rect.width / 2);
-            const y = e.clientY ? (e.clientY - rect.top) : (rect.height / 2);
-
-            num.style.left = `${x}px`;
-            num.style.top = `${y}px`;
-
-            clickBtn.appendChild(num);
-            setTimeout(() => num.remove(), 800);
-        }
-
-        // Покупка апгрейдов
-        function buyUpgrade(type) {
-            if (score >= costs[type]) {
-                score -= costs[type];
-                
-                if (type === 'click') {
-                    clickPower += 1;
-                    costs.click = Math.floor(costs.click * 1.6);
-                } else if (type === 'farm') {
-                    pps += 1;
-                    costs.farm = Math.floor(costs.farm * 1.5);
-                } else if (type === 'energy') {
-                    maxEnergy += 500;
-                    energy += 500;
-                    costs.energy = Math.floor(costs.energy * 1.8);
-                }
-
-                updateUI();
-            }
-        }
-
-        // Автоматическое начисление дохода и восстановление энергии (каждую секунду)
-        setInterval(() => {
-            // Пассивный доход
-            if (pps > 0) {
-                score += pps;
-            }
-            // Регенерация энергии (+3 в секунду)
-            if (energy < maxEnergy) {
-                energy = Math.min(maxEnergy, energy + 3);
+        function loadGame() {
+            let s = localStorage.getItem('brainrot_full_save');
+            if(s) {
+                let data = JSON.parse(s);
+                score = data.score !== undefined ? data.score : 3.08;
+                energy = data.energy !== undefined ? data.energy : 100;
             }
             updateUI();
-        }, 1000);
+        }
+
+        function saveGame() {
+            localStorage.setItem('brainrot_full_save', JSON.stringify({score, energy}));
+        }
+
+        function toggleMenu() {
+            el('drawer').classList.toggle('open');
+            el('overlay').classList.toggle('show');
+        }
+
+        function switchView(viewName, btn) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.drawer-item').forEach(i => i.classList.remove('active'));
+
+            el('view-' + viewName).classList.add('active');
+            btn.classList.add('active');
+            toggleMenu();
+        }
+
+        el('click-target').onclick = (e) => {
+            if(energy > 0) {
+                score += 0.01;
+                score = Math.round(score * 100) / 100;
+                energy -= 1;
+
+                let num = document.createElement('div');
+                num.className = 'floating-num';
+                num.innerHTML = `+0.01 <img src="${BC_IMG}" class="currency-inline">`;
+                
+                let rect = el('click-target').getBoundingClientRect();
+                num.style.left = `${e.clientX - rect.left}px`;
+                num.style.top = `${e.clientY - rect.top}px`;
+                el('click-target').appendChild(num);
+                setTimeout(() => num.remove(), 700);
+
+                updateUI();
+                saveGame();
+            }
+        };
+
+        function openCase(cost) {
+            if(score >= cost) {
+                score -= cost;
+                score = Math.round(score * 100) / 100;
+                alert('Кейс успешно открыт! 🎉');
+                updateUI();
+                saveGame();
+            } else {
+                alert('Не хватает BC! 💰');
+            }
+        }
+
+        setInterval(() => {
+            if(energy < maxEnergy) {
+                energy++;
+                updateUI();
+                saveGame();
+            }
+        }, 2000);
 
         function updateUI() {
-            scoreEl.innerText = score;
-            ppsEl.innerText = pps;
-            energyEl.innerText = energy;
-            maxEnergyEl.innerText = maxEnergy;
-
-            // Обновление полосы энергии
-            const energyPercent = (energy / maxEnergy) * 100;
-            energyFill.style.width = `${energyPercent}%`;
-
-            // Обновление цен и доступности кнопок
-            document.getElementById('cost-click').innerText = costs.click;
-            document.getElementById('cost-farm').innerText = costs.farm;
-            document.getElementById('cost-energy').innerText = costs.energy;
-
-            document.getElementById('btn-click').disabled = score < costs.click;
-            document.getElementById('btn-farm').disabled = score < costs.farm;
-            document.getElementById('btn-energy').disabled = score < costs.energy;
+            el('balance').innerText = score.toFixed(2);
+            el('coins').innerText = score.toFixed(2);
+            el('prof-balance').innerText = score.toFixed(2);
+            el('energy').innerText = energy;
+            el('energy-text').innerText = energy;
+            el('energy-bar').style.width = `${(energy / maxEnergy) * 100}%`;
         }
 
-        // Переключение вкладок
-        function switchTab(tabName, element) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-            document.getElementById('tab-' + tabName).classList.add('active');
-            element.classList.add('active');
-        }
-
-        updateUI();
+        loadGame();
     </script>
 </body>
 </html>
