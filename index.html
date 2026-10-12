@@ -46,7 +46,7 @@
             background: #1a1d29; border: 1px solid #2a2e43; padding: 5px 10px; border-radius: 20px;
             color: #f39c12; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 5px;
         }
-        .bc-icon { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+        .bc-icon { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
         .profile-avatar-btn {
             width: 36px; height: 36px; background: #23283d; border: 2px solid #f39c12; border-radius: 50%;
             display: flex; align-items: center; justify-content: center; font-weight: bold; color: #f39c12; font-size: 14px;
@@ -124,7 +124,7 @@
         .btn { background: #f39c12; border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
         .btn:hover { background: #e08e0b; }
         h2 { margin-top: 0; font-size: 22px; width: 100%; text-align: left; }
-        .currency-inline { width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; display: inline-block; object-fit: cover; }
+        .currency-inline { width: 16px; height: 16px; border-radius: 50%; vertical-align: middle; display: inline-block; object-fit: cover; }
 
         .back-btn { background: #23283d; border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; align-self: flex-start; font-weight: bold; }
         .prizes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
@@ -219,7 +219,7 @@
         <div class="header-left">BRAINROT CASE</div>
         <div class="header-right" onclick="toggleMenu()">
             <div class="balance-badge">
-                <img src="https://i.imgur.com/830g84e.png" class="bc-icon" alt="BC"> 
+                <img id="header-bc-img" src="" class="bc-icon" alt="BC"> 
                 <span id="balance">3.08</span>
             </div>
             <div class="profile-avatar-btn" id="header-avatar">P</div>
@@ -414,6 +414,9 @@
     <script>
         const OWNER_TELEGRAM_ID = 6638127989;
 
+        // Прямая ссылка на пиксельную монету BC
+        const BC_IMG = "https://i.imgur.com/830g84e.png";
+
         let player = {
             id: null,
             username: null,
@@ -436,14 +439,13 @@
         let currentWonPrizes = [];
         let rouletteTimeout = null;
 
-        // Переменные для мини-игры "Мины"
         let minesGame = {
             active: false,
             bet: 10,
             minesCount: 3,
             multiplier: 1.00,
             safeClicks: 0,
-            grid: [] // 25 ячеек: true - мина, false - пусто
+            grid: []
         };
 
         let casesDatabase = {
@@ -469,10 +471,11 @@
             }
         };
 
-        const BC_IMG = "https://i.imgur.com/830g84e.png";
         const el = (id) => document.getElementById(id);
 
         function loadGame() {
+            el('header-bc-img').src = BC_IMG;
+
             let savedData = localStorage.getItem('brainrot_full_save');
             let savedPromos = localStorage.getItem('brainrot_promos_db');
             let savedCases = localStorage.getItem('brainrot_cases_db');
@@ -563,6 +566,7 @@
             el('overlay').classList.toggle('show');
         }
 
+        // Исправленная функция переключения вкладок с закрытием меню
         function switchView(viewName, btn) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             if(btn && btn.classList.contains('drawer-item')) {
@@ -573,9 +577,9 @@
             el('view-' + viewName).classList.add('active');
             if(viewName === 'profile') renderInventory();
 
-            if(el('drawer').classList.contains('open')) {
-                toggleMenu();
-            }
+            // Гарантированно закрываем выпадающее меню
+            el('drawer').classList.remove('open');
+            el('overlay').classList.remove('show');
         }
 
         /* ЛОГИКА МИНИ-ИГРЫ "МИНЫ" */
@@ -620,7 +624,6 @@
             minesGame.multiplier = 1.00;
             minesGame.safeClicks = 0;
             
-            // Распределяем мины
             minesGame.grid = new Array(25).fill(false);
             let placed = 0;
             while (placed < minesCount) {
@@ -645,22 +648,18 @@
             if (cellEl.classList.contains('revealed')) return;
 
             if (minesGame.grid[index]) {
-                // Наступил на мину
                 cellEl.classList.add('revealed', 'mine');
                 cellEl.innerText = '💣';
                 endMinesGame(false);
             } else {
-                // Безопасная ячейка
                 cellEl.classList.add('revealed', 'safe');
                 cellEl.innerText = '💎';
                 minesGame.safeClicks++;
                 
-                // Увеличение множителя
                 let factor = 1 + (minesGame.minesCount * 0.15);
                 minesGame.multiplier = Math.round((minesGame.multiplier * factor) * 100) / 100;
                 updateMinesUI();
 
-                // Если открыл все безопасные ячейки
                 if (minesGame.safeClicks >= (25 - minesGame.minesCount)) {
                     cashoutMinesGame();
                 }
@@ -687,7 +686,6 @@
 
         function endMinesGame(won) {
             minesGame.active = false;
-            // Открываем все мины
             let gridEl = el('mines-grid');
             for (let i = 0; i < 25; i++) {
                 let cellEl = gridEl.children[i];
@@ -1030,4 +1028,8 @@
 
             el('admin-item-name').value = "";
             el('admin-item-icon').value = "";
-      
+            el('admin-item-chance').value = "";
+            el('admin-item-price').value = "";
+        }
+
+    
