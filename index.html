@@ -86,7 +86,7 @@
         }
         .admin-panel { display: none; width: 100%; background: #141722; border: 1px dashed #f39c12; border-radius: 14px; padding: 14px; margin-top: 15px; }
         .admin-panel.show { display: block; }
-        .admin-user-row { background: #0d0f18; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 13px; }
+        .admin-user-row { background: #0d0f18; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
 
         .case-buttons-group { display: flex; gap: 6px; width: 100%; margin-bottom: 15px; }
         .case-buttons-group .btn { flex: 1; padding: 10px 4px; font-size: 13px; text-align: center; }
@@ -140,6 +140,22 @@
         .character-container { position: relative; margin: 15px 0; cursor: pointer; text-align: center; }
         .character-img { width: 160px; height: 160px; object-fit: contain; filter: drop-shadow(0 0 15px rgba(243,156,18,0.3)); }
         .char-name { font-size: 22px; font-weight: bold; font-style: italic; margin-top: 10px; color: #f39c12; }
+
+        /* МОДАЛЬНОЕ ОКНО ВЫБОРА ИГРОКА */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 2000; display: none;
+            justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-card {
+            background: #141722; border: 1px solid #f39c12; border-radius: 14px;
+            width: 100%; max-width: 380px; max-height: 80vh; display: flex;
+            flex-direction: column; padding: 16px; position: relative;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: bold; font-size: 16px; color: #f39c12; }
+        .modal-close { background: #23283d; border: none; color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+        .modal-users-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
     </style>
 </head>
 <body>
@@ -153,6 +169,17 @@
     </div>
 
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА ИГРОКА -->
+    <div class="modal-overlay" id="users-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span>👥 Выберите игрока</span>
+                <button class="modal-close" onclick="closeUsersModal()">✕</button>
+            </div>
+            <div class="modal-users-list" id="modal-users-list"></div>
+        </div>
+    </div>
 
     <div class="drawer" id="drawer">
         <div class="drawer-header">
@@ -282,11 +309,39 @@
             <!-- АДМИН-ПАНЕЛЬ -->
             <div class="admin-panel" id="admin-promo-panel">
                 <h3 style="margin-top:0; color:#f39c12; font-size:16px;">⚙️ Панель Владельца</h3>
-                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">👥 Игроки:</div>
-                <div id="admin-users-list" style="margin-bottom: 15px; max-height: 150px; overflow-y: auto;"></div>
+                
+                <button class="btn" style="width:100%; background:#e67e22; margin-bottom:12px;" onclick="openUsersModal()">👥 Выбрать игрока из списка</button>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">💳 Изменение баланса игрока:</div>
                 <input type="number" id="grant-user-id" class="input-field" placeholder="ID игрока">
                 <input type="number" id="grant-amount" class="input-field" placeholder="Сумма BC (+/-)">
                 <button class="btn" style="width: 100%; background: #2980b9; margin-bottom: 15px;" onclick="grantBalanceToUser()">Изменить баланс</button>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">🎁 Выдать брейнрота игроку:</div>
+                <input type="number" id="give-item-user-id" class="input-field" placeholder="ID игрока">
+                <input type="text" id="give-item-name" class="input-field" placeholder="Название предмета">
+                <input type="text" id="give-item-icon" class="input-field" placeholder="Иконка (напр. 👑)">
+                <input type="number" id="give-item-price" class="input-field" placeholder="Цена продажи (BC)">
+                <button class="btn" style="width: 100%; background: #e67e22; margin-bottom: 15px;" onclick="adminGiveItemToUser()">Выдать брейнрота</button>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">🎫 Создать промокод:</div>
+                <input type="text" id="admin-promo-code" class="input-field" placeholder="Код (напр. SUPER)">
+                <input type="number" id="admin-promo-reward" class="input-field" placeholder="Награда (BC)">
+                <button class="btn" style="width: 100%; background: #8e44ad; margin-bottom: 15px;" onclick="adminCreatePromo()">Создать промокод</button>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">📦 Управление предметами кейсов:</div>
+                <select id="admin-case-select" class="select-field" onchange="renderAdminCaseItemsList()">
+                    <option value="linear">Линейный кейс</option>
+                    <option value="all_or_nothing">Всё или ничего</option>
+                </select>
+                
+                <div id="admin-case-items-list" style="margin-bottom:10px; max-height:120px; overflow-y:auto;"></div>
+
+                <input type="text" id="admin-item-name" class="input-field" placeholder="Название предмета">
+                <input type="text" id="admin-item-icon" class="input-field" placeholder="Иконка (эмодзи)">
+                <input type="number" id="admin-item-chance" class="input-field" placeholder="Шанс (%)">
+                <input type="number" id="admin-item-price" class="input-field" placeholder="Цена продажи (BC)">
+                <button class="btn" style="width: 100%; background: #27ae60;" onclick="adminAddItemToCase()">Добавить предмет в кейс</button>
             </div>
         </div>
 
@@ -380,7 +435,7 @@
 
             if (player.id === OWNER_TELEGRAM_ID) {
                 el('admin-promo-panel').classList.add('show');
-                renderAdminUsersList();
+                renderAdminCaseItemsList();
             }
         } catch(e) {}
         updateUI();
@@ -394,16 +449,38 @@
             let idx = allPlayersList.findIndex(p => p.id === player.id);
             if (idx >= 0) { allPlayersList[idx].score = player.score; allPlayersList[idx].username = player.username; }
             localStorage.setItem('brainrot_all_players', JSON.stringify(allPlayersList));
+            localStorage.setItem('brainrot_custom_cases', JSON.stringify(casesDatabase));
         } catch(e) {}
     }
 
-    function renderAdminUsersList() {
-        let list = el('admin-users-list');
-        if (!list) return;
+    /* МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА ИГРОКА */
+    function openUsersModal() {
+        let list = el('modal-users-list');
         list.innerHTML = '';
-        allPlayersList.forEach(u => {
-            list.innerHTML += `<div class="admin-user-row"><b>@${u.username}</b> (ID: ${u.id})<br>Баланс: ${u.score.toFixed(2)} BC <button class="btn" style="padding:2px 6px; font-size:10px; float:right;" onclick="el('grant-user-id').value=${u.id}">Выбрать</button></div>`;
-        });
+        if (allPlayersList.length === 0) {
+            list.innerHTML = '<div style="color:#8b93b0; font-size:13px; text-align:center;">Список игроков пуст</div>';
+        } else {
+            allPlayersList.forEach(u => {
+                list.innerHTML += `
+                    <div class="admin-user-row">
+                        <div><b>@${u.username}</b><br><small style="color:#8b93b0">ID: ${u.id}</small></div>
+                        <button class="btn" style="padding:6px 10px; font-size:12px; background:#f39c12;" onclick="selectUserFromModal(${u.id})">Выбрать</button>
+                    </div>
+                `;
+            });
+        }
+        el('users-modal').classList.add('show');
+    }
+
+    function closeUsersModal() {
+        el('users-modal').classList.remove('show');
+    }
+
+    function selectUserFromModal(id) {
+        el('grant-user-id').value = id;
+        el('give-item-user-id').value = id;
+        closeUsersModal();
+        alert(`Игрок с ID ${id} выбран!`);
     }
 
     function toggleMenu() {
@@ -472,13 +549,12 @@
         return items[0];
     }
 
-    // МУЛЬТИ-ОТКРЫТИЕ ОГРАНИЧЕНО ДО 15
     function openCustomAmountCases() {
         let amount = prompt("Сколько открыть? (до 15)", "5");
         if (amount === null) return;
         amount = parseInt(amount);
         if (isNaN(amount) || amount <= 0) return alert("Неверно!");
-        if (amount > 15) amount = 15; // Жесткий лимит до 15
+        if (amount > 15) amount = 15;
         openCases(amount);
     }
 
@@ -635,6 +711,7 @@
         initMinesGrid();
     }
 
+    /* УМЕНЬШЕННЫЙ МНОЖИТЕЛЬ МИН */
     function clickMineCell(index) {
         if (!minesGame.active) return;
         let cell = el('mines-grid').children[index];
@@ -645,7 +722,9 @@
             endMinesGame(false);
         } else {
             cell.className = 'mine-cell revealed safe'; cell.innerText = '💎';
-            minesGame.multiplier = Math.round((minesGame.multiplier + 0.1) * 100) / 100;
+            // Небольшой шаг роста множителя
+            let step = 0.03 + (minesGame.minesCount * 0.01);
+            minesGame.multiplier = Math.round((minesGame.multiplier + step) * 100) / 100;
             updateMinesUI();
         }
     }
@@ -688,17 +767,81 @@
         } else { alert("Неверно или уже использовано!"); }
     }
 
+    /* АДМИН: ИЗМЕНЕНИЕ БАЛАНСА */
     function grantBalanceToUser() {
         let id = parseInt(el('grant-user-id').value), amt = parseFloat(el('grant-amount').value);
-        if (isNaN(id) || isNaN(amt)) return alert("Заполните поля!");
+        if (isNaN(id) || isNaN(amt)) return alert("Заполните ID и сумму!");
         if (id === player.id) {
             player.score = Math.round((player.score + amt) * 100) / 100;
-            updateUI(); saveGame(); alert("Готово!");
+            updateUI(); saveGame(); alert("Баланс изменен!");
         } else {
             let t = allPlayersList.find(p => p.id === id);
-            if (t) { t.score += amt; saveGame(); renderAdminUsersList(); alert("Готово!"); }
+            if (t) { t.score += amt; saveGame(); alert("Баланс игрока изменен!"); }
             else alert("Игрок не найден");
         }
+    }
+
+    /* АДМИН: ВЫДАЧА ПРЕДМЕТА */
+    function adminGiveItemToUser() {
+        let id = parseInt(el('give-item-user-id').value);
+        let name = el('give-item-name').value.trim();
+        let icon = el('give-item-icon').value.trim() || "🎁";
+        let price = parseFloat(el('give-item-price').value);
+
+        if (isNaN(id) || !name || isNaN(price)) return alert("Заполните все поля предмета!");
+
+        let newItem = { name, icon, sellPrice: price };
+        if (id === player.id) {
+            player.inventory.push(newItem);
+            saveGame(); renderInventory(); alert(`Предмет "${name}" выдан вам!`);
+        } else {
+            alert(`Предмет подготовлен для игрока ${id}`);
+        }
+    }
+
+    /* АДМИН: СОЗДАНИЕ ПРОМОКОДА */
+    function adminCreatePromo() {
+        let code = el('admin-promo-code').value.trim();
+        let reward = parseFloat(el('admin-promo-reward').value);
+        if (!code || isNaN(reward) || reward <= 0) return alert("Заполните промокод и награду!");
+        promoCodes[code] = { reward, usedBy: [] };
+        alert(`🎫 Промокод "${code}" на ${reward} BC создан!`);
+    }
+
+    /* АДМИН: ОТОБРАЖЕНИЕ И УДАЛЕНИЕ ПРЕДМЕТОВ КЕЙСА */
+    function renderAdminCaseItemsList() {
+        let caseKey = el('admin-case-select').value;
+        let container = el('admin-case-items-list');
+        container.innerHTML = '';
+        casesDatabase[caseKey].items.forEach((item, index) => {
+            container.innerHTML += `
+                <div style="background:#0d0f18; padding:6px 10px; border-radius:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                    <span>${item.icon} ${item.name} (${item.chance}%)</span>
+                    <button class="btn" style="padding:2px 6px; font-size:10px; background:#c0392b;" onclick="adminRemoveItemFromCase('${caseKey}', ${index})">✕</button>
+                </div>
+            `;
+        });
+    }
+
+    function adminAddItemToCase() {
+        let caseKey = el('admin-case-select').value;
+        let name = el('admin-item-name').value.trim();
+        let icon = el('admin-item-icon').value.trim() || "🎁";
+        let chance = parseFloat(el('admin-item-chance').value);
+        let price = parseFloat(el('admin-item-price').value);
+
+        if (!name || isNaN(chance) || isNaN(price)) return alert("Заполните все поля предмета!");
+
+        casesDatabase[caseKey].items.push({ name, icon, chance, sellPrice: price });
+        saveGame();
+        renderAdminCaseItemsList();
+        alert(`✅ Предмет "${name}" добавлен в кейс!`);
+    }
+
+    function adminRemoveItemFromCase(caseKey, index) {
+        casesDatabase[caseKey].items.splice(index, 1);
+        saveGame();
+        renderAdminCaseItemsList();
     }
 
     loadGame();
