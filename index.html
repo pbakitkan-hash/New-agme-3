@@ -78,7 +78,7 @@
         .badge-new { background: #e74c3c; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
 
         .overlay {
-            position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);
             z-index: 900; display: none;
         }
         .overlay.show { display: block; }
@@ -483,7 +483,7 @@
 
             let savedData = localStorage.getItem('brainrot_save_' + player.id);
             if (!savedData) {
-                savedData = localStorage.getItem('brainrot_save'); // миграция со старого сохранения
+                savedData = localStorage.getItem('brainrot_save');
             }
             if (savedData) {
                 let parsed = JSON.parse(savedData);
@@ -493,7 +493,6 @@
                 player.inventory = parsed.inventory || [];
             }
 
-            // Добавляем текущего игрока в общий список зашедших
             let existingIdx = allPlayersList.findIndex(p => p.id === player.id);
             if (existingIdx >= 0) {
                 allPlayersList[existingIdx].username = player.username;
@@ -634,7 +633,6 @@
         if(el('energy-bar')) el('energy-bar').style.width = `${(player.energy / maxEnergy) * 100}%`;
     }
 
-    // Тап по ферме
     let clickTarget = el('click-target');
     if(clickTarget) {
         clickTarget.onclick = (e) => {
@@ -667,7 +665,6 @@
         }
     }, 2000);
 
-    // Кейсы
     function openCaseDetails(caseKey) {
         activeCaseKey = caseKey;
         let caseData = casesDatabase[caseKey];
@@ -865,7 +862,6 @@
         feed.insertAdjacentHTML('afterbegin', `<div class="live-item"><span>${item.icon}</span> <b>${name}</b> <span style="color:#f39c12">${item.sellPrice} BC</span></div>`);
     }
 
-    // Мины
     function initMinesGrid() {
         let grid = el('mines-grid');
         if (!grid) return;
@@ -919,7 +915,6 @@
             cell.innerText = '💎';
             minesGame.safeClicks++;
             
-            // Плавный прирост множителя (0.07 - 0.12 шага в зависимости от количества мин, без резких прыжков)
             let stepGrowth = 0.05 + (minesGame.minesCount * 0.015);
             minesGame.multiplier = Math.round((minesGame.multiplier + stepGrowth) * 100) / 100;
             
@@ -956,12 +951,10 @@
     }
 
     function claimDevBonus() {
-        if (player.id === OWNER_TELEGRAM_ID || true) {
-            player.score += 1000;
-            updateUI();
-            saveGame();
-            alert("+1000 BC получено!");
-        }
+        player.score += 1000;
+        updateUI();
+        saveGame();
+        alert("+1000 BC получено!");
     }
 
     function activatePromo() {
@@ -1009,7 +1002,7 @@
         let sellPrice = parseFloat(el('give-item-price').value);
 
         if (isNaN(targetId) || !itemName || isNaN(sellPrice)) {
-            return alert("Заполните все поля для выдачи брейнрота!");
+            return alert("Заполните все поля для выдачи предмета!");
         }
 
         let newItem = { name: itemName, icon: itemIcon, sellPrice: sellPrice };
@@ -1020,7 +1013,7 @@
             renderInventory();
             alert(`Предмет "${itemName}" выдан вам в инвентарь!`);
         } else {
-            alert(`Предмет подготовлен для ID ${targetId} (если этот пользователь зайдет с этого браузера).`);
+            alert(`Предмет подготовлен для ID ${targetId}.`);
         }
 
         el('give-item-name').value = "";
@@ -1063,4 +1056,16 @@
         let caseKey = el('admin-case-select').value;
         let itemName = el('admin-item-name').value.trim();
         let itemIcon = el('admin-item-icon').value.trim() || "🎁";
-        let chance = parseFloat(el('admin-i
+        let chance = parseFloat(el('admin-item-chance').value);
+        let sellPrice = parseFloat(el('admin-item-price').value);
+
+        if (!itemName || isNaN(chance) || isNaN(sellPrice)) {
+            return alert("Заполните все поля правильно!");
+        }
+
+        casesDatabase[caseKey].items.push({
+            name: itemName,
+            icon: itemIcon,
+            chance: chance,
+            sellPrice: sellPrice
+  
