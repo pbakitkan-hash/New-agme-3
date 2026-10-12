@@ -220,7 +220,7 @@
         <div class="header-right" onclick="toggleMenu()">
             <div class="balance-badge">
                 <img id="header-bc-img" src="" class="bc-icon" alt="BC"> 
-                <span id="balance">3.08</span>
+                <span id="balance">0.00</span>
             </div>
             <div class="profile-avatar-btn" id="header-avatar">P</div>
         </div>
@@ -322,7 +322,7 @@
             <div class="card" style="flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 15px;">
                 <div id="user-tg-name">👤 <b>@Player</b></div>
                 <div>🆔 ID: <span id="user-tg-id">123456789</span></div>
-                <div>💰 Баланс: <span id="prof-balance">3.08</span> BC</div>
+                <div>💰 Баланс: <span id="prof-balance">0.00</span> BC</div>
                 <button class="btn" style="width:100%; margin-top:4px;" onclick="claimDevBonus()">👑 Кнопка владельца (+1000 BC)</button>
             </div>
 
@@ -378,7 +378,7 @@
         <div id="view-farm" class="view">
             <div class="farm-stats">
                 <div class="farm-stat-item">Уровень<div class="farm-stat-value" id="level">11</div></div>
-                <div class="farm-stat-item">Баланс<div class="farm-stat-value" id="coins">3.08</div></div>
+                <div class="farm-stat-item">Баланс<div class="farm-stat-value" id="coins">0.00</div></div>
                 <div class="farm-stat-item">Энергия<div class="farm-stat-value"><span id="energy">100</span>/100</div></div>
             </div>
 
@@ -420,7 +420,7 @@
         let player = {
             id: null,
             username: null,
-            score: 3.08,
+            score: 0,
             energy: 100,
             level: 11,
             inventory: []
@@ -476,7 +476,13 @@
         function loadGame() {
             el('header-bc-img').src = BC_IMG;
 
-            let savedData = localStorage.getItem('brainrot_full_save');
+            // Возвращаем старый надежный ключ сохранения, чтобы баланс не сбрасывался
+            let savedData = localStorage.getItem('brainrot_save');
+            if (!savedData) {
+                // На случай если данные были в других ключах
+                savedData = localStorage.getItem('brainrot_full_save');
+            }
+
             let savedPromos = localStorage.getItem('brainrot_promos_db');
             let savedCases = localStorage.getItem('brainrot_cases_db');
             
@@ -538,7 +544,7 @@
         }
 
         function saveGame() {
-            localStorage.setItem('brainrot_full_save', JSON.stringify(player));
+            localStorage.setItem('brainrot_save', JSON.stringify(player));
             localStorage.setItem('brainrot_promos_db', JSON.stringify(promoCodes));
             localStorage.setItem('brainrot_cases_db', JSON.stringify(casesDatabase));
         }
@@ -566,7 +572,6 @@
             el('overlay').classList.toggle('show');
         }
 
-        // Исправленная функция переключения вкладок с закрытием меню
         function switchView(viewName, btn) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             if(btn && btn.classList.contains('drawer-item')) {
@@ -577,7 +582,6 @@
             el('view-' + viewName).classList.add('active');
             if(viewName === 'profile') renderInventory();
 
-            // Гарантированно закрываем выпадающее меню
             el('drawer').classList.remove('open');
             el('overlay').classList.remove('show');
         }
@@ -1027,9 +1031,4 @@
             }
 
             el('admin-item-name').value = "";
-            el('admin-item-icon').value = "";
-            el('admin-item-chance').value = "";
-            el('admin-item-price').value = "";
-        }
-
-    
+            el('admin-item-ic
