@@ -70,6 +70,7 @@
         .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 16px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .btn { background: #f39c12; border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; }
         .btn:active { opacity: 0.8; }
+        .btn:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.5; }
         h2 { margin-top: 0; font-size: 22px; width: 100%; text-align: left; }
 
         .back-btn { background: #23283d; border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; align-self: flex-start; font-weight: bold; }
@@ -270,7 +271,7 @@
         <!-- МИНЫ -->
         <div id="view-mines" class="view">
             <h2>💣 Мины</h2>
-            <div style="font-size:12px; color:#e74c3c; margin-bottom:8px; width:100%;">Выберите брейнрот из инвентаря для ставки в мины:</div>
+            <div style="font-size:12px; color:#e74c3c; margin-bottom:8px; width:100%;">Выберите брейнрот из инвентаря для ставки (минимальная ставка от 3):</div>
             
             <div class="mines-inventory-selector" id="mines-inventory-selector">
                 <div style="color:#8b93b0; font-size:12px;">Инвентарь пуст</div>
@@ -278,10 +279,10 @@
 
             <div class="card" style="flex-direction: column; align-items: flex-start; gap: 10px;">
                 <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
-                    <span>Мины (1-24):</span>
-                    <input type="number" id="mines-count" class="input-field" value="5" min="1" max="24" style="width: 120px; margin-bottom: 0;">
+                    <span>Мины (3-24):</span>
+                    <input type="number" id="mines-count" class="input-field" value="3" min="3" max="24" style="width: 120px; margin-bottom: 0;">
                 </div>
-                <button class="btn" style="width: 100%; background: #27ae60;" id="mines-start-btn" onclick="startMinesGame()">🎲 Начать игру</button>
+                <button class="btn" style="width: 100%; background: #27ae60;" id="mines-start-btn" onclick="startMinesGame()" disabled>🎲 Выберите брейнрот</button>
             </div>
 
             <div id="mines-game-box" style="display: none; width: 100%; flex-direction: column; align-items: center;">
@@ -370,15 +371,26 @@
             </div>
         </div>
 
-        <!-- МАГАЗИН (С РЕАЛЬНОЙ ФОТОГРАФИЙ ГАРАМЫ СВЕРХУ И НАДПИСЬЮ СНИЗУ) -->
+        <!-- МАГАЗИН (2 ПРЕДМЕТА С ПРАВИЛЬНЫМИ КАРТИНКАМИ) -->
         <div id="view-shop" class="view">
             <h2>Магазин</h2>
+            
+            <!-- 1. Garama (150 BC) -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
-                    <img src="https://i.ibb.co/12910.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" alt="Garama" onerror="this.src='https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png'">
+                    <img src="https://i.postimg.cc/m2mD3sFk/garama.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" alt="Garama" onerror="this.src='https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png'">
                 </div>
-                <div style="flex:1;"><b>Garama and Madundung</b><br><small style="color:#f39c12">50 BC</small></div>
-                <button class="btn" onclick="buyGaramaItem()">Купить</button>
+                <div style="flex:1;"><b>Garama</b><br><small style="color:#f39c12">150 BC</small></div>
+                <button class="btn" onclick="buyShopItem('Garama', 'https://i.postimg.cc/m2mD3sFk/garama.jpg', 150, 75)">Купить</button>
+            </div>
+
+            <!-- 2. IXOVER (1 000 000 BC) -->
+            <div class="card" style="align-items: center;">
+                <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
+                    <img src="https://i.postimg.cc/m2mD3sFk/garama.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" alt="IXOVER" onerror="this.src='https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png'">
+                </div>
+                <div style="flex:1;"><b>IXOVER</b><br><small style="color:#f39c12">1 000 000 BC</small></div>
+                <button class="btn" onclick="buyShopItem('IXOVER', 'https://i.postimg.cc/m2mD3sFk/garama.jpg', 1000000, 500000)">Купить</button>
             </div>
         </div>
     </div>
@@ -394,7 +406,7 @@
     let currentCasePrice = 59;
     let currentWonPrizes = [];
     let rouletteTimeout = null;
-    let minesGame = { active: false, betItem: null, minesCount: 5, multiplier: 1.00, grid: [] };
+    let minesGame = { active: false, betItem: null, minesCount: 3, multiplier: 1.00, grid: [] };
     let selectedMinesItemIndex = null;
 
     let casesDatabase = {
@@ -469,21 +481,19 @@
         } catch(e) {}
     }
 
-    /* ПОКУПКА ГАРАМЫ (КАРТИНКА СВЕРХУ, НАЗВАНИЕ СНИЗУ) */
-    function buyGaramaItem() {
-        let price = 50;
-        if (player.score < price) return alert("Не хватает BC!");
+    function buyShopItem(name, imgUrl, price, sellPrice) {
+        if (player.score < price) return alert(`Не хватает BC! Нужно ${price.toLocaleString()} BC.`);
         player.score = Math.round((player.score - price) * 100) / 100;
         player.inventory.push({ 
-            name: "Garama and Madundung", 
-            img: "https://i.ibb.co/12910.jpg", 
-            sellPrice: 100 
+            name: name, 
+            img: imgUrl, 
+            sellPrice: sellPrice 
         });
         saveGame();
         updateUI();
         renderInventory();
         renderMinesInventorySelector();
-        alert("🗿 Garama and Madundung успешно куплен и добавлен в инвентарь!");
+        alert(`🎉 ${name} успешно куплен и добавлен в инвентарь!`);
     }
 
     function openUsersModal() {
@@ -715,9 +725,16 @@
         let container = el('mines-inventory-selector');
         if (!container) return;
         container.innerHTML = '';
+        
+        let startBtn = el('mines-start-btn');
+
         if (player.inventory.length === 0) {
             container.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Инвентарь пуст. Купите брейнрот или выбейте в кейсах!</div>';
             selectedMinesItemIndex = null;
+            if (startBtn) {
+                startBtn.disabled = true;
+                startBtn.innerText = "🛑 Инвентарь пуст";
+            }
             return;
         }
 
@@ -731,6 +748,16 @@
                 </div>
             `;
         });
+
+        if (startBtn) {
+            if (selectedMinesItemIndex !== null && player.inventory[selectedMinesItemIndex]) {
+                startBtn.disabled = false;
+                startBtn.innerText = "🎲 Начать игру";
+            } else {
+                startBtn.disabled = true;
+                startBtn.innerText = "🎲 Выберите брейнрот";
+            }
+        }
     }
 
     function selectMinesItem(index) {
@@ -753,10 +780,13 @@
 
     function startMinesGame() {
         if (selectedMinesItemIndex === null || !player.inventory[selectedMinesItemIndex]) {
-            return alert("🛑 Выберите брейнрот из инвентаря сверху для ставки!");
+            return alert("🛑 Обязательно выберите брейнрот из инвентаря для ставки!");
         }
 
         let count = parseInt(el('mines-count').value);
+        if (isNaN(count) || count < 3) count = 3;
+        if (count > 24) count = 24;
+
         let stakedItem = player.inventory.splice(selectedMinesItemIndex, 1)[0];
         selectedMinesItemIndex = null;
 
@@ -776,7 +806,6 @@
         initMinesGrid();
     }
 
-    /* ИМБОВЫЙ МНОЖИТЕЛЬ В МИНАХ С УЧЕТОМ КОЛИЧЕСТВА МИН */
     function clickMineCell(index) {
         if (!minesGame.active) return;
         let cell = el('mines-grid').children[index];
@@ -787,8 +816,7 @@
             endMinesGame(false);
         } else {
             cell.className = 'mine-cell revealed safe'; cell.innerText = '💎';
-            // Мощный множитель, зависящий от количества выбранных мин
-            let baseStep = 0.12 + (minesGame.minesCount * 0.15);
+            let baseStep = 0.25 + (minesGame.minesCount * 0.35);
             minesGame.multiplier = Math.round((minesGame.multiplier + baseStep) * 100) / 100;
             updateMinesUI();
         }
@@ -815,6 +843,7 @@
             if (minesGame.grid[i]) { grid.children[i].className = 'mine-cell revealed mine'; grid.children[i].innerText = '💣'; }
         }
         if (!won) alert("💥 Мина! Ваш брейнрот сгорел.");
+        renderMinesInventorySelector();
         el('mines-start-btn').style.display = 'block';
     }
 
