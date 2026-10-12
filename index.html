@@ -107,6 +107,17 @@
             100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
         }
 
+        /* МИНИ-ИГРА МИНЫ */
+        .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; margin-top: 10px; }
+        .mine-cell {
+            aspect-ratio: 1; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; transition: background 0.2s;
+        }
+        .mine-cell:hover { background: #252a3d; }
+        .mine-cell.revealed { background: #141722; cursor: default; }
+        .mine-cell.mine { background: #c0392b !important; }
+        .mine-cell.safe { background: #27ae60 !important; }
+
         /* КАРТОЧКИ И КЕЙСЫ */
         .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 16px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; transition: border-color 0.2s; }
         .card:hover { border-color: #f39c12; }
@@ -179,7 +190,7 @@
 
 <div class="app-wrapper">
 
-    <!-- LIVE ДОСКА ДРОПОВ (ТОЛЬКО РЕАЛЬНЫЕ ИГРОКИ) -->
+    <!-- LIVE ДОСКА ДРОПОВ -->
     <div class="live-bar">
         <span class="live-tag">LIVE</span>
         <div class="live-feed" id="live-feed">
@@ -198,9 +209,9 @@
         <button class="drawer-item active" onclick="switchView('cases', this)">🎁 Кейсы <span class="badge-new">ТОП</span></button>
         <button class="drawer-item" onclick="switchView('profile', this)">👤 Профиль</button>
         <button class="drawer-item" onclick="switchView('farm', this)">🌿 Ферма (Нубини)</button>
+        <button class="drawer-item" onclick="switchView('mines', this)">💣 Мины</button>
         <button class="drawer-item" onclick="switchView('shop', this)">🛒 Магазин</button>
         <button class="drawer-item" onclick="alert('Режим в разработке!')">🚀 Ракета</button>
-        <button class="drawer-item" onclick="alert('Режим в разработке!')">💣 Мины</button>
     </div>
 
     <!-- ШАПКА -->
@@ -208,7 +219,7 @@
         <div class="header-left">BRAINROT CASE</div>
         <div class="header-right" onclick="toggleMenu()">
             <div class="balance-badge">
-                <img src="https://i.imgur.com/8X8v35a.png" class="bc-icon" alt="BC"> 
+                <img src="https://i.imgur.com/830g84e.png" class="bc-icon" alt="BC"> 
                 <span id="balance">3.08</span>
             </div>
             <div class="profile-avatar-btn" id="header-avatar">P</div>
@@ -281,7 +292,29 @@
             </div>
         </div>
 
-        <!-- ПРОФИЛЬ (С ИНВЕНТАРЕМ ПОСЕРЕДИНЕ) -->
+        <!-- МИНИ-ИГРА МИНЫ -->
+        <div id="view-mines" class="view">
+            <h2>💣 Мины</h2>
+            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Ставка (BC):</span>
+                    <input type="number" id="mines-bet" class="input-field" value="10" style="width: 120px; margin-bottom: 0;">
+                </div>
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Количество мин (1-24):</span>
+                    <input type="number" id="mines-count" class="input-field" value="3" min="1" max="24" style="width: 120px; margin-bottom: 0;">
+                </div>
+                <button class="btn" style="width: 100%; background: #27ae60;" id="mines-start-btn" onclick="startMinesGame()">🎲 Начать игру</button>
+            </div>
+
+            <div id="mines-game-box" style="display: none; width: 100%; flex-direction: column; align-items: center;">
+                <div style="font-size: 15px; margin-bottom: 10px; font-weight: bold;">Множитель: <span id="mines-multiplier" style="color: #f39c12;">1.00x</span> | Выигрыш: <span id="mines-win-amount" style="color: #27ae60;">0.00</span> BC</div>
+                <div class="mines-grid" id="mines-grid"></div>
+                <button class="btn" style="width: 100%; margin-top: 15px; background: #e74c3c;" id="mines-cashout-btn" onclick="cashoutMinesGame()">💰 Забрать выигрыш</button>
+            </div>
+        </div>
+
+        <!-- ПРОФИЛЬ -->
         <div id="view-profile" class="view">
             <h2>Профиль игрока</h2>
             
@@ -293,7 +326,7 @@
                 <button class="btn" style="width:100%; margin-top:4px;" onclick="claimDevBonus()">👑 Кнопка владельца (+1000 BC)</button>
             </div>
 
-            <!-- 2. ИНВЕНТАРЬ ПОСЕРЕДИНЕ -->
+            <!-- 2. ИНВЕНТАРЬ -->
             <h2>🎒 Инвентарь</h2>
             <div class="card" style="flex-direction: column; margin-bottom: 15px; width: 100%;">
                 <div id="inventory-empty-msg" style="color:#8b93b0; text-align:center; padding: 10px; display:none; font-size: 14px;">
@@ -309,7 +342,7 @@
                 <button class="btn" style="width: 100%;" onclick="activatePromo()">Активировать</button>
             </div>
 
-            <!-- 4. АДМИН-ПАНЕЛЬ (ВНИЗУ ПРОФИЛЯ) -->
+            <!-- 4. АДМИН-ПАНЕЛЬ -->
             <div class="admin-panel" id="admin-promo-panel">
                 <h3 style="margin-top:0; color:#f39c12; font-size:16px;">⚙️ Панель Владельца</h3>
                 
@@ -326,7 +359,18 @@
 
                 <div style="font-size: 12px; font-weight: bold; color: #8b93b0; margin-bottom: 6px;">3. Сброс аккаунта по ID:</div>
                 <input type="number" id="reset-target-id" class="input-field" placeholder="Telegram ID игрока для сброса">
-                <button class="btn" style="width: 100%; background: #e74c3c;" onclick="resetAccountById()">🗑 Сбросить аккаунт по ID</button>
+                <button class="btn" style="width: 100%; background: #e74c3c; margin-bottom: 15px;" onclick="resetAccountById()">🗑 Сбросить аккаунт по ID</button>
+
+                <div style="font-size: 12px; font-weight: bold; color: #f39c12; margin-bottom: 6px; border-top: 1px dashed #23283d; padding-top: 10px;">4. Добавить предмет / Изменить шанс:</div>
+                <select id="admin-target-case" class="input-field">
+                    <option value="linear">Линейный кейс</option>
+                    <option value="all_or_nothing">Всё или ничего</option>
+                </select>
+                <input type="text" id="admin-item-name" class="input-field" placeholder="Название (например: Noobini Pizzanini)">
+                <input type="text" id="admin-item-icon" class="input-field" placeholder="Эмодзи или иконка (например: 🍕)">
+                <input type="number" step="0.01" id="admin-item-chance" class="input-field" placeholder="Шанс выпадения в % (например: 15)">
+                <input type="number" id="admin-item-price" class="input-field" placeholder="Цена продажи (например: 50)">
+                <button class="btn" style="width: 100%; background: #8e44ad;" onclick="adminSaveItemToCase()">🛠 Добавить/Обновить предмет в кейсе</button>
             </div>
         </div>
 
@@ -382,7 +426,8 @@
         let promoCodes = {
             "Uuu": { reward: 100, maxUses: 50, usedBy: [] },
             "ADMIN1000": { reward: 1000, maxUses: 9999, usedBy: [] },
-            "BRAINROT": { reward: 50, maxUses: 9999, usedBy: [] }
+            "BRAINROT": { reward: 50, maxUses: 9999, usedBy: [] },
+            "NO": { reward: 50, maxUses: 9999, usedBy: [] }
         };
 
         let maxEnergy = 100;
@@ -391,7 +436,17 @@
         let currentWonPrizes = [];
         let rouletteTimeout = null;
 
-        const casesDatabase = {
+        // Переменные для мини-игры "Мины"
+        let minesGame = {
+            active: false,
+            bet: 10,
+            minesCount: 3,
+            multiplier: 1.00,
+            safeClicks: 0,
+            grid: [] // 25 ячеек: true - мина, false - пусто
+        };
+
+        let casesDatabase = {
             'linear': {
                 name: 'Линейный кейс',
                 price: 59,
@@ -414,15 +469,19 @@
             }
         };
 
-        const BC_IMG = "https://i.imgur.com/8X8v35a.png";
+        const BC_IMG = "https://i.imgur.com/830g84e.png";
         const el = (id) => document.getElementById(id);
 
         function loadGame() {
             let savedData = localStorage.getItem('brainrot_full_save');
             let savedPromos = localStorage.getItem('brainrot_promos_db');
+            let savedCases = localStorage.getItem('brainrot_cases_db');
             
             if (savedPromos) {
                 try { promoCodes = JSON.parse(savedPromos); } catch(e) {}
+            }
+            if (savedCases) {
+                try { casesDatabase = JSON.parse(savedCases); } catch(e) {}
             }
 
             let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
@@ -444,7 +503,6 @@
                 player.username = tgUser?.username || tgUser?.first_name || `Player_${player.id.toString().slice(-4)}`;
             }
 
-            // Проверка сброса по ID
             let pendingReset = localStorage.getItem(`pending_reset_${player.id}`);
             if (pendingReset) {
                 player.score = 0;
@@ -453,7 +511,6 @@
                 alert("⚠️ Ваш аккаунт был полностью сброшен администратором.");
             }
 
-            // Проверка бонуса по ID
             let pendingBonus = localStorage.getItem(`pending_bonus_${player.id}`);
             if (pendingBonus) {
                 player.score += parseFloat(pendingBonus);
@@ -474,14 +531,15 @@
 
             renderInventory();
             updateUI();
+            initMinesGrid();
         }
 
         function saveGame() {
             localStorage.setItem('brainrot_full_save', JSON.stringify(player));
             localStorage.setItem('brainrot_promos_db', JSON.stringify(promoCodes));
+            localStorage.setItem('brainrot_cases_db', JSON.stringify(casesDatabase));
         }
 
-        /* ПОПОЛНЕНИЕ ЛЕНТЫ ТОЛЬКО РЕАЛЬНЫМИ ДРОПАМИ */
         function addLiveDrop(username, item) {
             let feed = el('live-feed');
             if (!feed) return;
@@ -520,6 +578,131 @@
             }
         }
 
+        /* ЛОГИКА МИНИ-ИГРЫ "МИНЫ" */
+        function initMinesGrid() {
+            let gridEl = el('mines-grid');
+            if (!gridEl) return;
+            gridEl.innerHTML = '';
+            for (let i = 0; i < 25; i++) {
+                let cell = document.createElement('div');
+                cell.className = 'mine-cell';
+                cell.innerText = '❓';
+                cell.onclick = () => clickMineCell(i);
+                gridEl.appendChild(cell);
+            }
+        }
+
+        function startMinesGame() {
+            let bet = parseFloat(el('mines-bet').value);
+            let minesCount = parseInt(el('mines-count').value);
+
+            if (isNaN(bet) || bet <= 0) {
+                alert("❌ Введи корректную ставку!");
+                return;
+            }
+            if (player.score < bet) {
+                alert("❌ Не хватает BC для ставки!");
+                return;
+            }
+            if (isNaN(minesCount) || minesCount < 1 || minesCount > 24) {
+                alert("❌ Количество мин должно быть от 1 до 24!");
+                return;
+            }
+
+            player.score -= bet;
+            player.score = Math.round(player.score * 100) / 100;
+            updateUI();
+            saveGame();
+
+            minesGame.active = true;
+            minesGame.bet = bet;
+            minesGame.minesCount = minesCount;
+            minesGame.multiplier = 1.00;
+            minesGame.safeClicks = 0;
+            
+            // Распределяем мины
+            minesGame.grid = new Array(25).fill(false);
+            let placed = 0;
+            while (placed < minesCount) {
+                let pos = Math.floor(Math.random() * 25);
+                if (!minesGame.grid[pos]) {
+                    minesGame.grid[pos] = true;
+                    placed++;
+                }
+            }
+
+            el('mines-game-box').style.display = 'flex';
+            el('mines-start-btn').style.display = 'none';
+            updateMinesUI();
+            initMinesGrid();
+        }
+
+        function clickMineCell(index) {
+            if (!minesGame.active) return;
+            let gridEl = el('mines-grid');
+            let cellEl = gridEl.children[index];
+
+            if (cellEl.classList.contains('revealed')) return;
+
+            if (minesGame.grid[index]) {
+                // Наступил на мину
+                cellEl.classList.add('revealed', 'mine');
+                cellEl.innerText = '💣';
+                endMinesGame(false);
+            } else {
+                // Безопасная ячейка
+                cellEl.classList.add('revealed', 'safe');
+                cellEl.innerText = '💎';
+                minesGame.safeClicks++;
+                
+                // Увеличение множителя
+                let factor = 1 + (minesGame.minesCount * 0.15);
+                minesGame.multiplier = Math.round((minesGame.multiplier * factor) * 100) / 100;
+                updateMinesUI();
+
+                // Если открыл все безопасные ячейки
+                if (minesGame.safeClicks >= (25 - minesGame.minesCount)) {
+                    cashoutMinesGame();
+                }
+            }
+        }
+
+        function updateMinesUI() {
+            el('mines-multiplier').innerText = minesGame.multiplier.toFixed(2) + 'x';
+            let currentWin = Math.round((minesGame.bet * minesGame.multiplier) * 100) / 100;
+            el('mines-win-amount').innerText = currentWin.toFixed(2);
+        }
+
+        function cashoutMinesGame() {
+            if (!minesGame.active) return;
+            let winAmount = Math.round((minesGame.bet * minesGame.multiplier) * 100) / 100;
+            player.score += winAmount;
+            player.score = Math.round(player.score * 100) / 100;
+            updateUI();
+            saveGame();
+
+            alert(`🎉 Поздравляем! Вы забрали выигрыш: +${winAmount} BC!`);
+            endMinesGame(true);
+        }
+
+        function endMinesGame(won) {
+            minesGame.active = false;
+            // Открываем все мины
+            let gridEl = el('mines-grid');
+            for (let i = 0; i < 25; i++) {
+                let cellEl = gridEl.children[i];
+                if (minesGame.grid[i] && !cellEl.classList.contains('revealed')) {
+                    cellEl.classList.add('revealed', 'mine');
+                    cellEl.innerText = '💣';
+                }
+            }
+            if (!won) {
+                alert("💥 Вы подорвались на мине! Ставка сгорела.");
+            }
+            el('mines-start-btn').style.display = 'block';
+        }
+
+        /* КЕЙСЫ И РУЛЕТКА */
         function openCaseDetails(caseKey) {
             activeCaseKey = caseKey;
             let caseData = casesDatabase[caseKey];
@@ -590,8 +773,6 @@
             for (let i = 0; i < count; i++) {
                 let wonItem = getRandomItem();
                 currentWonPrizes.push(wonItem);
-                
-                // Публикуем ТОЛЬКО реальный дроп игрока в LIVE-доску
                 addLiveDrop(player.username, wonItem);
             }
 
@@ -816,108 +997,37 @@
             el('reset-target-id').value = "";
         }
 
-        function claimDevBonus() {
-            let tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || player.id;
-            if (tgId === OWNER_TELEGRAM_ID) {
-                player.score += 1000;
-                player.score = Math.round(player.score * 100) / 100;
-                updateUI();
-                saveGame();
-                alert("👑 Бонус разработчика: +1000 BC успешно начислено!");
+        function adminSaveItemToCase() {
+            let caseKey = el('admin-target-case').value;
+            let itemName = el('admin-item-name').value.trim();
+            let itemIcon = el('admin-item-icon').value.trim();
+            let chance = parseFloat(el('admin-item-chance').value);
+            let sellPrice = parseFloat(el('admin-item-price').value);
+
+            if (!itemName || !itemIcon || isNaN(chance) || isNaN(sellPrice)) {
+                alert("❌ Заполни все поля корректно!");
+                return;
+            }
+
+            let targetCase = casesDatabase[caseKey];
+            if (!targetCase) return;
+
+            let existingItem = targetCase.items.find(i => i.name.toLowerCase() === itemName.toLowerCase());
+            if (existingItem) {
+                existingItem.icon = itemIcon;
+                existingItem.chance = chance;
+                existingItem.sellPrice = sellPrice;
+                alert(`✅ Предмет "${itemName}" успешно обновлен в кейсе "${targetCase.name}"!`);
             } else {
-                alert("❌ Доступ запрещен! Эта функция только для владельца бота.");
-            }
-        }
-
-        function activatePromo() {
-            let code = el('promo-input').value.trim();
-            if (!promoCodes[code]) {
-                alert("❌ Неверный или недействительный промокод!");
-                return;
-            }
-            let promo = promoCodes[code];
-            if (promo.usedBy.includes(player.id)) {
-                alert("⚠️ Вы уже активировали этот промокод ранее!");
-                return;
-            }
-            if (promo.usedBy.length >= promo.maxUses) {
-                alert("❌ У этого промокода закончились лимиты активаций!");
-                return;
+                targetCase.items.push({ name: itemName, icon: itemIcon, chance: chance, sellPrice: sellPrice });
+                alert(`✅ Новый предмет "${itemName}" успешно добавлен в кейс "${targetCase.name}"!`);
             }
 
-            player.score += promo.reward;
-            player.score = Math.round(player.score * 100) / 100;
-            promo.usedBy.push(player.id);
-
-            alert(`🎉 Успешно! Промокод активирован: +${promo.reward} BC!`);
-            el('promo-input').value = "";
-            updateUI();
             saveGame();
-        }
-
-        function createNewPromo() {
-            let codeName = el('new-code-name').value.trim();
-            let reward = parseInt(el('new-code-reward').value);
-            let limit = parseInt(el('new-code-limit').value);
-
-            if (!codeName || isNaN(reward) || isNaN(limit) || reward <= 0 || limit <= 0) {
-                alert("❌ Заполни все поля корректными значениями!");
-                return;
-            }
-            if (promoCodes[codeName]) {
-                alert("⚠️ Такой промокод уже существует!");
-                return;
+            if (activeCaseKey === caseKey) {
+                openCaseDetails(caseKey);
             }
 
-            promoCodes[codeName] = { reward: reward, maxUses: limit, usedBy: [] };
-            saveGame();
-            alert(`✅ Промокод "${codeName}" на ${reward} BC (лимит: ${limit} раз) успешно создан!`);
-            
-            el('new-code-name').value = "";
-            el('new-code-reward').value = "";
-            el('new-code-limit').value = "";
-        }
-
-        el('click-target').onclick = (e) => {
-            if(player.energy > 0) {
-                player.score += 0.01;
-                player.score = Math.round(player.score * 100) / 100;
-                player.energy -= 1;
-
-                let num = document.createElement('div');
-                num.className = 'floating-num';
-                num.innerHTML = `+0.01 <img src="${BC_IMG}" class="currency-inline">`;
-                
-                let rect = el('click-target').getBoundingClientRect();
-                num.style.left = `${e.clientX - rect.left}px`;
-                num.style.top = `${e.clientY - rect.top}px`;
-                el('click-target').appendChild(num);
-                setTimeout(() => num.remove(), 700);
-
-                updateUI();
-                saveGame();
-            }
-        };
-
-        setInterval(() => {
-            if(player.energy < maxEnergy) {
-                player.energy++;
-                updateUI();
-                saveGame();
-            }
-        }, 2000);
-
-        function updateUI() {
-            el('balance').innerText = player.score.toFixed(2);
-            el('coins').innerText = player.score.toFixed(2);
-            el('prof-balance').innerText = player.score.toFixed(2);
-            el('energy').innerText = player.energy;
-            el('energy-text').innerText = player.energy;
-            el('level').innerText = player.level;
-            el('energy-bar').style.width = `${(player.energy / maxEnergy) * 100}%`;
-        }
-
-        loadGame();
-    </script>
-</body>
-</html>
+            el('admin-item-name').value = "";
+            el('admin-item-icon').value = "";
+      
