@@ -7,7 +7,7 @@ TOKEN = os.environ.get('BOT_TOKEN')
 if not TOKEN:
     raise ValueError("ОШИБКА: Переменная BOT_TOKEN не найдена на Render!")
 
-WEB_APP_URL = os.environ.get('WEB_APP_URL', 'https://pbakitkan-hash.github.io/New-agme-3/?v=12')
+WEB_APP_URL = os.environ.get('WEB_APP_URL', 'https://pbakitkan-hash.github.io/New-agme-3/')
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TOKEN}"
 
 app = Flask(__name__)
