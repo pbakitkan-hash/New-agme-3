@@ -74,10 +74,11 @@
 
         .back-btn { background: #23283d; border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; align-self: flex-start; font-weight: bold; }
         .prizes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
-        .prize-card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; text-align: center; position: relative; }
+        .prize-card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+        .prize-img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; border-radius: 6px; }
         .prize-icon { font-size: 32px; margin-bottom: 5px; }
-        .prize-title { font-size: 13px; font-weight: bold; }
-        .prize-count-badge { position: absolute; top: 6px; right: 6px; background: #e74c3c; color: #fff; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 6px; }
+        .prize-title { font-size: 12px; font-weight: bold; word-break: break-word; }
+        .prize-count-badge { position: absolute; top: 6px; right: 6px; background: #e74c3c; color: #fff; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 6px; z-index: 2; }
         .prize-chance { font-size: 11px; color: #8b93b0; margin-top: 3px; }
 
         .input-field, .select-field {
@@ -117,6 +118,7 @@
             border-radius: 10px; margin: 0 6px; display: flex; flex-direction: column;
             align-items: center; justify-content: center; text-align: center; padding: 8px;
         }
+        .roulette-item-img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 4px; border-radius: 4px; }
         .roulette-item-icon { font-size: 36px; margin-bottom: 6px; }
         .roulette-item-title { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
         .roulette-results-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 15px; width: 100%; max-height: 250px; overflow-y: auto; }
@@ -157,8 +159,9 @@
         .modal-users-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 
         .mines-inventory-selector { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 8px; margin-bottom: 10px; }
-        .mines-sel-item { min-width: 70px; height: 75px; background: #0d0f18; border: 2px solid #2a2e43; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; text-align: center; padding: 4px; }
+        .mines-sel-item { min-width: 75px; height: 85px; background: #0d0f18; border: 2px solid #2a2e43; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; text-align: center; padding: 4px; }
         .mines-sel-item.selected { border-color: #f39c12; background: #1a1d29; }
+        .mines-sel-img { width: 36px; height: 36px; object-fit: contain; margin-bottom: 3px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -264,7 +267,7 @@
             </div>
         </div>
 
-        <!-- МИНЫ (ИГРА ЗА БРЕЙНРОТЫ) -->
+        <!-- МИНЫ -->
         <div id="view-mines" class="view">
             <h2>💣 Мины</h2>
             <div style="font-size:12px; color:#e74c3c; margin-bottom:8px; width:100%;">Выберите брейнрот из инвентаря для ставки в мины:</div>
@@ -367,11 +370,13 @@
             </div>
         </div>
 
-        <!-- МАГАЗИН (С ГАРАМОЙ И ИКОНКОЙ) -->
+        <!-- МАГАЗИН (С РЕАЛЬНОЙ ФОТОГРАФИЙ ГАРАМЫ СВЕРХУ И НАДПИСЬЮ СНИЗУ) -->
         <div id="view-shop" class="view">
             <h2>Магазин</h2>
             <div class="card" style="align-items: center;">
-                <div style="font-size: 36px; margin-right: 12px;">🗿</div>
+                <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
+                    <img src="https://i.ibb.co/12910.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" alt="Garama" onerror="this.src='https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png'">
+                </div>
                 <div style="flex:1;"><b>Garama and Madundung</b><br><small style="color:#f39c12">50 BC</small></div>
                 <button class="btn" onclick="buyGaramaItem()">Купить</button>
             </div>
@@ -464,12 +469,16 @@
         } catch(e) {}
     }
 
-    /* ПОКУПКА ГАРАМЫ В МАГАЗИНЕ */
+    /* ПОКУПКА ГАРАМЫ (КАРТИНКА СВЕРХУ, НАЗВАНИЕ СНИЗУ) */
     function buyGaramaItem() {
         let price = 50;
         if (player.score < price) return alert("Не хватает BC!");
         player.score = Math.round((player.score - price) * 100) / 100;
-        player.inventory.push({ name: "Garama and Madundung", icon: "🗿", sellPrice: 100 });
+        player.inventory.push({ 
+            name: "Garama and Madundung", 
+            img: "https://i.ibb.co/12910.jpg", 
+            sellPrice: 100 
+        });
         saveGame();
         updateUI();
         renderInventory();
@@ -477,7 +486,6 @@
         alert("🗿 Garama and Madundung успешно куплен и добавлен в инвентарь!");
     }
 
-    /* ВЫБОР ИГРОКА ИЗ СПИСКА */
     function openUsersModal() {
         let list = el('modal-users-list');
         list.innerHTML = '';
@@ -561,7 +569,8 @@
         let grid = el('prizes-grid');
         grid.innerHTML = '';
         c.items.forEach(i => {
-            grid.innerHTML += `<div class="prize-card"><div class="prize-icon">${i.icon}</div><div class="prize-title">${i.name}</div><div class="prize-chance">${i.chance}%</div><div style="font-size:10px; color:#f39c12;">+${i.sellPrice} BC</div></div>`;
+            let mediaHtml = i.img ? `<img src="${i.img}" class="prize-img">` : `<div class="prize-icon">${i.icon}</div>`;
+            grid.innerHTML += `<div class="prize-card">${mediaHtml}<div class="prize-title">${i.name}</div><div class="prize-chance">${i.chance}%</div><div style="font-size:10px; color:#f39c12;">+${i.sellPrice} BC</div></div>`;
         });
         resetCaseView();
         switchView('case-detail', null);
@@ -617,7 +626,8 @@
         let html = '';
         for (let i = 0; i < 30; i++) {
             let item = (i === 24) ? winningItem : getRandomItem();
-            html += `<div class="roulette-item"><div class="roulette-item-icon">${item.icon}</div><div class="roulette-item-title">${item.name}</div></div>`;
+            let mediaHtml = item.img ? `<img src="${item.img}" class="roulette-item-img">` : `<div class="roulette-item-icon">${item.icon}</div>`;
+            html += `<div class="roulette-item">${mediaHtml}<div class="roulette-item-title">${item.name}</div></div>`;
         }
         track.innerHTML = html;
         setTimeout(() => {
@@ -647,7 +657,8 @@
         });
 
         Object.values(grouped).forEach(g => {
-            resultsList.innerHTML += `<div class="prize-card" style="width: 110px;"><span class="prize-count-badge">×${g.count}</span><div class="prize-icon">${g.icon}</div><div class="prize-title">${g.name}</div>${isAutoSell ? `<div style="font-size:10px; color:#27ae60;">+${g.sellPrice * g.count} BC</div>` : ''}</div>`;
+            let mediaHtml = g.img ? `<img src="${g.img}" class="prize-img">` : `<div class="prize-icon">${g.icon}</div>`;
+            resultsList.innerHTML += `<div class="prize-card" style="width: 110px;"><span class="prize-count-badge">×${g.count}</span>${mediaHtml}<div class="prize-title">${g.name}</div>${isAutoSell ? `<div style="font-size:10px; color:#27ae60;">+${g.sellPrice * g.count} BC</div>` : ''}</div>`;
         });
 
         if (isAutoSell) {
@@ -677,7 +688,8 @@
         el('inventory-empty-msg').style.display = 'none';
 
         player.inventory.forEach((i, idx) => {
-            grid.innerHTML += `<div class="prize-card"><div class="prize-icon">${i.icon}</div><div class="prize-title">${i.name}</div><button class="btn" style="padding:4px; font-size:10px; margin-top:6px; width:100%;" onclick="sellInventoryItem(${idx})">Продать (+${i.sellPrice})</button></div>`;
+            let mediaHtml = i.img ? `<img src="${i.img}" class="prize-img">` : `<div class="prize-icon">${i.icon}</div>`;
+            grid.innerHTML += `<div class="prize-card">${mediaHtml}<div class="prize-title">${i.name}</div><button class="btn" style="padding:4px; font-size:10px; margin-top:6px; width:100%;" onclick="sellInventoryItem(${idx})">Продать (+${i.sellPrice})</button></div>`;
         });
     }
 
@@ -696,25 +708,25 @@
         if (!feed) return;
         let empty = el('no-drops-msg');
         if (empty) empty.remove();
-        feed.insertAdjacentHTML('afterbegin', `<div class="live-item"><span>${item.icon}</span> <b>${name}</b> <span style="color:#f39c12">${item.sellPrice} BC</span></div>`);
+        feed.insertAdjacentHTML('afterbegin', `<div class="live-item"><span>${item.icon || '🎁'}</span> <b>${name}</b> <span style="color:#f39c12">${item.sellPrice} BC</span></div>`);
     }
 
-    /* РЕНДЕР СЕЛЕКТОРА БРЕЙНРОТОВ ДЛЯ МИН */
     function renderMinesInventorySelector() {
         let container = el('mines-inventory-selector');
         if (!container) return;
         container.innerHTML = '';
         if (player.inventory.length === 0) {
-            container.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Инвентарь пуст. Купите в магазине или выбейте в кейсах!</div>';
+            container.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Инвентарь пуст. Купите брейнрот или выбейте в кейсах!</div>';
             selectedMinesItemIndex = null;
             return;
         }
 
         player.inventory.forEach((item, idx) => {
             let isSel = (selectedMinesItemIndex === idx) ? 'selected' : '';
+            let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon}</span>`;
             container.innerHTML += `
                 <div class="mines-sel-item ${isSel}" onclick="selectMinesItem(${idx})">
-                    <span style="font-size:24px;">${item.icon}</span>
+                    ${mediaHtml}
                     <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${item.name}</span>
                 </div>
             `;
@@ -739,14 +751,13 @@
         }
     }
 
-    /* СТАРТ МИН С ВЫБОРОМ БРЕЙНРОТА */
     function startMinesGame() {
         if (selectedMinesItemIndex === null || !player.inventory[selectedMinesItemIndex]) {
             return alert("🛑 Выберите брейнрот из инвентаря сверху для ставки!");
         }
 
         let count = parseInt(el('mines-count').value);
-        let stakedItem = player.inventory.splice(selectedMinesItemIndex, 1)[0]; // Забираем предмет в ставку
+        let stakedItem = player.inventory.splice(selectedMinesItemIndex, 1)[0];
         selectedMinesItemIndex = null;
 
         saveGame();
@@ -765,6 +776,7 @@
         initMinesGrid();
     }
 
+    /* ИМБОВЫЙ МНОЖИТЕЛЬ В МИНАХ С УЧЕТОМ КОЛИЧЕСТВА МИН */
     function clickMineCell(index) {
         if (!minesGame.active) return;
         let cell = el('mines-grid').children[index];
@@ -775,8 +787,9 @@
             endMinesGame(false);
         } else {
             cell.className = 'mine-cell revealed safe'; cell.innerText = '💎';
-            let step = 0.08 + (minesGame.minesCount * 0.03);
-            minesGame.multiplier = Math.round((minesGame.multiplier + step) * 100) / 100;
+            // Мощный множитель, зависящий от количества выбранных мин
+            let baseStep = 0.12 + (minesGame.minesCount * 0.15);
+            minesGame.multiplier = Math.round((minesGame.multiplier + baseStep) * 100) / 100;
             updateMinesUI();
         }
     }
@@ -870,7 +883,7 @@
         casesDatabase[caseKey].items.forEach((item, index) => {
             container.innerHTML += `
                 <div style="background:#0d0f18; padding:6px 10px; border-radius:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-                    <span>${item.icon} ${item.name} (${item.chance}%)</span>
+                    <span>${item.icon || '🖼️'} ${item.name} (${item.chance}%)</span>
                     <button class="btn" style="padding:2px 6px; font-size:10px; background:#c0392b;" onclick="adminRemoveItemFromCase('${caseKey}', ${index})">✕</button>
                 </div>
             `;
