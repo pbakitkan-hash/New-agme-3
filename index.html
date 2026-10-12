@@ -1,456 +1,1071 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>BRAINROT CASE</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
-:root{--bg:#101018;--panel:#1c1c2b;--purple:#a66cff;--gold:#ffd166;--green:#54e0a1;--muted:#aaaac0}
-*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(circle at top,#302047,#101018 65%);color:white;font-family:Arial,sans-serif}
-button,input,select{font:inherit}
-button{cursor:pointer;color:white;border:0}
-.app{max-width:520px;margin:auto;padding:15px 14px 90px}
-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:18px}
-.brand{font-weight:1000;font-size:20px;letter-spacing:1px}
-.brand span{color:var(--purple)}
-.small{font-size:11px;color:var(--muted)}
-.balance{color:var(--gold);font-weight:bold}
-.user{background:#ffffff10;padding:10px;border-radius:14px;font-size:12px}
-.hero{padding:22px;border-radius:22px;background:linear-gradient(135deg,#552b80,#292344);border:1px solid #8b62bd}
-.hero h1{font-size:29px;margin:8px 0}
-.hero p{font-size:13px;color:#e0d5ef;line-height:1.5}
-.primary{background:linear-gradient(90deg,#a66cff,#7847e8);padding:12px 16px;border-radius:12px;font-weight:bold}
-.secondary{background:#ffffff13;padding:10px 13px;border-radius:11px;border:1px solid #ffffff18}
-.full{width:100%}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:13px}
-.stat,.panel{background:var(--panel);border:1px solid #343449;border-radius:15px;padding:13px}
-.stat b{display:block;font-size:19px}.stat span{font-size:10px;color:var(--muted)}
-.heading{display:flex;justify-content:space-between;align-items:center;margin:22px 2px 12px}
-.heading h2{font-size:17px;margin:0}
-.heading span{font-size:11px;color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.case{background:linear-gradient(150deg,#26263b,#191923);border:1px solid #39394f;border-radius:17px;padding:12px;text-align:center}
-.case-art{height:100px;border-radius:13px;background:radial-gradient(circle,#59417e,#222035);display:grid;place-items:center;font-size:53px;margin-bottom:10px}
-.case h3{font-size:14px;margin:7px 0}
-.case p{font-size:11px;color:var(--muted)}
-.case button{background:#ffffff12;padding:10px;border-radius:10px;width:100%;font-size:12px;font-weight:bold}
-.view{display:none}.view.active{display:block}
-.clicker{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center}
-.coin{width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#fff0a5,#f5ad35 55%,#a85b18);box-shadow:inset 0 0 0 8px #ffdf7b,0 7px 22px #0006;font-size:53px;animation:float 1.8s infinite;margin:auto}
-@keyframes float{50%{transform:translateY(-4px)}}
-.bar{height:8px;background:#39394b;border-radius:9px;overflow:hidden;margin:9px 0}
-.bar div{height:100%;background:var(--green);width:100%}
-.nav{position:fixed;bottom:0;left:0;right:0;background:#11111bf5;border-top:1px solid #333348;display:flex;justify-content:center;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:10}
-.nav-inner{width:100%;max-width:520px;display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
-.nav button{background:transparent;color:var(--muted);font-size:10px;padding:7px 1px;border-radius:10px}
-.nav button.active{background:#a66cff25;color:white}
-.nav button span{display:block;font-size:20px;margin-bottom:3px}
-.row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #353548}
-.row:last-child{border-bottom:0}
-.item-icon{width:44px;height:44px;border-radius:12px;background:#ffffff10;display:grid;place-items:center;font-size:25px}
-.item-info{flex:1;min-width:0}.item-info b{display:block;font-size:13px}.item-info small{color:var(--muted);font-size:11px}
-.sell{background:#54e0a122;color:var(--green);padding:9px;border-radius:9px;font-size:11px;font-weight:bold}
-.field{display:block;width:100%;padding:11px;background:#101019;color:white;border:1px solid #39394f;border-radius:10px;margin:8px 0 12px}
-.notice{font-size:12px;color:#ffe3a0;line-height:1.5;background:#ffd16612;padding:10px;border-radius:10px}
-.modal-bg{display:none;position:fixed;inset:0;background:#000b;z-index:30;align-items:flex-end;justify-content:center;padding:10px}
-.modal-bg.show{display:flex}
-.modal{background:#1c1c2b;border:1px solid #49415f;border-radius:20px;padding:17px;width:100%;max-width:500px;max-height:85vh;overflow:auto}
-.modal h2{margin-top:0}
-.reward{text-align:center;font-size:58px;padding:16px}
-.toast{display:none;position:fixed;top:15px;left:5%;width:90%;z-index:50;text-align:center;padding:13px;background:#29283a;border:1px solid #6b518c;border-radius:12px}
-.toast.show{display:block}
-.empty{text-align:center;color:var(--muted);padding:25px 5px;font-size:13px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Brainrot Case</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body {
+            background-color: #0d0f18;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center;
+            height: 100vh; overflow: hidden;
+        }
+        .app-wrapper {
+            width: 100%; max-width: 480px; height: 100%;
+            background: #0d0f18; display: flex; flex-direction: column;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8); position: relative;
+        }
+
+        /* LIVE ДОСКА ДРОПОВ */
+        .live-bar {
+            background: #141722; border-bottom: 1px solid #23283d;
+            padding: 6px 12px; display: flex; align-items: center; gap: 8px;
+            font-size: 12px; overflow-x: auto; white-space: nowrap; scroll-behavior: smooth;
+        }
+        .live-tag { background: #e74c3c; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; flex-shrink: 0; }
+        .live-feed { display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; min-height: 24px; }
+        .live-feed::-webkit-scrollbar { display: none; }
+        .live-item { display: inline-flex; align-items: center; background: #1a1d29; border: 1px solid #2a2e43; padding: 3px 8px; border-radius: 6px; gap: 6px; font-size: 11px; flex-shrink: 0; }
+
+        /* ШАПКА */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; background: #141722; border-bottom: 1px solid #23283d;
+        }
+        .header-left { font-weight: bold; font-size: 18px; letter-spacing: 0.5px; color: #fff; }
+        
+        .header-right { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .balance-badge {
+            background: #1a1d29; border: 1px solid #2a2e43; padding: 5px 10px; border-radius: 20px;
+            color: #f39c12; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 5px;
+        }
+        .bc-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; background: #f39c12; color: #0d0f18;
+            border-radius: 50%; font-size: 11px; font-weight: 900; line-height: 1;
+        }
+        .profile-avatar-btn {
+            width: 36px; height: 36px; background: #23283d; border: 2px solid #f39c12; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-weight: bold; color: #f39c12; font-size: 14px;
+        }
+        
+        /* КОНТЕНТ */
+        .content { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; align-items: center; }
+        .view { display: none; width: 100%; flex-direction: column; align-items: center; }
+        .view.active { display: flex; }
+
+        /* ВЫПАДАЮЩЕЕ МЕНЮ */
+        .drawer {
+            position: absolute; top: 0; right: -100%; width: 280px; height: 100%;
+            background: #141722; border-left: 1px solid #23283d; z-index: 1000;
+            transition: right 0.3s ease; display: flex; flex-direction: column; padding: 20px; overflow-y: auto;
+        }
+        .drawer.open { right: 0; }
+        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 18px; font-weight: bold; }
+        .menu-close-btn { background: #23283d; border: none; color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+        
+        .drawer-item {
+            background: #1a1d29; border: 1px solid #2a2e43; color: #fff; font-size: 15px; text-align: left;
+            padding: 12px 14px; border-radius: 10px; cursor: pointer; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .drawer-item.active { border-color: #f39c12; color: #f39c12; font-weight: bold; }
+        .badge-new { background: #e74c3c; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+            z-index: 900; display: none;
+        }
+        .overlay.show { display: block; }
+
+        /* ФЕРМА */
+        .farm-stats { display: flex; justify-content: space-around; width: 100%; background: #1a1d29; border-radius: 14px; padding: 14px; margin-bottom: 20px; border: 1px solid #2a2e43; }
+        .farm-stat-item { text-align: center; font-size: 13px; color: #8b93b0; }
+        .farm-stat-value { font-size: 16px; font-weight: bold; color: #fff; margin-top: 4px; }
+        
+        .energy-box { width: 100%; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 12px; padding: 14px; margin-bottom: 25px; }
+        .energy-info { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #8b93b0; }
+        .energy-bar-bg { width: 100%; height: 12px; background: #0d0f18; border-radius: 6px; overflow: hidden; }
+        .energy-bar-fill { height: 100%; width: 100%; background: #f39c12; transition: width 0.2s; }
+
+        .character-container { position: relative; margin: 15px 0; cursor: pointer; text-align: center; }
+        .character-img { width: 160px; height: 160px; object-fit: contain; display: inline-block; filter: drop-shadow(0 0 15px rgba(243,156,18,0.3)); }
+        .char-name { font-size: 22px; font-weight: bold; font-style: italic; margin-top: 10px; color: #f39c12; }
+        
+        .floating-num {
+            position: absolute; font-size: 26px; font-weight: bold; color: #f39c12;
+            pointer-events: none; animation: floatUp 0.7s ease-out forwards; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            display: flex; align-items: center; gap: 4px;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
+        }
+
+        /* МИНЫ */
+        .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; margin-top: 10px; }
+        .mine-cell {
+            aspect-ratio: 1; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer;
+        }
+        .mine-cell.revealed { background: #141722; cursor: default; }
+        .mine-cell.mine { background: #c0392b !important; }
+        .mine-cell.safe { background: #27ae60 !important; }
+
+        /* КАРТОЧКИ И КЕЙСЫ */
+        .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 16px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+        .btn { background: #f39c12; border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        h2 { margin-top: 0; font-size: 22px; width: 100%; text-align: left; }
+
+        .back-btn { background: #23283d; border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; align-self: flex-start; font-weight: bold; }
+        .prizes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
+        .prize-card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; text-align: center; position: relative; }
+        .prize-icon { font-size: 32px; margin-bottom: 5px; }
+        .prize-title { font-size: 13px; font-weight: bold; }
+        .prize-count-badge { position: absolute; top: 6px; right: 6px; background: #e74c3c; color: #fff; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 6px; }
+        .prize-chance { font-size: 11px; color: #8b93b0; margin-top: 3px; }
+
+        .input-field {
+            width: 100%; padding: 12px; background: #0d0f18; border: 1px solid #2a2e43;
+            border-radius: 10px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none;
+        }
+        .select-field {
+            width: 100%; padding: 12px; background: #0d0f18; border: 1px solid #2a2e43;
+            border-radius: 10px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none;
+        }
+        .admin-panel { display: none; width: 100%; background: #141722; border: 1px dashed #f39c12; border-radius: 14px; padding: 14px; margin-top: 15px; }
+        .admin-panel.show { display: block; }
+
+        .admin-user-row { background: #0d0f18; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 13px; }
+
+        .case-buttons-group { display: flex; gap: 6px; width: 100%; margin-bottom: 15px; }
+        .case-buttons-group .btn { flex: 1; padding: 10px 4px; font-size: 13px; text-align: center; }
+        .plus-btn { background: #27ae60 !important; font-size: 20px !important; padding: 0 14px !important; }
+
+        .autosell-toggle-box {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 10px;
+            padding: 10px 14px; margin-bottom: 15px; font-size: 14px; font-weight: bold;
+        }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #23283d; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #f39c12; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .roulette-container { display: none; width: 100%; flex-direction: column; align-items: center; margin-top: 10px; }
+        .roulette-container.show { display: flex; }
+        .roulette-window {
+            width: 100%; height: 130px; background: #141722; border: 2px solid #f39c12;
+            border-radius: 14px; position: relative; overflow: hidden; display: flex; align-items: center;
+        }
+        .roulette-pointer {
+            position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: #e74c3c;
+            transform: translateX(-50%); z-index: 10;
+        }
+        .roulette-track { display: flex; position: absolute; left: 0; transition: transform 4s cubic-bezier(0.15, 0.85, 0.25, 1); }
+        .roulette-item {
+            min-width: 100px; height: 110px; background: #1a1d29; border: 1px solid #2a2e43;
+            border-radius: 10px; margin: 0 6px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; padding: 8px;
+        }
+        .roulette-item-icon { font-size: 36px; margin-bottom: 6px; }
+        .roulette-item-title { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+        .roulette-results-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 15px; width: 100%; max-height: 250px; overflow-y: auto; }
+    </style>
 </head>
 <body>
-<div class="app">
-<header>
-  <div class="brand">BRAINROT <span>CASE</span><div class="small">ОТКРЫВАЙ · СОБИРАЙ · КЛИКАЙ</div></div>
-  <div class="user"><div id="username">Player</div><div class="balance">🪙 <span id="balance">0</span> BC</div></div>
-</header>
 
-<main>
-<section class="view active" id="view-home">
-  <div class="hero">
-    <div class="small">ТВОЯ КОЛЛЕКЦИЯ НАЧИНАЕТСЯ ЗДЕСЬ</div>
-    <h1>Открой свой первый кейс 🎁</h1>
-    <p>Собирай brainrot-предметы, зарабатывай BC и пополняй инвентарь!</p>
-    <button class="primary" onclick="switchView('cases')">Открыть кейсы →</button>
-  </div>
-  <div class="stats">
-    <div class="stat"><b id="level">1</b><span>УРОВЕНЬ</span></div>
-    <div class="stat"><b id="clicks">0</b><span>КЛИКИ</span></div>
-    <div class="stat"><b id="itemCount">0</b><span>ПРЕДМЕТЫ</span></div>
-  </div>
-  <div class="heading"><h2>🎁 Популярные кейсы</h2><span onclick="switchView('cases')">Все →</span></div>
-  <div class="grid" id="homeCases"></div>
-  <div class="heading"><h2>⚡ Быстрый заработок</h2><span>+1 BC за тап</span></div>
-  <div class="panel clicker">
-    <div><b>Brainrot Clicker</b><p class="small">Нажимай на монету и получай BC.</p><div class="small">Энергия: <b id="energyText">100/100</b></div><div class="bar"><div id="energyBar"></div></div></div>
-    <button class="coin" onclick="clickCoin()">🪙</button>
-  </div>
-</section>
+<div class="app-wrapper">
 
-<section class="view" id="view-cases">
-  <div class="heading"><h2>🎁 Все кейсы</h2><span>Выбирай</span></div>
-  <div class="grid" id="allCases"></div>
-  <div class="panel" style="margin-top:13px"><b>Как играть?</b><p class="small">Выбирай кейс, смотри возможные предметы и открывай его. Полученные предметы можно продавать за BC.</p></div>
-</section>
-
-<section class="view" id="view-clicker">
-  <div class="heading"><h2>⚡ Кликер</h2><span>Фарм BC</span></div>
-  <div class="panel" style="text-align:center;padding:22px">
-    <div class="small">ТВОЙ БАЛАНС</div>
-    <h1 style="color:var(--gold)">🪙 <span id="clickBalance">0</span> BC</h1>
-    <button class="coin" onclick="clickCoin()">🪙</button>
-    <div class="bar"><div id="energyBar2"></div></div>
-    <div class="small" id="energyText2">Энергия: 100/100</div>
-    <p class="small">Каждый клик даёт 1 BC и расходует 1 энергию. Энергия восстанавливается автоматически.</p>
-    <button class="secondary" onclick="dailyBonus()">🎁 Ежедневный бонус +100 BC</button>
-  </div>
-</section>
-
-<section class="view" id="view-inventory">
-  <div class="heading"><h2>🎒 Инвентарь</h2><span id="inventoryCount">0 предметов</span></div>
-  <div class="panel" id="inventory"></div>
-  <button class="secondary full" style="margin-top:10px" onclick="sellAll()">Продать все предметы</button>
-</section>
-
-<section class="view" id="view-profile">
-  <div class="heading"><h2>👤 Профиль</h2></div>
-  <div class="panel" style="text-align:center;padding:22px">
-    <div style="font-size:55px">🧑‍💻</div>
-    <h2 id="profileName">Player</h2>
-    <div class="small" id="telegramId">Telegram ID: не определён</div>
-    <h1 style="color:var(--gold)">🪙 <span id="profileBalance">0</span> BC</h1>
-    <p>Уровень: <b id="profileLevel">1</b></p>
-    <p>Всего кликов: <b id="profileClicks">0</b></p>
-    <p>Предметов: <b id="profileItems">0</b></p>
-    <button class="secondary full" onclick="dailyBonus()">Забрать ежедневный бонус</button>
-  </div>
-  <div id="adminArea" style="display:none">
-    <div class="heading"><h2>🛠️ Панель владельца</h2></div>
-    <div class="panel">
-      <div class="notice">Демо-панель. Для настоящей защиты баланса нужна серверная проверка.</div>
-      <button class="primary full" style="margin-top:10px" onclick="switchView('admin')">Открыть админ-панель</button>
-      <button class="secondary full" style="margin-top:8px" onclick="devBonus()">Получить +1000 BC</button>
+    <!-- LIVE ДОСКА ДРОПОВ -->
+    <div class="live-bar">
+        <span class="live-tag">LIVE</span>
+        <div class="live-feed" id="live-feed">
+            <span id="no-drops-msg" style="color: #8b93b0; font-size: 11px;">Ожидание первых дропов...</span>
+        </div>
     </div>
-  </div>
-  <div class="panel" style="margin-top:12px"><button class="secondary full" onclick="resetGame()">Сбросить прогресс</button><p class="small">Прогресс хранится в браузере на этом устройстве.</p></div>
-</section>
 
-<section class="view" id="view-admin">
-  <div class="heading"><h2>🛠️ Админ-панель</h2></div>
-  <div class="panel">
-    <div class="notice">Доступ только для указанного Telegram ID. Это проверка на стороне браузера, а не полноценная защита.</div>
-    <label class="small">Кейс</label><select id="adminCase" class="field"></select>
-    <label class="small">Название предмета</label><input id="adminName" class="field" placeholder="Например, Tralalero">
-    <label class="small">Эмодзи предмета</label><input id="adminIcon" class="field" placeholder="🦈">
-    <label class="small">Шанс выпадения (%)</label><input id="adminChance" class="field" type="number" min="0.1" max="100" step="0.1" placeholder="10">
-    <label class="small">Цена продажи (BC)</label><input id="adminPrice" class="field" type="number" min="0" placeholder="50">
-    <button class="primary full" onclick="addItem()">Добавить предмет</button>
-  </div>
-</section>
-</main>
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <!-- ВЫПАДАЮЩЕЕ МЕНЮ -->
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <span>МЕНЮ</span>
+            <button class="menu-close-btn" onclick="toggleMenu()">✕</button>
+        </div>
+        <button class="drawer-item active" onclick="switchView('cases', this)">🎁 Кейсы <span class="badge-new">ТОП</span></button>
+        <button class="drawer-item" onclick="switchView('profile', this)">👤 Профиль</button>
+        <button class="drawer-item" onclick="switchView('farm', this)">🌿 Ферма (Нубини)</button>
+        <button class="drawer-item" onclick="switchView('mines', this)">💣 Мины</button>
+        <button class="drawer-item" onclick="switchView('shop', this)">🛒 Магазин</button>
+    </div>
+
+    <!-- ШАПКА -->
+    <div class="header">
+        <div class="header-left">BRAINROT CASE</div>
+        <div class="header-right" onclick="toggleMenu()">
+            <div class="balance-badge">
+                <span class="bc-icon">BC</span> 
+                <span id="balance">0.00</span>
+            </div>
+            <div class="profile-avatar-btn" id="header-avatar">P</div>
+        </div>
+    </div>
+
+    <!-- КОНТЕНТ -->
+    <div class="content">
+
+        <!-- КЕЙСЫ -->
+        <div id="view-cases" class="view active">
+            <h2>Доступные кейсы</h2>
+            <div class="card" onclick="openCaseDetails('linear')" style="cursor: pointer;">
+                <div><b>Линейный кейс</b><br><small style="color:#8b93b0" id="linear-case-sub">4 предмета • 59 BC</small></div>
+                <button class="btn" onclick="event.stopPropagation(); openCaseDetails('linear')">Смотреть</button>
+            </div>
+            <div class="card" onclick="openCaseDetails('all_or_nothing')" style="cursor: pointer; border-color: #e74c3c;">
+                <div><b>Всё или ничего</b> 🔥<br><small style="color:#e74c3c" id="all-case-sub">2 предмета • 100 BC</small></div>
+                <button class="btn" style="background: #e74c3c;" onclick="event.stopPropagation(); openCaseDetails('all_or_nothing')">Смотреть</button>
+            </div>
+        </div>
+
+        <!-- ДЕТАЛИ КЕЙСА -->
+        <div id="view-case-detail" class="view">
+            <button class="back-btn" onclick="switchView('cases', null)" id="back-to-cases-btn">← Назад</button>
+            <h2 id="detail-case-title">Кейс</h2>
+            
+            <div id="case-main-box" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                <div style="font-size: 60px; margin: 10px 0;" id="case-box-icon">📦</div>
+                
+                <div class="autosell-toggle-box">
+                    <span>⚡ Авто-продажа выпавшего</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autosell-checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="case-buttons-group">
+                    <button class="btn" onclick="openCases(1)">х1<br><span style="font-size:10px;" id="price-x1">59 BC</span></button>
+                    <button class="btn" onclick="openCases(3)" style="background: #9b59b6;">х3<br><span style="font-size:10px;" id="price-x3">177 BC</span></button>
+                    <button class="btn" onclick="openCases(5)" style="background: #e67e22;">х5<br><span style="font-size:10px;" id="price-x5">295 BC</span></button>
+                    <button class="btn plus-btn" onclick="openCustomAmountCases()">+</button>
+                </div>
+            </div>
+
+            <div class="roulette-container" id="roulette-container">
+                <div class="roulette-window">
+                    <div class="roulette-pointer"></div>
+                    <div class="roulette-track" id="roulette-track"></div>
+                </div>
+                <button class="btn" style="margin-top: 15px; background: #e74c3c; width: 100%;" onclick="skipRouletteAnimation()">⏭ Пропустить</button>
+            </div>
+
+            <div id="roulette-results-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
+                <h3 style="color: #f39c12; margin: 5px 0;" id="results-title">🎉 Вы выиграли:</h3>
+                <div class="roulette-results-list" id="won-prizes-list"></div>
+                <button class="btn" style="width: 100%; margin-top: 15px;" onclick="resetCaseView()">Забрать призы</button>
+            </div>
+
+            <div id="case-prizes-info" style="width: 100%;">
+                <div style="width: 100%; text-align: left; font-weight: bold; font-size: 16px; margin-top: 5px;">Возможные призы:</div>
+                <div class="prizes-grid" id="prizes-grid"></div>
+            </div>
+        </div>
+
+        <!-- МИНЫ -->
+        <div id="view-mines" class="view">
+            <h2>💣 Мины</h2>
+            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Валюта:</span>
+                    <select id="mines-currency" class="select-field" style="width: 120px; margin-bottom: 0;">
+                        <option value="bc">Баланс (BC)</option>
+                        <option value="coins">Монеты (Ферма)</option>
+                    </select>
+                </div>
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Ставка:</span>
+                    <input type="number" id="mines-bet" class="input-field" value="10" style="width: 120px; margin-bottom: 0;">
+                </div>
+                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Мины (1-24):</span>
+                    <input type="number" id="mines-count" class="input-field" value="3" min="1" max="24" style="width: 120px; margin-bottom: 0;">
+                </div>
+                <button class="btn" style="width: 100%; background: #27ae60;" id="mines-start-btn" onclick="startMinesGame()">🎲 Начать игру</button>
+            </div>
+
+            <div id="mines-game-box" style="display: none; width: 100%; flex-direction: column; align-items: center;">
+                <div style="font-size: 15px; margin-bottom: 10px; font-weight: bold;">Множитель: <span id="mines-multiplier" style="color: #f39c12;">1.00x</span> | Выигрыш: <span id="mines-win-amount" style="color: #27ae60;">0.00</span></div>
+                <div class="mines-grid" id="mines-grid"></div>
+                <button class="btn" style="width: 100%; margin-top: 15px; background: #e74c3c;" onclick="cashoutMinesGame()">💰 Забрать выигрыш</button>
+            </div>
+        </div>
+
+        <!-- ПРОФИЛЬ -->
+        <div id="view-profile" class="view">
+            <h2>Профиль игрока</h2>
+            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 15px;">
+                <div id="user-tg-name">👤 <b>@Player</b></div>
+                <div>🆔 ID: <span id="user-tg-id">123456789</span></div>
+                <div>💰 Баланс: <span id="prof-balance">0.00</span> BC</div>
+                <button class="btn" style="width:100%;" onclick="claimDevBonus()">👑 Кнопка владельца (+1000 BC)</button>
+            </div>
+
+            <h2>🎒 Инвентарь</h2>
+            <div class="card" style="flex-direction: column; margin-bottom: 15px; width: 100%;">
+                <div id="inventory-empty-msg" style="color:#8b93b0; text-align:center; padding: 10px; display:none; font-size: 14px;">
+                    Инвентарь пуст!
+                </div>
+                <div class="prizes-grid" id="inventory-grid" style="width: 100%; max-height: 260px; overflow-y: auto;"></div>
+            </div>
+
+            <h2>Промокод</h2>
+            <div class="card" style="flex-direction: column;">
+                <input type="text" id="promo-input" class="input-field" placeholder="Введи промокод...">
+                <button class="btn" style="width: 100%;" onclick="activatePromo()">Активировать</button>
+            </div>
+
+            <!-- АДМИН-ПАНЕЛЬ -->
+            <div class="admin-panel" id="admin-promo-panel">
+                <h3 style="margin-top:0; color:#f39c12; font-size:16px;">⚙️ Панель Владельца</h3>
+                
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">👥 Список зашедших игроков:</div>
+                <div id="admin-users-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">💳 Начисление / Списание баланса (по ID):</div>
+                <input type="number" id="grant-user-id" class="input-field" placeholder="ID игрока">
+                <input type="number" id="grant-amount" class="input-field" placeholder="Сумма BC (минус для списания)">
+                <button class="btn" style="width: 100%; background: #2980b9; margin-bottom: 15px;" onclick="grantBalanceToUser()">Изменить баланс BC</button>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">🎁 Выдать брейнрота игроку:</div>
+                <input type="number" id="give-item-user-id" class="input-field" placeholder="ID игрока">
+                <input type="text" id="give-item-name" class="input-field" placeholder="Название предмета (напр. Golden Raccoon)">
+                <input type="text" id="give-item-icon" class="input-field" placeholder="Иконка (напр. 👑)">
+                <input type="number" id="give-item-price" class="input-field" placeholder="Цена продажи (BC)">
+                <button class="btn" style="width: 100%; background: #e67e22; margin-bottom: 15px;" onclick="adminGiveItemToUser()">Выдать брейнрота</button>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">🔄 Обнуление аккаунта игрока:</div>
+                <input type="number" id="reset-user-id" class="input-field" placeholder="ID игрока для сброса">
+                <button class="btn" style="width: 100%; background: #c0392b; margin-bottom: 15px;" onclick="adminResetUserAccount()">Обнулить игрока</button>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">🎫 Создание промокода:</div>
+                <input type="text" id="admin-promo-code" class="input-field" placeholder="Слово промокода (напр. BONUS)">
+                <input type="number" id="admin-promo-reward" class="input-field" placeholder="Сумма награды (BC)">
+                <button class="btn" style="width: 100%; background: #8e44ad; margin-bottom: 15px;" onclick="adminCreatePromo()">Создать промокод</button>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">📦 Добавить предмет в кейс:</div>
+                <select id="admin-case-select" class="select-field">
+                    <option value="linear">Линейный кейс</option>
+                    <option value="all_or_nothing">Всё или ничего</option>
+                </select>
+                <input type="text" id="admin-item-name" class="input-field" placeholder="Название предмета">
+                <input type="text" id="admin-item-icon" class="input-field" placeholder="Иконка (эмодзи)">
+                <input type="number" id="admin-item-chance" class="input-field" placeholder="Шанс выпадания (%)">
+                <input type="number" id="admin-item-price" class="input-field" placeholder="Цена продажи (BC)">
+                <button class="btn" style="width: 100%; background: #27ae60;" onclick="adminAddItemToCase()">Добавить предмет в кейс</button>
+            </div>
+        </div>
+
+        <!-- ФЕРМА -->
+        <div id="view-farm" class="view">
+            <div class="farm-stats">
+                <div class="farm-stat-item">Уровень<div class="farm-stat-value" id="level">11</div></div>
+                <div class="farm-stat-item">Баланс<div class="farm-stat-value" id="coins">0.00</div></div>
+                <div class="farm-stat-item">Энергия<div class="farm-stat-value"><span id="energy">100</span>/100</div></div>
+            </div>
+
+            <div class="energy-box">
+                <div class="energy-info"><span>Энергия</span><span><span id="energy-text">100</span>/100</span></div>
+                <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-bar"></div></div>
+            </div>
+
+            <div class="character-container" id="click-target">
+                <img src="https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png" class="character-img" alt="Noobini">
+                <div class="char-name">Noobini Pizzanini</div>
+                <div style="color: #8b93b0; font-size: 14px; margin-top: 5px;">Тапай, чтобы фармить!</div>
+            </div>
+        </div>
+
+        <!-- МАГАЗИН -->
+        <div id="view-shop" class="view">
+            <h2>Магазин питомцев</h2>
+            <div class="card">
+                <div><b>Garama and Madundung</b><br><small style="color:#f39c12">50 BC</small></div>
+                <button class="btn" onclick="alert('Куплено!')">Купить</button>
+            </div>
+        </div>
+
+    </div>
 </div>
-
-<nav class="nav"><div class="nav-inner">
-<button class="active" data-view="home" onclick="switchView('home')"><span>🏠</span>Главная</button>
-<button data-view="cases" onclick="switchView('cases')"><span>🎁</span>Кейсы</button>
-<button data-view="clicker" onclick="switchView('clicker')"><span>⚡</span>Кликер</button>
-<button data-view="inventory" onclick="switchView('inventory')"><span>🎒</span>Инвентарь</button>
-<button data-view="profile" onclick="switchView('profile')"><span>👤</span>Профиль</button>
-</div></nav>
-
-<div class="modal-bg" id="caseModal" onclick="if(event.target===this)closeModal()">
-  <div class="modal">
-    <h2 id="modalTitle">Кейс</h2>
-    <div class="reward" id="reward">🎁</div>
-    <p class="small" id="modalDescription"></p>
-    <div id="modalItems"></div>
-    <button class="primary full" id="openButton" onclick="openCase()">Открыть кейс</button>
-    <button class="secondary full" style="margin-top:8px" onclick="closeModal()">Закрыть</button>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
 
 <script>
-'use strict';
+    const OWNER_TELEGRAM_ID = 6638127989;
 
-const OWNER_TELEGRAM_ID = 6638127989;
-const STORAGE_KEY = 'brainrot_case_save_v2';
-const MAX_ENERGY = 100;
+    let player = {
+        id: 123456789,
+        username: "Player",
+        score: 0,
+        energy: 100,
+        level: 11,
+        inventory: []
+    };
+    
+    let promoCodes = {
+        "Uuu": { reward: 100, maxUses: 50, usedBy: [] },
+        "ADMIN1000": { reward: 1000, maxUses: 9999, usedBy: [] }
+    };
 
-const casesDatabase = {
-  starter:{name:'Стартовый',icon:'📦',price:0,items:[
-    {name:'Noobini Pizzanini',icon:'🍕',chance:45,sellPrice:5},
-    {name:'Trippi Troppi',icon:'🦐',chance:30,sellPrice:8},
-    {name:'Brr Brr Patapim',icon:'🌳',chance:18,sellPrice:15},
-    {name:'Tralalero Tralala',icon:'🦈',chance:7,sellPrice:40}
-  ]},
-  meme:{name:'Мемный',icon:'😂',price:50,items:[
-    {name:'Cappuccino Assassino',icon:'☕',chance:45,sellPrice:20},
-    {name:'Bombardiro Crocodilo',icon:'🐊',chance:30,sellPrice:40},
-    {name:'Chimpanzini Bananini',icon:'🍌',chance:18,sellPrice:75},
-    {name:'Tung Tung Tung Sahur',icon:'🪵',chance:7,sellPrice:160}
-  ]},
-  rare:{name:'Редкий',icon:'💎',price:150,items:[
-    {name:'Lirili Larila',icon:'🐘',chance:45,sellPrice:55},
-    {name:'Ballerina Cappuccina',icon:'🩰',chance:30,sellPrice:100},
-    {name:'Tralalita Tralala',icon:'🦈',chance:18,sellPrice:220},
-    {name:'Odin Din Din Dun',icon:'⚡',chance:7,sellPrice:500}
-  ]},
-  legendary:{name:'Легендарный',icon:'👑',price:400,items:[
-    {name:'Frigo Camelo',icon:'🐪',chance:45,sellPrice:150},
-    {name:'La Vaca Saturno Saturnita',icon:'🐄',chance:30,sellPrice:300},
-    {name:'Los Tralaleritos',icon:'🦈',chance:18,sellPrice:650},
-    {name:'Graipuss Medussi',icon:'🐙',chance:7,sellPrice:1500}
-  ]}
-};
+    let allPlayersList = [];
+    let maxEnergy = 100;
+    let activeCaseKey = 'linear';
+    let currentCasePrice = 59;
+    let currentWonPrizes = [];
+    let rouletteTimeout = null;
 
-let player={
-  id:null,username:'Player',score:0,energy:MAX_ENERGY,level:1,
-  clicks:0,inventory:[],lastEnergyAt:Date.now(),lastDaily:'',
-  openedCases:{}
-};
-let selectedCase='starter';
-let toastTimer;
+    let minesGame = {
+        active: false,
+        bet: 10,
+        currency: 'bc',
+        minesCount: 3,
+        multiplier: 1.00,
+        safeClicks: 0,
+        grid: []
+    };
 
-function $(id){return document.getElementById(id)}
-function safeName(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function number(n){return Math.floor(Number(n)||0).toLocaleString('ru-RU')}
-function today(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+    let casesDatabase = {
+        'linear': {
+            name: 'Линейный кейс',
+            price: 59,
+            icon: '📦',
+            items: [
+                { name: "Noobini Pizzanini", icon: "🍕", chance: 50, sellPrice: 20 },
+                { name: "Noobini Santanini", icon: "🎅", chance: 30, sellPrice: 45 },
+                { name: "Skibidi Bot",       icon: "🤖", chance: 15, sellPrice: 120 },
+                { name: "Golden Raccoon",   icon: "👑", chance: 5,  sellPrice: 400 }
+            ]
+        },
+        'all_or_nothing': {
+            name: 'Всё или ничего',
+            price: 100,
+            icon: '🔥',
+            items: [
+                { name: "Noobini Pizzanini", icon: "🍕", chance: 99.99, sellPrice: 5 },
+                { name: "Strawberry Elephant", icon: "🐘", chance: 0.01, sellPrice: 50000 }
+            ]
+        }
+    };
 
-function toast(message){
-  const t=$('toast');t.textContent=message;t.classList.add('show');
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2300);
-}
+    const el = (id) => document.getElementById(id);
 
-function loadGame(){
-  let tgUser=null;
-  try{tgUser=window.Telegram?.WebApp?.initDataUnsafe?.user||null}catch(e){}
-  if(tgUser){
-    player.id=Number(tgUser.id);
-    player.username=tgUser.username?'@'+tgUser.username:([tgUser.first_name,tgUser.last_name].filter(Boolean).join(' ')||'Player');
-  }
-  try{
-    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-    if(saved){
-      const currentId=player.id;
-      player={...player,...saved};
-      if(currentId)player.id=currentId;
-      if(tgUser)player.username=tgUser.username?'@'+tgUser.username:([tgUser.first_name,tgUser.last_name].filter(Boolean).join(' ')||'Player');
+    function loadGame() {
+        try {
+            let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+            if (tgUser && tgUser.id) {
+                player.id = tgUser.id;
+                player.username = tgUser.username || tgUser.first_name || "Player";
+            }
+
+            let savedCases = localStorage.getItem('brainrot_custom_cases');
+            if (savedCases) casesDatabase = JSON.parse(savedCases);
+
+            let savedPromos = localStorage.getItem('brainrot_custom_promos');
+            if (savedPromos) promoCodes = JSON.parse(savedPromos);
+
+            let savedAllPlayers = localStorage.getItem('brainrot_all_players');
+            if (savedAllPlayers) allPlayersList = JSON.parse(savedAllPlayers);
+
+            let savedData = localStorage.getItem('brainrot_save_' + player.id);
+            if (!savedData) {
+                savedData = localStorage.getItem('brainrot_save');
+            }
+            if (savedData) {
+                let parsed = JSON.parse(savedData);
+                player.score = parsed.score ?? 0;
+                player.energy = parsed.energy ?? 100;
+                player.level = parsed.level ?? 11;
+                player.inventory = parsed.inventory || [];
+            }
+
+            let existingIdx = allPlayersList.findIndex(p => p.id === player.id);
+            if (existingIdx >= 0) {
+                allPlayersList[existingIdx].username = player.username;
+                allPlayersList[existingIdx].score = player.score;
+            } else {
+                allPlayersList.push({ id: player.id, username: player.username, score: player.score });
+            }
+
+            el('user-tg-name').innerHTML = `👤 <b>@${player.username}</b>`;
+            el('user-tg-id').innerText = player.id;
+            el('header-avatar').innerText = player.username.charAt(0).toUpperCase();
+
+            if (player.id === OWNER_TELEGRAM_ID) {
+                let adminPanel = el('admin-promo-panel');
+                if (adminPanel) adminPanel.classList.add('show');
+                renderAdminUsersList();
+            }
+        } catch(e) {
+            console.error("Load error:", e);
+        }
+
+        updateCaseSubtexts();
+        renderInventory();
+        updateUI();
+        initMinesGrid();
     }
-  }catch(e){console.warn('Ошибка загрузки сохранения',e)}
-  if(!player.id)player.id=123456789;
-  player.score=Math.max(0,Number(player.score)||0);
-  player.energy=Math.max(0,Math.min(MAX_ENERGY,Number(player.energy)||0));
-  player.clicks=Number(player.clicks)||0;
-  player.inventory=Array.isArray(player.inventory)?player.inventory:[];
-  player.lastEnergyAt=Number(player.lastEnergyAt)||Date.now();
-  regenerateEnergy();
-  saveGame();
-}
 
-function saveGame(){
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(player))}
-  catch(e){console.warn('Сохранение недоступно',e)}
-}
+    function saveGame() {
+        try {
+            localStorage.setItem('brainrot_save_' + player.id, JSON.stringify(player));
+            
+            let existingIdx = allPlayersList.findIndex(p => p.id === player.id);
+            if (existingIdx >= 0) {
+                allPlayersList[existingIdx].score = player.score;
+                allPlayersList[existingIdx].username = player.username;
+            }
+            localStorage.setItem('brainrot_all_players', JSON.stringify(allPlayersList));
+            localStorage.setItem('brainrot_custom_cases', JSON.stringify(casesDatabase));
+            localStorage.setItem('brainrot_custom_promos', JSON.stringify(promoCodes));
 
-function regenerateEnergy(){
-  const now=Date.now();
-  const last=Number(player.lastEnergyAt)||now;
-  const gained=Math.floor((now-last)/30000);
-  if(gained>0){
-    player.energy=Math.min(MAX_ENERGY,player.energy+gained);
-    player.lastEnergyAt=last+gained*30000;
-  }
-}
-
-function updateLevel(){
-  player.level=1+Math.floor(player.score/500)+Math.floor(player.inventory.length/5);
-}
-
-function updateUI(){
-  regenerateEnergy();updateLevel();
-  $('username').textContent=player.username||'Player';
-  $('balance').textContent=number(player.score);
-  $('level').textContent=player.level;
-  $('clicks').textContent=number(player.clicks);
-  $('itemCount').textContent=player.inventory.length;
-  $('clickBalance').textContent=number(player.score);
-  $('energyText').textContent=player.energy+'/'+MAX_ENERGY;
-  $('energyText2').textContent='Энергия: '+player.energy+'/'+MAX_ENERGY;
-  $('energyBar').style.width=(player.energy/MAX_ENERGY*100)+'%';
-  $('energyBar2').style.width=(player.energy/MAX_ENERGY*100)+'%';
-  $('profileName').textContent=player.username||'Player';
-  $('telegramId').textContent='Telegram ID: '+(player.id||'не определён');
-  $('profileBalance').textContent=number(player.score);
-  $('profileLevel').textContent=player.level;
-  $('profileClicks').textContent=number(player.clicks);
-  $('profileItems').textContent=player.inventory.length;
-  $('adminArea').style.display=Number(player.id)===OWNER_TELEGRAM_ID?'block':'none';
-  renderInventory();
-}
-
-function caseCard(key){
-  const c=casesDatabase[key];
-  return `<div class="case"><div class="case-art">${c.icon}</div><h3>${safeName(c.name)}</h3><p>${c.items.length} предмета</p><button onclick="showCase('${key}')">${c.price===0?'Бесплатно':'🪙 '+c.price+' BC'} →</button></div>`;
-}
-
-function renderCases(){
-  $('homeCases').innerHTML=Object.keys(casesDatabase).slice(0,2).map(caseCard).join('');
-  $('allCases').innerHTML=Object.keys(casesDatabase).map(caseCard).join('');
-  $('adminCase').innerHTML=Object.keys(casesDatabase).map(k=>`<option value="${k}">${safeName(casesDatabase[k].name)}</option>`).join('');
-}
-
-function switchView(name){
-  if(name==='admin'&&Number(player.id)!==OWNER_TELEGRAM_ID){
-    toast('Нет доступа к админ-панели');return;
-  }
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  const view=$('view-'+name);
-  if(view)view.classList.add('active');
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
-  updateUI();
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-function showCase(key){
-  const c=casesDatabase[key];if(!c)return;
-  selectedCase=key;
-  $('modalTitle').textContent=c.icon+' '+c.name;
-  $('reward').textContent=c.icon;
-  $('modalDescription').textContent='Цена: '+c.price+' BC. Выбери предмет и испытай удачу!';
-  $('modalItems').innerHTML=c.items.map(i=>`
-    <div class="row">
-      <div class="item-icon">${i.icon}</div>
-      <div class="item-info"><b>${safeName(i.name)}</b><small>Шанс: ${i.chance}% · Продажа: ${i.sellPrice} BC</small></div>
-    </div>`).join('');
-  $('openButton').textContent=c.price===0?'Открыть бесплатно':'Открыть за '+c.price+' BC';
-  $('openButton').onclick=openCase;
-  $('caseModal').classList.add('show');
-}
-
-function closeModal(){$('caseModal').classList.remove('show')}
-
-function openCase(){
-  const c=casesDatabase[selectedCase];if(!c)return;
-  if(player.score<c.price){toast('Не хватает BC! Поиграй в кликер.');return}
-  player.score-=c.price;
-  const roll=Math.random()*100;
-  let sum=0,item=c.items[c.items.length-1];
-  for(const candidate of c.items){
-    sum+=candidate.chance;
-    if(roll<sum){item=candidate;break}
-  }
-  player.inventory.push({...item,caseName:c.name,uid:Date.now()+Math.random()});
-  player.openedCases[selectedCase]=(player.openedCases[selectedCase]||0)+1;
-  $('reward').textContent=item.icon;
-  $('modalDescription').textContent='🎉 Выпал предмет: '+item.name+'! Цена продажи: '+item.sellPrice+' BC.';
-  $('modalItems').innerHTML='';
-  $('openButton').textContent='Открыть ещё раз';
-  updateUI();saveGame();toast('Предмет получен!');
-}
-
-function clickCoin(){
-  regenerateEnergy();
-  if(player.energy<1){toast('Энергия закончилась. Подожди восстановления!');return}
-  player.energy--;
-  player.score++;
-  player.clicks++;
-  updateUI();saveGame();
-}
-
-function renderInventory(){
-  const box=$('inventory');
-  $('inventoryCount').textContent=player.inventory.length+' предметов';
-  if(!player.inventory.length){
-    box.innerHTML='<div class="empty">🎒 Инвентарь пуст.<br>Открой кейс, чтобы получить предмет!</div>';
-    return;
-  }
-  box.innerHTML=player.inventory.map((item,index)=>`
-    <div class="row">
-      <div class="item-icon">${item.icon||'🎁'}</div>
-      <div class="item-info"><b>${safeName(item.name)}</b><small>${safeName(item.caseName||'Предмет')} · ${Number(item.sellPrice)||0} BC</small></div>
-      <button class="sell" onclick="sellItem(${index})">Продать</button>
-    </div>`).join('');
-}
-
-function sellItem(index){
-  const item=player.inventory[index];if(!item)return;
-  player.score+=Math.max(0,Number(item.sellPrice)||0);
-  player.inventory.splice(index,1);
-  updateUI();saveGame();toast('Предмет продан!');
-}
-
-function sellAll(){
-  if(!player.inventory.length){toast('Инвентарь пуст');return}
-  const total=player.inventory.reduce((s,i)=>s+Math.max(0,Number(i.sellPrice)||0),0);
-  if(!confirm('Продать все предметы за '+total+' BC?'))return;
-  player.score+=total;player.inventory=[];
-  updateUI();saveGame();toast('Получено '+total+' BC');
-}
-
-function dailyBonus(){
-  if(player.lastDaily===today()){toast('Бонус уже получен сегодня');return}
-  player.lastDaily=today();player.score+=100;
-  updateUI();saveGame();toast('Ежедневный бонус: +100 BC 🎁');
-}
-
-function devBonus(){
-  if(Number(player.id)!==OWNER_TELEGRAM_ID){toast('Нет доступа');return}
-  player.score+=1000;updateUI();saveGame();toast('+1000 BC');
-}
-
-function addItem(){
-  if(Number(player.id)!==OWNER_TELEGRAM_ID){toast('Нет доступа');return}
-  const key=$('adminCase').value;
-  const name=$('adminName').value.trim();
-  const icon=$('adminIcon').value.trim()||'🎁';
-  const chance=Number($('adminChance').value);
-  const price=Number($('adminPrice').value);
-  const c=casesDatabase[key];
-  if(!c||!name||!Number.isFinite(chance)||chance<=0||chance>100||
-     $('adminChance').value===''||$('adminPrice').value===''||
-     !Number.isFinite(price)||price<0){
-    toast('Проверь название, шанс и цену');return;
-  }
-  const total=c.items.reduce((s,i)=>s+Number(i.chance||0),0);
-  if(total+chance>100.0001){toast('Сумма шансов превысит 100%');return}
-  c.items.push({name,icon,chance,sellPrice:price});
-  renderCases();saveGame();
-  $('adminName').value='';$('adminIcon').value='';
-  $('adminChance').value='';$('adminPrice').value='';
-  toast('Предмет добавлен!');
-}
-
-function resetGame(){
-  if(!confirm('Точно сбросить весь прогресс?'))return;
-  const id=player.id,username=player.username;
-  player={id,username,score:0,energy:MAX_ENERGY,level:1,clicks:0,inventory:[],lastEnergyAt:Date.now(),lastDaily:'',openedCases:{}};
-  saveGame();updateUI();toast('Прогресс сброшен');
-}
-
-function initGame(){
-  try{
-    if(window.Telegram&&window.Telegram.WebApp){
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
+            if (player.id === OWNER_TELEGRAM_ID) {
+                renderAdminUsersList();
+            }
+        } catch(e) {}
     }
-  }catch(e){console.log(e)}
-  loadGame();
-  renderCases();
-  updateUI();
-  setInterval(()=>{
-    const before=player.energy;
-    regenerateEnergy();
-    if(player.energy!==before){updateUI();saveGame()}
-  },5000);
 
-initGame();
-</script>
-</body>
-</html>
+    function renderAdminUsersList() {
+        let listEl = el('admin-users-list');
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        if (allPlayersList.length === 0) {
+            listEl.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Пока никто не заходил.</div>';
+            return;
+        }
+
+        allPlayersList.forEach(u => {
+            listEl.innerHTML += `
+                <div class="admin-user-row">
+                    <div><b>@${u.username}</b> (ID: ${u.id})</div>
+                    <div style="color: #f39c12; margin: 4px 0;">Баланс: ${u.score.toFixed(2)} BC</div>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn" style="padding:4px 8px; font-size:11px; background:#2980b9;" onclick="quickAdminAddBalance(${u.id}, 100)">+100 BC</button>
+                        <button class="btn" style="padding:4px 8px; font-size:11px; background:#c0392b;" onclick="quickAdminAddBalance(${u.id}, -100)">-100 BC</button>
+                        <button class="btn" style="padding:4px 8px; font-size:11px; background:#e67e22;" onclick="quickAdminSelectUser(${u.id})">Выбрать</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function quickAdminSelectUser(id) {
+        el('grant-user-id').value = id;
+        el('give-item-user-id').value = id;
+        el('reset-user-id').value = id;
+        alert(`Выбран игрок с ID: ${id}`);
+    }
+
+    function quickAdminAddBalance(id, amount) {
+        if (id === player.id) {
+            player.score += amount;
+            if (player.score < 0) player.score = 0;
+            updateUI();
+            saveGame();
+            alert(`Баланс игрока изменен на ${amount} BC!`);
+        } else {
+            let target = allPlayersList.find(p => p.id === id);
+            if (target) {
+                target.score += amount;
+                if (target.score < 0) target.score = 0;
+                saveGame();
+                renderAdminUsersList();
+                alert(`Баланс игрока @${target.username} изменен!`);
+            }
+        }
+    }
+
+    function updateCaseSubtexts() {
+        if(casesDatabase['linear']) {
+            el('linear-case-sub').innerText = `${casesDatabase['linear'].items.length} предметов • ${casesDatabase['linear'].price} BC`;
+        }
+        if(casesDatabase['all_or_nothing']) {
+            el('all-case-sub').innerText = `${casesDatabase['all_or_nothing'].items.length} предметов • ${casesDatabase['all_or_nothing'].price} BC`;
+        }
+    }
+
+    function toggleMenu() {
+        let drawer = el('drawer');
+        let overlay = el('overlay');
+        if (drawer && overlay) {
+            drawer.classList.toggle('open');
+            overlay.classList.toggle('show');
+        }
+    }
+
+    function switchView(viewName, btn) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        if (btn && btn.classList.contains('drawer-item')) {
+            document.querySelectorAll('.drawer-item').forEach(i => i.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        let targetView = el('view-' + viewName);
+        if (targetView) targetView.classList.add('active');
+        if (viewName === 'profile') renderInventory();
+        
+        let drawer = el('drawer');
+        let overlay = el('overlay');
+        if (drawer) drawer.classList.remove('open');
+        if (overlay) overlay.classList.remove('show');
+    }
+
+    function updateUI() {
+        if(el('balance')) el('balance').innerText = player.score.toFixed(2);
+        if(el('coins')) el('coins').innerText = player.score.toFixed(2);
+        if(el('prof-balance')) el('prof-balance').innerText = player.score.toFixed(2);
+        if(el('energy')) el('energy').innerText = player.energy;
+        if(el('energy-text')) el('energy-text').innerText = player.energy;
+        if(el('level')) el('level').innerText = player.level;
+        if(el('energy-bar')) el('energy-bar').style.width = `${(player.energy / maxEnergy) * 100}%`;
+    }
+
+    let clickTarget = el('click-target');
+    if(clickTarget) {
+        clickTarget.onclick = (e) => {
+            if (player.energy > 0) {
+                player.score += 0.01;
+                player.score = Math.round(player.score * 100) / 100;
+                player.energy -= 1;
+
+                let num = document.createElement('div');
+                num.className = 'floating-num';
+                num.innerHTML = `+0.01 <span class="bc-icon" style="width:16px;height:16px;font-size:9px;">BC</span>`;
+                
+                let rect = clickTarget.getBoundingClientRect();
+                num.style.left = `${e.clientX - rect.left}px`;
+                num.style.top = `${e.clientY - rect.top}px`;
+                clickTarget.appendChild(num);
+                setTimeout(() => num.remove(), 700);
+
+                updateUI();
+                saveGame();
+            }
+        };
+    }
+
+    setInterval(() => {
+        if (player.energy < maxEnergy) {
+            player.energy++;
+            updateUI();
+            saveGame();
+        }
+    }, 2000);
+
+    function openCaseDetails(caseKey) {
+        activeCaseKey = caseKey;
+        let caseData = casesDatabase[caseKey];
+        currentCasePrice = caseData.price;
+        
+        el('detail-case-title').innerText = `Кейс: ${caseData.name}`;
+        el('case-box-icon').innerText = caseData.icon;
+        el('price-x1').innerText = `${caseData.price} BC`;
+        el('price-x3').innerText = `${caseData.price * 3} BC`;
+        el('price-x5').innerText = `${caseData.price * 5} BC`;
+        
+        let grid = el('prizes-grid');
+        grid.innerHTML = '';
+        caseData.items.forEach(item => {
+            grid.innerHTML += `
+                <div class="prize-card">
+                    <div class="prize-icon">${item.icon}</div>
+                    <div class="prize-title">${item.name}</div>
+                    <div class="prize-chance">${item.chance}%</div>
+                    <div style="font-size: 10px; color: #f39c12;">+${item.sellPrice} BC</div>
+                </div>
+            `;
+        });
+        resetCaseView();
+        switchView('case-detail', null);
+    }
+
+    function getRandomItem() {
+        let caseData = casesDatabase[activeCaseKey];
+        let rand = Math.random() * 100;
+        let current = 0;
+        for (let item of caseData.items) {
+            current += item.chance;
+            if (rand <= current) return item;
+        }
+        return caseData.items[0];
+    }
+
+    function openCustomAmountCases() {
+        let amount = prompt("Сколько открыть? (до 999)", "10");
+        if (amount === null) return;
+        amount = parseInt(amount);
+        if (isNaN(amount) || amount <= 0) return alert("Неверно!");
+        if (amount > 999) amount = 999;
+        openCases(amount);
+    }
+
+    function openCases(count) {
+        let totalCost = currentCasePrice * count;
+        if (player.score < totalCost) return alert('Не хватает BC!');
+
+        player.score -= totalCost;
+        player.score = Math.round(player.score * 100) / 100;
+        updateUI();
+        saveGame();
+
+        currentWonPrizes = [];
+        for (let i = 0; i < count; i++) {
+            let wonItem = getRandomItem();
+            currentWonPrizes.push(wonItem);
+            addLiveDrop(player.username, wonItem);
+        }
+
+        el('case-main-box').style.display = 'none';
+        el('case-prizes-info').style.display = 'none';
+        el('back-to-cases-btn').style.display = 'none';
+
+        if (count > 5) {
+            showWonResults();
+        } else {
+            el('roulette-container').classList.add('show');
+            buildRouletteTrack(currentWonPrizes[0]);
+        }
+    }
+
+    function buildRouletteTrack(winningItem) {
+        let track = el('roulette-track');
+        track.style.transition = 'none';
+        track.style.transform = 'translateX(0px)';
+        track.innerHTML = '';
+
+        let html = '';
+        for (let i = 0; i < 40; i++) {
+            let item = (i === 32) ? winningItem : getRandomItem();
+            html += `<div class="roulette-item"><div class="roulette-item-icon">${item.icon}</div><div class="roulette-item-title">${item.name}</div></div>`;
+        }
+        track.innerHTML = html;
+
+        setTimeout(() => {
+            track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
+            track.style.transform = `translateX(-${(32 * 112) - (el('roulette-container').clientWidth / 2) + 56}px)`;
+        }, 50);
+
+        rouletteTimeout = setTimeout(() => showWonResults(), 4100);
+    }
+
+    function skipRouletteAnimation() {
+        if (rouletteTimeout) clearTimeout(rouletteTimeout);
+        showWonResults();
+    }
+
+    function showWonResults() {
+        el('roulette-container').classList.remove('show');
+        let resultsList = el('won-prizes-list');
+        resultsList.innerHTML = '';
+
+        let isAutoSell = el('autosell-checkbox').checked;
+        let totalSold = 0;
+        let grouped = {};
+
+        currentWonPrizes.forEach(prize => {
+            if (!grouped[prize.name]) grouped[prize.name] = { ...prize, count: 0 };
+            grouped[prize.name].count++;
+            if (isAutoSell) totalSold += prize.sellPrice;
+            else player.inventory.push(prize);
+        });
+
+        Object.values(grouped).forEach(g => {
+            resultsList.innerHTML += `
+                <div class="prize-card" style="width: 110px;">
+                    <span class="prize-count-badge">×${g.count}</span>
+                    <div class="prize-icon">${g.icon}</div>
+                    <div class="prize-title">${g.name}</div>
+                    ${isAutoSell ? `<div style="font-size:10px; color:#27ae60;">+${g.sellPrice * g.count} BC</div>` : ''}
+                </div>
+            `;
+        });
+
+        if (isAutoSell) {
+            player.score += totalSold;
+            player.score = Math.round(player.score * 100) / 100;
+            el('results-title').innerHTML = `⚡ Авто-продано на <span style="color:#27ae60">+${totalSold} BC</span>:`;
+        } else {
+            el('results-title').innerHTML = `🎉 Вы выиграли:`;
+        }
+
+        saveGame();
+        renderInventory();
+        updateUI();
+        el('roulette-results-view').style.display = 'flex';
+    }
+
+    function resetCaseView() {
+        if (rouletteTimeout) clearTimeout(rouletteTimeout);
+        el('roulette-results-view').style.display = 'none';
+        el('roulette-container').classList.remove('show');
+        el('case-main-box').style.display = 'flex';
+        el('case-prizes-info').style.display = 'block';
+        el('back-to-cases-btn').style.display = 'block';
+    }
+
+    function renderInventory() {
+        let grid = el('inventory-grid');
+        if(!grid) return;
+        grid.innerHTML = '';
+        if (player.inventory.length === 0) {
+            el('inventory-empty-msg').style.display = 'block';
+            return;
+        }
+        el('inventory-empty-msg').style.display = 'none';
+
+        let grouped = {};
+        player.inventory.forEach(item => {
+            if (!grouped[item.name]) grouped[item.name] = { ...item, count: 0 };
+            grouped[item.name].count++;
+        });
+
+        Object.values(grouped).forEach(g => {
+            grid.innerHTML += `
+                <div class="prize-card">
+                    <span class="prize-count-badge">×${g.count}</span>
+                    <div class="prize-icon">${g.icon}</div>
+                    <div class="prize-title">${g.name}</div>
+                    <button class="btn" style="padding:4px 2px; font-size:10px; margin-top:6px; width:100%;" onclick="sellAllGroup('${g.name}')">Продать все (+${g.sellPrice * g.count})</button>
+                </div>
+            `;
+        });
+    }
+
+    function sellAllGroup(name) {
+        let gain = player.inventory.filter(i => i.name === name).reduce((sum, i) => sum + i.sellPrice, 0);
+        player.score += gain;
+        player.score = Math.round(player.score * 100) / 100;
+        player.inventory = player.inventory.filter(i => i.name !== name);
+        saveGame();
+        renderInventory();
+        updateUI();
+    }
+
+    function addLiveDrop(name, item) {
+        let feed = el('live-feed');
+        if (!feed) return;
+        let empty = el('no-drops-msg');
+        if (empty) empty.remove();
+        feed.insertAdjacentHTML('afterbegin', `<div class="live-item"><span>${item.icon}</span> <b>${name}</b> <span style="color:#f39c12">${item.sellPrice} BC</span></div>`);
+    }
+
+    function initMinesGrid() {
+        let grid = el('mines-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        for (let i = 0; i < 25; i++) {
+            let cell = document.createElement('div');
+            cell.className = 'mine-cell';
+            cell.innerText = '❓';
+            cell.onclick = () => clickMineCell(i);
+            grid.appendChild(cell);
+        }
+    }
+
+    function startMinesGame() {
+        let bet = parseFloat(el('mines-bet').value);
+        let count = parseInt(el('mines-count').value);
+        let currency = el('mines-currency').value;
+
+        if (isNaN(bet) || bet <= 0) return alert("Неверная ставка!");
+        
+        if (player.score < bet) return alert("Не хватает баланса!");
+        player.score -= bet;
+
+        updateUI();
+        saveGame();
+
+        minesGame = { active: true, bet, currency, minesCount: count, multiplier: 1.00, safeClicks: 0, grid: new Array(25).fill(false) };
+        let placed = 0;
+        while (placed < count) {
+            let pos = Math.floor(Math.random() * 25);
+            if (!minesGame.grid[pos]) { minesGame.grid[pos] = true; placed++; }
+        }
+
+        el('mines-game-box').style.display = 'flex';
+        el('mines-start-btn').style.display = 'none';
+        updateMinesUI();
+        initMinesGrid();
+    }
+
+    function clickMineCell(index) {
+        if (!minesGame.active) return;
+        let cell = el('mines-grid').children[index];
+        if (cell.classList.contains('revealed')) return;
+
+        if (minesGame.grid[index]) {
+            cell.className = 'mine-cell revealed mine';
+            cell.innerText = '💣';
+            endMinesGame(false);
+        } else {
+            cell.className = 'mine-cell revealed safe';
+            cell.innerText = '💎';
+            minesGame.safeClicks++;
+            
+            let stepGrowth = 0.05 + (minesGame.minesCount * 0.015);
+            minesGame.multiplier = Math.round((minesGame.multiplier + stepGrowth) * 100) / 100;
+            
+            updateMinesUI();
+        }
+    }
+
+    function updateMinesUI() {
+        el('mines-multiplier').innerText = minesGame.multiplier.toFixed(2) + 'x';
+        el('mines-win-amount').innerText = (minesGame.bet * minesGame.multiplier).toFixed(2);
+    }
+
+    function cashoutMinesGame() {
+        if (!minesGame.active) return;
+        let win = Math.round((minesGame.bet * minesGame.multiplier) * 100) / 100;
+        player.score += win;
+        updateUI();
+        saveGame();
+        alert(`Выигрыш: +${win}!`);
+        endMinesGame(true);
+    }
+
+    function endMinesGame(won) {
+        minesGame.active = false;
+        let grid = el('mines-grid');
+        for (let i = 0; i < 25; i++) {
+            if (minesGame.grid[i]) {
+                grid.children[i].className = 'mine-cell revealed mine';
+                grid.children[i].innerText = '💣';
+            }
+        }
+        if (!won) alert("Мина! Ставка сгорела.");
+        el('mines-start-btn').style.display = 'block';
+    }
+
+    function claimDevBonus() {
+        player.score += 1000;
+        updateUI();
+        saveGame();
+        alert("+1000 BC получено!");
+    }
+
+    function activatePromo() {
+        let code = el('promo-input').value.trim();
+        if (promoCodes[code] && !promoCodes[code].usedBy.includes(player.id)) {
+            player.score += promoCodes[code].reward;
+            promoCodes[code].usedBy.push(player.id);
+            updateUI();
+            saveGame();
+            alert(`Активировано! +${promoCodes[code].reward} BC`);
+        } else {
+            alert("Неверный промокод или уже использован!");
+        }
+    }
+
+    function grantBalanceToUser() {
+        let targetId = parseInt(el('grant-user-id').value);
+        let amt = parseFloat(el('grant-amount').value);
+        if (isNaN(targetId) || isNaN(amt)) return alert("Заполните поля ID и суммы!");
+
+        if (targetId === player.id) {
+            player.score += amt;
+            if (player.score < 0) player.score = 0;
+            updateUI();
+            saveGame();
+            alert(`Баланс изменен на ${amt} BC!`);
+        } else {
+            let target = allPlayersList.find(p => p.id === targetId);
+            if (target) {
+                target.score += amt;
+                if (target.score < 0) target.score = 0;
+                saveGame();
+                renderAdminUsersList();
+                alert(`Баланс игрока @${target.username} изменен на ${amt} BC!`);
+            } else {
+                alert("Игрок с таким ID не найден в памяти устройства.");
+            }
+        }
+    }
+
+    function adminGiveItemToUser() {
+        let targetId = parseInt(el('give-item-user-id').value);
+        let itemName = el('give-item-name').value.trim();
+        let itemIcon = el('give-item-icon').value.trim() || "🎁";
+        let sellPrice = parseFloat(el('give-item-price').value);
+
+        if (isNaN(targetId) || !itemName || isNaN(sellPrice)) {
+            return alert("Заполните все поля для выдачи предмета!");
+        }
+
+        let newItem = { name: itemName, icon: itemIcon, sellPrice: sellPrice };
+
+        if (targetId === player.id) {
+            player.inventory.push(newItem);
+            saveGame();
+            renderInventory();
+            alert(`Предмет "${itemName}" выдан вам в инвентарь!`);
+        } else {
+            alert(`Предмет подготовлен для ID ${targetId}.`);
+        }
+
+        el('give-item-name').value = "";
+        el('give-item-icon').value = "";
+        el('give-item-price').value = "";
+    }
+
+    function adminResetUserAccount() {
+        let targetId = parseInt(el('reset-user-id').value);
+        if (isNaN(targetId)) return alert("Введите ID игрока!");
+        
+        if (player.id === targetId) {
+            player.score = 0;
+            player.inventory = [];
+            updateUI();
+            saveGame();
+            alert(`Аккаунт ${targetId} полностью сброшен!`);
+        } else {
+            localStorage.removeItem('brainrot_save_' + targetId);
+            allPlayersList = allPlayersList.filter(p => p.id !== targetId);
+            saveGame();
+            renderAdminUsersList();
+            alert(`Данные игрока ${targetId} очищены!`);
+        }
+    }
+
+    function adminCreatePromo() {
+        let code = el('admin-promo-code').value.trim();
+        let reward = parseFloat(el('admin-promo-reward').value);
+        if (!code || isNaN(reward) || reward <= 0) return alert("Заполните данные промокода!");
+        
+        promoCodes[code] = { reward: reward, maxUses: 999, usedBy: [] };
+        saveGame();
+        el('admin-promo-code').value = "";
+        el('admin-promo-reward').value = "";
+        alert(`🎫 Промокод "${code}" на ${reward} BC успешно создан!`);
+    }
+
+    function adminAddItemToCase() {
+        let caseKey = el('admin-case-select').value;
+        let itemName = el('admin-item-name').value.trim();
+        let itemIcon = el('admin-item-icon').value.trim() || "🎁";
+        let chance = parseFloat(el('admin-item-chance').value);
+        let sellPrice = parseFloat(el('admin-item-price').value);
+
+        if (!itemName || isNaN(chance) || isNaN(sellPrice)) {
+            return alert("Заполните все поля правильно!");
+        }
+
+        casesDatabase[caseKey].items.push({
+            name: itemName,
+            icon: itemIcon,
+            chance: chance,
+            sellPrice: sellPrice
+  
