@@ -155,6 +155,10 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: bold; font-size: 16px; color: #f39c12; }
         .modal-close { background: #23283d; border: none; color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
         .modal-users-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+
+        .mines-inventory-selector { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 8px; margin-bottom: 10px; }
+        .mines-sel-item { min-width: 70px; height: 75px; background: #0d0f18; border: 2px solid #2a2e43; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; text-align: center; padding: 4px; }
+        .mines-sel-item.selected { border-color: #f39c12; background: #1a1d29; }
     </style>
 </head>
 <body>
@@ -260,15 +264,16 @@
             </div>
         </div>
 
-        <!-- МИНЫ -->
+        <!-- МИНЫ (ИГРА ЗА БРЕЙНРОТЫ) -->
         <div id="view-mines" class="view">
             <h2>💣 Мины</h2>
-            <div style="font-size:12px; color:#e74c3c; margin-bottom:10px; width:100%;">⚠️ Доступно только при наличии брейнротов в инвентаре!</div>
+            <div style="font-size:12px; color:#e74c3c; margin-bottom:8px; width:100%;">Выберите брейнрот из инвентаря для ставки в мины:</div>
+            
+            <div class="mines-inventory-selector" id="mines-inventory-selector">
+                <div style="color:#8b93b0; font-size:12px;">Инвентарь пуст</div>
+            </div>
+
             <div class="card" style="flex-direction: column; align-items: flex-start; gap: 10px;">
-                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
-                    <span>Ставка:</span>
-                    <input type="number" id="mines-bet" class="input-field" value="10" style="width: 120px; margin-bottom: 0;">
-                </div>
                 <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
                     <span>Мины (1-24):</span>
                     <input type="number" id="mines-count" class="input-field" value="5" min="1" max="24" style="width: 120px; margin-bottom: 0;">
@@ -277,9 +282,9 @@
             </div>
 
             <div id="mines-game-box" style="display: none; width: 100%; flex-direction: column; align-items: center;">
-                <div style="font-size: 15px; margin-bottom: 10px; font-weight: bold;">Множитель: <span id="mines-multiplier" style="color: #f39c12;">1.00x</span> | Выигрыш: <span id="mines-win-amount" style="color: #27ae60;">0.00</span></div>
+                <div style="font-size: 15px; margin-bottom: 10px; font-weight: bold;">Множитель: <span id="mines-multiplier" style="color: #f39c12;">1.00x</span></div>
                 <div class="mines-grid" id="mines-grid"></div>
-                <button class="btn" style="width: 100%; margin-top: 15px; background: #e74c3c;" onclick="cashoutMinesGame()">💰 Забрать</button>
+                <button class="btn" style="width: 100%; margin-top: 15px; background: #e74c3c;" onclick="cashoutMinesGame()">💰 Забрать приз</button>
             </div>
         </div>
 
@@ -362,12 +367,13 @@
             </div>
         </div>
 
-        <!-- МАГАЗИН -->
+        <!-- МАГАЗИН (С ГАРАМОЙ И ИКОНКОЙ) -->
         <div id="view-shop" class="view">
             <h2>Магазин</h2>
-            <div class="card">
-                <div><b>Garama and Madundung</b><br><small style="color:#f39c12">50 BC</small></div>
-                <button class="btn" onclick="alert('Куплено!')">Купить</button>
+            <div class="card" style="align-items: center;">
+                <div style="font-size: 36px; margin-right: 12px;">🗿</div>
+                <div style="flex:1;"><b>Garama and Madundung</b><br><small style="color:#f39c12">50 BC</small></div>
+                <button class="btn" onclick="buyGaramaItem()">Купить</button>
             </div>
         </div>
     </div>
@@ -383,7 +389,8 @@
     let currentCasePrice = 59;
     let currentWonPrizes = [];
     let rouletteTimeout = null;
-    let minesGame = { active: false, bet: 10, minesCount: 5, multiplier: 1.00, grid: [] };
+    let minesGame = { active: false, betItem: null, minesCount: 5, multiplier: 1.00, grid: [] };
+    let selectedMinesItemIndex = null;
 
     let casesDatabase = {
         'linear': {
@@ -443,6 +450,7 @@
         } catch(e) {}
         updateUI();
         renderInventory();
+        renderMinesInventorySelector();
         initMinesGrid();
     }
 
@@ -456,6 +464,20 @@
         } catch(e) {}
     }
 
+    /* ПОКУПКА ГАРАМЫ В МАГАЗИНЕ */
+    function buyGaramaItem() {
+        let price = 50;
+        if (player.score < price) return alert("Не хватает BC!");
+        player.score = Math.round((player.score - price) * 100) / 100;
+        player.inventory.push({ name: "Garama and Madundung", icon: "🗿", sellPrice: 100 });
+        saveGame();
+        updateUI();
+        renderInventory();
+        renderMinesInventorySelector();
+        alert("🗿 Garama and Madundung успешно куплен и добавлен в инвентарь!");
+    }
+
+    /* ВЫБОР ИГРОКА ИЗ СПИСКА */
     function openUsersModal() {
         let list = el('modal-users-list');
         list.innerHTML = '';
@@ -498,6 +520,7 @@
         }
         el('view-' + viewName).classList.add('active');
         if (viewName === 'profile') renderInventory();
+        if (viewName === 'mines') renderMinesInventorySelector();
         el('drawer').classList.remove('open');
         el('overlay').classList.remove('show');
     }
@@ -632,6 +655,7 @@
         }
         saveGame();
         renderInventory();
+        renderMinesInventorySelector();
         updateUI();
         el('roulette-results-view').style.display = 'flex';
     }
@@ -652,23 +676,18 @@
         if (player.inventory.length === 0) { el('inventory-empty-msg').style.display = 'block'; return; }
         el('inventory-empty-msg').style.display = 'none';
 
-        let grouped = {};
-        player.inventory.forEach(i => {
-            if (!grouped[i.name]) grouped[i.name] = { ...i, count: 0 };
-            grouped[i.name].count++;
-        });
-
-        Object.values(grouped).forEach(g => {
-            grid.innerHTML += `<div class="prize-card"><span class="prize-count-badge">×${g.count}</span><div class="prize-icon">${g.icon}</div><div class="prize-title">${g.name}</div><button class="btn" style="padding:4px; font-size:10px; margin-top:6px; width:100%;" onclick="sellAllGroup('${g.name}')">Продать (+${g.sellPrice * g.count})</button></div>`;
+        player.inventory.forEach((i, idx) => {
+            grid.innerHTML += `<div class="prize-card"><div class="prize-icon">${i.icon}</div><div class="prize-title">${i.name}</div><button class="btn" style="padding:4px; font-size:10px; margin-top:6px; width:100%;" onclick="sellInventoryItem(${idx})">Продать (+${i.sellPrice})</button></div>`;
         });
     }
 
-    function sellAllGroup(name) {
-        let gain = player.inventory.filter(i => i.name === name).reduce((s, i) => s + i.sellPrice, 0);
-        player.score = Math.round((player.score + gain) * 100) / 100;
-        player.inventory = player.inventory.filter(i => i.name !== name);
+    function sellInventoryItem(index) {
+        let item = player.inventory[index];
+        player.score = Math.round((player.score + item.sellPrice) * 100) / 100;
+        player.inventory.splice(index, 1);
         saveGame();
         renderInventory();
+        renderMinesInventorySelector();
         updateUI();
     }
 
@@ -678,6 +697,33 @@
         let empty = el('no-drops-msg');
         if (empty) empty.remove();
         feed.insertAdjacentHTML('afterbegin', `<div class="live-item"><span>${item.icon}</span> <b>${name}</b> <span style="color:#f39c12">${item.sellPrice} BC</span></div>`);
+    }
+
+    /* РЕНДЕР СЕЛЕКТОРА БРЕЙНРОТОВ ДЛЯ МИН */
+    function renderMinesInventorySelector() {
+        let container = el('mines-inventory-selector');
+        if (!container) return;
+        container.innerHTML = '';
+        if (player.inventory.length === 0) {
+            container.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Инвентарь пуст. Купите в магазине или выбейте в кейсах!</div>';
+            selectedMinesItemIndex = null;
+            return;
+        }
+
+        player.inventory.forEach((item, idx) => {
+            let isSel = (selectedMinesItemIndex === idx) ? 'selected' : '';
+            container.innerHTML += `
+                <div class="mines-sel-item ${isSel}" onclick="selectMinesItem(${idx})">
+                    <span style="font-size:24px;">${item.icon}</span>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${item.name}</span>
+                </div>
+            `;
+        });
+    }
+
+    function selectMinesItem(index) {
+        selectedMinesItemIndex = index;
+        renderMinesInventorySelector();
     }
 
     function initMinesGrid() {
@@ -693,20 +739,21 @@
         }
     }
 
-    /* ПРОВЕРКА НАЛИЧИЯ БРЕЙНРОТА И ПОДКРУТКА ШАНСА МИН */
+    /* СТАРТ МИН С ВЫБОРОМ БРЕЙНРОТА */
     function startMinesGame() {
-        if (player.inventory.length === 0) {
-            return alert("🛑 У вас нет брейнротов в инвентаре! Откройте кейсы, чтобы выбить брейнроты перед игрой в Мины.");
+        if (selectedMinesItemIndex === null || !player.inventory[selectedMinesItemIndex]) {
+            return alert("🛑 Выберите брейнрот из инвентаря сверху для ставки!");
         }
 
-        let bet = parseFloat(el('mines-bet').value);
         let count = parseInt(el('mines-count').value);
-        if (isNaN(bet) || bet <= 0 || player.score < bet) return alert("Ошибка ставки!");
-        player.score = Math.round((player.score - bet) * 100) / 100;
-        updateUI();
-        saveGame();
+        let stakedItem = player.inventory.splice(selectedMinesItemIndex, 1)[0]; // Забираем предмет в ставку
+        selectedMinesItemIndex = null;
 
-        minesGame = { active: true, bet, minesCount: count, multiplier: 1.00, grid: new Array(25).fill(false) };
+        saveGame();
+        renderInventory();
+        renderMinesInventorySelector();
+
+        minesGame = { active: true, betItem: stakedItem, minesCount: count, multiplier: 1.00, grid: new Array(25).fill(false) };
         let placed = 0;
         while (placed < count) {
             let pos = Math.floor(Math.random() * 25);
@@ -728,7 +775,7 @@
             endMinesGame(false);
         } else {
             cell.className = 'mine-cell revealed safe'; cell.innerText = '💎';
-            let step = 0.05 + (minesGame.minesCount * 0.02);
+            let step = 0.08 + (minesGame.minesCount * 0.03);
             minesGame.multiplier = Math.round((minesGame.multiplier + step) * 100) / 100;
             updateMinesUI();
         }
@@ -736,16 +783,15 @@
 
     function updateMinesUI() {
         el('mines-multiplier').innerText = minesGame.multiplier.toFixed(2) + 'x';
-        el('mines-win-amount').innerText = (minesGame.bet * minesGame.multiplier).toFixed(2);
     }
 
     function cashoutMinesGame() {
         if (!minesGame.active) return;
-        let win = Math.round((minesGame.bet * minesGame.multiplier) * 100) / 100;
-        player.score = Math.round((player.score + win) * 100) / 100;
+        let rewardBC = Math.round((minesGame.betItem.sellPrice * minesGame.multiplier) * 100) / 100;
+        player.score = Math.round((player.score + rewardBC) * 100) / 100;
         updateUI();
         saveGame();
-        alert(`Выигрыш: +${win} BC!`);
+        alert(`🎉 Победа! Вы забрали награду: +${rewardBC} BC!`);
         endMinesGame(true);
     }
 
@@ -755,7 +801,7 @@
         for (let i = 0; i < 25; i++) {
             if (minesGame.grid[i]) { grid.children[i].className = 'mine-cell revealed mine'; grid.children[i].innerText = '💣'; }
         }
-        if (!won) alert("Мина! Ставка сгорела.");
+        if (!won) alert("💥 Мина! Ваш брейнрот сгорел.");
         el('mines-start-btn').style.display = 'block';
     }
 
@@ -802,7 +848,7 @@
         let newItem = { name, icon, sellPrice: price };
         if (id === player.id) {
             player.inventory.push(newItem);
-            saveGame(); renderInventory(); alert(`Предмет "${name}" выдан вам!`);
+            saveGame(); renderInventory(); renderMinesInventorySelector(); alert(`Предмет "${name}" выдан вам!`);
         } else {
             alert(`Предмет подготовлен для игрока ${id}`);
         }
