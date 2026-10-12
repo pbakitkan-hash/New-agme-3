@@ -1,71 +1,42 @@
 import os
-import threading
-from flask import Flask
-import requests
+from telebot import TeleBot, types
 
-# Токен твоего бота
-TOKEN = "8830829115:AAE1t8lqMI2ARzog7IPsO5fLKoNptbrw1wI"
+# Безопасное получение токена из переменных окружения Render
+TOKEN = os.environ.get("BOT_TOKEN")
 
-# Твоя ссылка на GitHub Pages
-WEB_APP_URL = "https://pbakitkan-hash.github.io/New-agme-3/?v=2"
+if not TOKEN:
+    raise ValueError("ОШИБКА: Переменная BOT_TOKEN не найдена на Render!")
 
+bot = TeleBot(TOKEN)
 
-# Инициализация Flask для Render Web Service
-app = Flask(__name__)
+# Актуальная ссылка на Mini App с обходом кэша
+WEB_APP_URL = "https://pbakitkan-hash.github.io/New-agme-3/?v=12"
 
-@app.route('/')
-def home():
-    return "Бот работает 24/7!"
+@bot.message_handler(commands=['start'])
+def start_command(message):
+    keyboard = types.InlineKeyboardMarkup()
+    
+    # Кнопка открытия Mini App
+    web_app_btn = types.InlineKeyboardButton(
+        text="🎮 Играть в BRAINROT CASE", 
+        web_app=types.WebAppInfo(url=WEB_APP_URL)
+    )
+    keyboard.add(web_app_btn)
 
-def send_telegram_request(method, payload):
-    url = f"https://api.telegram.org/bot{TOKEN}/{method}"
-    try:
-        requests.post(url, json=payload, timeout=10)
-    except Exception as e:
-        print(f"Ошибка запроса: {e}")
+    name = message.from_user.first_name or "Игрок"
+    welcome_text = (
+        f"Привет, {name}! 👋\n\n"
+        f"🔥 Добро пожаловать в **BRAINROT CASE**!\n\n"
+        f"Нажми кнопку ниже, чтобы открыть приложение, крутить кейсы, играть в мины и фармить BC!"
+    )
 
-def run_bot():
-    print("=== БОТ ЗАПУЩЕН ЧЕРЕЗ WEB SERVICE ===")
-    offset = 0
-    while True:
-        try:
-            url = f"https://api.telegram.org/bot{TOKEN}/getUpdates?offset={offset}&timeout=30"
-            response = requests.get(url, timeout=35)
-            data = response.json()
+    bot.send_message(
+        chat_id=message.chat.id,
+        text=welcome_text,
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
 
-            if data.get("ok"):
-                for result in data.get("result", []):
-                    offset = result["update_id"] + 1
-                    message = result.get("message")
-                    
-                    if message and "text" in message:
-                        chat_id = message["chat"]["id"]
-                        text = message["text"]
-
-                        if text == "/start":
-                            keyboard = {
-                                "inline_keyboard": [[
-                                    {
-                                        "text": "🎮 Играть в кликер",
-                                        "web_app": {"url": WEB_APP_URL}
-                                    }
-                                ]]
-                            }
-                            payload = {
-                                "chat_id": chat_id,
-                                "text": "Привет! Нажми кнопку ниже, чтобы запустить кликер:",
-                                "reply_markup": keyboard
-                            }
-                            send_telegram_request("sendMessage", payload)
-        except Exception as e:
-            print(f"Ошибка polling: {e}")
-
-if __name__ == "__main__":
-    # Запуск фонового потока для бота Telegram
-    bot_thread = threading.Thread(target=run_bot, daemon=True)
-    bot_thread.start()
-
-    # Запуск Flask на сервере Render
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
- 
+if __name__ == '__main__':
+    print("Бот успешно запущен и защищен!")
+    bot.infinity_polling()
