@@ -40,15 +40,15 @@ def start_command(message):
     name = message.from_user.first_name or "Игрок"
     welcome_text = (
         f"Привет, {name}! 👋\n\n"
-        f"🔥 Добро пожаловать в **BRAINROT CASE**!\n\n"
+        f"Добро пожаловать в BRAINROT CASE!\n\n"
         f"Нажми кнопку ниже, чтобы открыть приложение, крутить кейсы, играть в мины и фармить BC!"
     )
 
+    # Отправляем без parse_mode, чтобы не было ошибок разметки
     bot.send_message(
         chat_id=message.chat.id,
         text=welcome_text,
-        reply_markup=keyboard,
-        parse_mode="Markdown"
+        reply_markup=keyboard
     )
 
 # 4. Запуск сервера и бота
