@@ -45,7 +45,11 @@
             background: #1a1d29; border: 1px solid #2a2e43; padding: 5px 10px; border-radius: 20px;
             color: #f39c12; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 5px;
         }
-        .bc-icon { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+        .bc-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; background: #f39c12; color: #0d0f18;
+            border-radius: 50%; font-size: 11px; font-weight: 900; line-height: 1;
+        }
         .profile-avatar-btn {
             width: 36px; height: 36px; background: #23283d; border: 2px solid #f39c12; border-radius: 50%;
             display: flex; align-items: center; justify-content: center; font-weight: bold; color: #f39c12; font-size: 14px;
@@ -117,7 +121,6 @@
         .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 16px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
         .btn { background: #f39c12; border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; }
         h2 { margin-top: 0; font-size: 22px; width: 100%; text-align: left; }
-        .currency-inline { width: 16px; height: 16px; border-radius: 50%; vertical-align: middle; display: inline-block; object-fit: cover; }
 
         .back-btn { background: #23283d; border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; align-self: flex-start; font-weight: bold; }
         .prizes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
@@ -128,6 +131,10 @@
         .prize-chance { font-size: 11px; color: #8b93b0; margin-top: 3px; }
 
         .input-field {
+            width: 100%; padding: 12px; background: #0d0f18; border: 1px solid #2a2e43;
+            border-radius: 10px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none;
+        }
+        .select-field {
             width: 100%; padding: 12px; background: #0d0f18; border: 1px solid #2a2e43;
             border-radius: 10px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none;
         }
@@ -203,7 +210,7 @@
         <div class="header-left">BRAINROT CASE</div>
         <div class="header-right" onclick="toggleMenu()">
             <div class="balance-badge">
-                <img id="header-bc-img" src="https://i.imgur.com/830g84e.png" class="bc-icon" alt="BC"> 
+                <span class="bc-icon">BC</span> 
                 <span id="balance">0.00</span>
             </div>
             <div class="profile-avatar-btn" id="header-avatar">P</div>
@@ -217,11 +224,11 @@
         <div id="view-cases" class="view active">
             <h2>Доступные кейсы</h2>
             <div class="card" onclick="openCaseDetails('linear')" style="cursor: pointer;">
-                <div><b>Линейный кейс</b><br><small style="color:#8b93b0">4 предмета • 59 BC</small></div>
+                <div><b>Линейный кейс</b><br><small style="color:#8b93b0" id="linear-case-sub">4 предмета • 59 BC</small></div>
                 <button class="btn" onclick="event.stopPropagation(); openCaseDetails('linear')">Смотреть</button>
             </div>
             <div class="card" onclick="openCaseDetails('all_or_nothing')" style="cursor: pointer; border-color: #e74c3c;">
-                <div><b>Всё или ничего</b> 🔥<br><small style="color:#e74c3c">0.01% Клубничный слон • 100 BC</small></div>
+                <div><b>Всё или ничего</b> 🔥<br><small style="color:#e74c3c" id="all-case-sub">0.01% Клубничный слон • 100 BC</small></div>
                 <button class="btn" style="background: #e74c3c;" onclick="event.stopPropagation(); openCaseDetails('all_or_nothing')">Смотреть</button>
             </div>
         </div>
@@ -316,11 +323,25 @@
                 <button class="btn" style="width: 100%;" onclick="activatePromo()">Активировать</button>
             </div>
 
+            <!-- АДМИН-ПАНЕЛЬ -->
             <div class="admin-panel" id="admin-promo-panel">
                 <h3 style="margin-top:0; color:#f39c12; font-size:16px;">⚙️ Панель Владельца</h3>
+                
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">1. Начисление баланса:</div>
                 <input type="number" id="grant-user-id" class="input-field" placeholder="ID игрока">
                 <input type="number" id="grant-amount" class="input-field" placeholder="Сумма BC">
-                <button class="btn" style="width: 100%; background: #2980b9;" onclick="grantBalanceToUser()">💳 Начислить BC</button>
+                <button class="btn" style="width: 100%; background: #2980b9; margin-bottom: 15px;" onclick="grantBalanceToUser()">💳 Начислить BC</button>
+
+                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">2. Добавить предмет в кейс:</div>
+                <select id="admin-case-select" class="select-field">
+                    <option value="linear">Линейный кейс</option>
+                    <option value="all_or_nothing">Всё или ничего</option>
+                </select>
+                <input type="text" id="admin-item-name" class="input-field" placeholder="Название предмета">
+                <input type="text" id="admin-item-icon" class="input-field" placeholder="Иконка (эмодзи, напр. 🦄)">
+                <input type="number" id="admin-item-chance" class="input-field" placeholder="Шанс выпадания (%)">
+                <input type="number" id="admin-item-price" class="input-field" placeholder="Цена продажи (BC)">
+                <button class="btn" style="width: 100%; background: #27ae60;" onclick="adminAddItemToCase()">➕ Создать предмет</button>
             </div>
         </div>
 
@@ -358,7 +379,6 @@
 
 <script>
     const OWNER_TELEGRAM_ID = 6638127989;
-    const BC_IMG = "https://i.imgur.com/830g84e.png";
 
     let player = {
         id: 123456789,
@@ -416,6 +436,11 @@
 
     function loadGame() {
         try {
+            let savedCases = localStorage.getItem('brainrot_custom_cases');
+            if (savedCases) {
+                casesDatabase = JSON.parse(savedCases);
+            }
+
             let savedData = localStorage.getItem('brainrot_save');
             if (savedData) {
                 let parsed = JSON.parse(savedData);
@@ -445,6 +470,7 @@
             console.error("Load error:", e);
         }
 
+        updateCaseSubtexts();
         renderInventory();
         updateUI();
         initMinesGrid();
@@ -453,7 +479,17 @@
     function saveGame() {
         try {
             localStorage.setItem('brainrot_save', JSON.stringify(player));
+            localStorage.setItem('brainrot_custom_cases', JSON.stringify(casesDatabase));
         } catch(e) {}
+    }
+
+    function updateCaseSubtexts() {
+        if(casesDatabase['linear']) {
+            el('linear-case-sub').innerText = `${casesDatabase['linear'].items.length} предметов • ${casesDatabase['linear'].price} BC`;
+        }
+        if(casesDatabase['all_or_nothing']) {
+            el('all-case-sub').innerText = `${casesDatabase['all_or_nothing'].items.length} предметов • ${casesDatabase['all_or_nothing'].price} BC`;
+        }
     }
 
     function toggleMenu() {
@@ -502,7 +538,7 @@
 
                 let num = document.createElement('div');
                 num.className = 'floating-num';
-                num.innerHTML = `+0.01 <img src="${BC_IMG}" class="currency-inline">`;
+                num.innerHTML = `+0.01 <span class="bc-icon" style="width:16px;height:16px;font-size:9px;">BC</span>`;
                 
                 let rect = clickTarget.getBoundingClientRect();
                 num.style.left = `${e.clientX - rect.left}px`;
@@ -834,6 +870,39 @@
             saveGame();
             alert(`Начислено +${amt} BC!`);
         }
+    }
+
+    function adminAddItemToCase() {
+        let caseKey = el('admin-case-select').value;
+        let itemName = el('admin-item-name').value.trim();
+        let itemIcon = el('admin-item-icon').value.trim() || "🎁";
+        let chance = parseFloat(el('admin-item-chance').value);
+        let sellPrice = parseFloat(el('admin-item-price').value);
+
+        if (!itemName || isNaN(chance) || isNaN(sellPrice)) {
+            return alert("Заполните все поля правильно!");
+        }
+
+        casesDatabase[caseKey].items.push({
+            name: itemName,
+            icon: itemIcon,
+            chance: chance,
+            sellPrice: sellPrice
+        });
+
+        saveGame();
+        updateCaseSubtexts();
+
+        if (activeCaseKey === caseKey) {
+            openCaseDetails(caseKey);
+        }
+
+        el('admin-item-name').value = "";
+        el('admin-item-icon').value = "";
+        el('admin-item-chance').value = "";
+        el('admin-item-price').value = "";
+
+        alert(`✅ Предмет "${itemName}" добавлен в кейс!`);
     }
 
     // Запуск при загрузке
