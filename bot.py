@@ -13,7 +13,6 @@ TELEGRAM_API_URL = f"https://api.telegram.org/bot{TOKEN}"
 app = Flask(__name__)
 CORS(app)
 
-# Временное хранилище данных пользователей в памяти (на продакшн лучше подключить БД)
 users_db = {}
 
 @app.route('/')
@@ -25,7 +24,6 @@ def handle_user(user_id):
     if request.method == 'GET':
         user_data = users_db.get(user_id, {"balance": 150.0, "inventory": []})
         return jsonify(user_data)
-    
     elif request.method == 'POST':
         data = request.json
         if data:
@@ -33,17 +31,14 @@ def handle_user(user_id):
             return jsonify({"status": "success", "saved": data})
         return jsonify({"status": "error", "message": "No data provided"}), 400
 
-# Эндпоинт для вебхуков Telegram
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
     update = request.get_json()
     if update and "message" in update:
         chat_id = update["message"]["chat"]["id"]
         text = update["message"].get("text", "")
-
         if text == "/start":
             send_welcome(chat_id)
-
     return "OK", 200
 
 def send_welcome(chat_id):
@@ -57,17 +52,14 @@ def send_welcome(chat_id):
             ]
         ]
     }
-
     payload = {
         "chat_id": chat_id,
         "text": "Привет! 🔥\n\nДобро пожаловать в BRAINROT CASE!\nНажми кнопку ниже, чтобы открыть приложение, крутить кейсы и фармить BC!",
         "reply_markup": keyboard
     }
-
     requests.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
 
 if __name__ == '__main__':
-    # Автоматическая установка вебхука в Telegram при запуске
     render_url = os.environ.get('RENDER_EXTERNAL_URL')
     if render_url:
         webhook_url = f"{render_url}/{TOKEN}"
