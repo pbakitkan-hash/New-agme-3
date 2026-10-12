@@ -1,62 +1,70 @@
 import os
-from threading import Thread
-from flask import Flask
-from telebot import TeleBot, types
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import requests
 
-# 1. Безопасное получение токена из настроек Render (Environment)
 TOKEN = os.environ.get("BOT_TOKEN")
-
 if not TOKEN:
     raise ValueError("ОШИБКА: Переменная BOT_TOKEN не найдена на Render!")
 
-bot = TeleBot(TOKEN)
-
-# Актуальная ссылка на Mini App с обходом кэша
 WEB_APP_URL = "https://pbakitkan-hash.github.io/New-agme-3/?v=12"
+TELEGRAM_API_URL = f"https://api.telegram.org/bot{TOKEN}"
 
-# 2. Инициализация Flask для работы 24/7 (для Cron-job.org)
 app = Flask(__name__)
+CORS(app)
+
+users_db = {}
 
 @app.route('/')
 def home():
-    return "BRAINROT CASE Bot is running 24/7!"
+    return "BRAINROT CASE Backend is running!"
 
-def run_flask():
+@app.route('/api/user/<int:user_id>', methods=['GET', 'POST'])
+def handle_user(user_id):
+    if request.method == 'GET':
+        user_data = users_db.get(user_id, {"balance": 0.0, "inventory": []})
+        return jsonify(user_data)
+    elif request.method == 'POST':
+        data = request.json
+        users_db[user_id] = data
+        return jsonify({"status": "success", "saved": data})
+
+# Эндпоинт для вебхуков Telegram (исключает ошибку 409 полностью)
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    update = request.get_json()
+    if update and "message" in update:
+        chat_id = update["message"]["chat"]["id"]
+        text = update["message"].get("text", "")
+        
+        if text == "/start":
+            send_welcome(chat_id)
+            
+    return "OK", 200
+
+def send_welcome(chat_id):
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "🎮 Играть в BRAINROT CASE",
+                    "web_app": {"url": WEB_APP_URL}
+                }
+            ]
+        ]
+    }
+    payload = {
+        "chat_id": chat_id,
+        "text": "Привет! 👋\n\nДобро пожаловать в BRAINROT CASE!\n\nНажми кнопку ниже, чтобы открыть приложение, крутить кейсы и фармить BC!",
+        "reply_markup": keyboard
+    }
+    requests.post(f"{TELEGRAM_API_URL}/sendMessage", json=payload)
+
+if __name__ == '__main__':
+    # Автоматически регистрируем вебхук в Telegram при запуске
+    render_url = os.environ.get("RENDER_EXTERNAL_URL")
+    if render_url:
+        requests.get(f"{TELEGRAM_API_URL}/setWebhook?url={render_url}/{TOKEN}")
+
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
-
-# 3. Обработка команды /start
-@bot.message_handler(commands=['start'])
-def start_command(message):
-    keyboard = types.InlineKeyboardMarkup()
-    
-    # Кнопка открытия Mini App
-    web_app_btn = types.InlineKeyboardButton(
-        text="🎮 Играть в BRAINROT CASE", 
-        web_app=types.WebAppInfo(url=WEB_APP_URL)
-    )
-    keyboard.add(web_app_btn)
-
-    name = message.from_user.first_name or "Игрок"
-    welcome_text = (
-        f"Привет, {name}! 👋\n\n"
-        f"Добро пожаловать в BRAINROT CASE!\n\n"
-        f"Нажми кнопку ниже, чтобы открыть приложение, крутить кейсы, играть в мины и фармить BC!"
-    )
-
-    # Отправляем без parse_mode, чтобы не было ошибок разметки
-    bot.send_message(
-        chat_id=message.chat.id,
-        text=welcome_text,
-        reply_markup=keyboard
-    )
-
-# 4. Запуск сервера и бота
-if __name__ == '__main__':
-    # Запуск веб-сервера в фоновом потоке
-    flask_thread = Thread(target=run_flask)
-    flask_thread.daemon = True
-    flask_thread.start()
-
-    print("Бот и Flask-сервер успешно запущены!")
-    bot.infinity_polling()
