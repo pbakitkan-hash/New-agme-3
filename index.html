@@ -371,26 +371,26 @@
             </div>
         </div>
 
-        <!-- МАГАЗИН (2 ПРЕДМЕТА С ПРАВИЛЬНЫМИ КАРТИНКАМИ) -->
+        <!-- МАГАЗИН -->
         <div id="view-shop" class="view">
             <h2>Магазин</h2>
             
             <!-- 1. Garama (150 BC) -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
-                    <img src="https://i.postimg.cc/m2mD3sFk/garama.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" alt="Garama" onerror="this.src='https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png'">
+                    <img src="https://files.catbox.moe/kmkz5j.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" alt="Garama">
                 </div>
                 <div style="flex:1;"><b>Garama</b><br><small style="color:#f39c12">150 BC</small></div>
-                <button class="btn" onclick="buyShopItem('Garama', 'https://i.postimg.cc/m2mD3sFk/garama.jpg', 150, 75)">Купить</button>
+                <button class="btn" onclick="buyShopItem('Garama', 'https://files.catbox.moe/kmkz5j.jpg', 150, 75)">Купить</button>
             </div>
 
             <!-- 2. IXOVER (1 000 000 BC) -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
-                    <img src="https://i.postimg.cc/m2mD3sFk/garama.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" alt="IXOVER" onerror="this.src='https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png'">
+                    <img src="https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg" style="width:50px; height:50px; object-fit:cover; border-radius:6px; margin-bottom:4px;" alt="IXOVER">
                 </div>
                 <div style="flex:1;"><b>IXOVER</b><br><small style="color:#f39c12">1 000 000 BC</small></div>
-                <button class="btn" onclick="buyShopItem('IXOVER', 'https://i.postimg.cc/m2mD3sFk/garama.jpg', 1000000, 500000)">Купить</button>
+                <button class="btn" onclick="buyShopItem('IXOVER', 'https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg', 1000000, 500000)">Купить</button>
             </div>
         </div>
     </div>
@@ -398,9 +398,10 @@
 
 <script>
     const OWNER_TELEGRAM_ID = 6638127989;
+    const NPOINT_URL = "https://api.npoint.io/d04978e5ad90577e8ab4";
+    
     let player = { id: 123456789, username: "Player", score: 0, energy: 100, level: 11, inventory: [] };
     let promoCodes = { "Uuu": { reward: 100, usedBy: [] }, "ADMIN1000": { reward: 1000, usedBy: [] } };
-    let allPlayersList = [];
     let maxEnergy = 100;
     let activeCaseKey = 'linear';
     let currentCasePrice = 59;
@@ -430,7 +431,7 @@
 
     const el = (id) => document.getElementById(id);
 
-    function loadGame() {
+    async function loadGame() {
         try {
             let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
             if (tgUser && tgUser.id) {
@@ -445,12 +446,8 @@
                 player.level = p.level ?? 11;
                 player.inventory = p.inventory || [];
             }
-            let all = localStorage.getItem('brainrot_all_players');
-            if (all) allPlayersList = JSON.parse(all);
 
-            let idx = allPlayersList.findIndex(p => p.id === player.id);
-            if (idx >= 0) { allPlayersList[idx].username = player.username; allPlayersList[idx].score = player.score; }
-            else { allPlayersList.push({ id: player.id, username: player.username, score: player.score }); }
+            await syncPlayerToCloud();
 
             el('user-tg-name').innerHTML = `👤 <b>@${player.username}</b>`;
             el('user-tg-id').innerText = player.id;
@@ -471,47 +468,62 @@
         initMinesGrid();
     }
 
-    function saveGame() {
+    async function saveGame() {
         try {
             localStorage.setItem('brainrot_save_' + player.id, JSON.stringify(player));
-            let idx = allPlayersList.findIndex(p => p.id === player.id);
-            if (idx >= 0) { allPlayersList[idx].score = player.score; allPlayersList[idx].username = player.username; }
-            localStorage.setItem('brainrot_all_players', JSON.stringify(allPlayersList));
-            localStorage.setItem('brainrot_custom_cases', JSON.stringify(casesDatabase));
+            await syncPlayerToCloud();
         } catch(e) {}
     }
 
-    function buyShopItem(name, imgUrl, price, sellPrice) {
-        if (player.score < price) return alert(`Не хватает BC! Нужно ${price.toLocaleString()} BC.`);
-        player.score = Math.round((player.score - price) * 100) / 100;
-        player.inventory.push({ 
-            name: name, 
-            img: imgUrl, 
-            sellPrice: sellPrice 
-        });
-        saveGame();
-        updateUI();
-        renderInventory();
-        renderMinesInventorySelector();
-        alert(`🎉 ${name} успешно куплен и добавлен в инвентарь!`);
+    async function syncPlayerToCloud() {
+        if (!NPOINT_URL) return;
+        try {
+            let res = await fetch(NPOINT_URL);
+            let users = await res.json();
+            if (!Array.isArray(users)) users = [];
+
+            let idx = users.findIndex(u => u.id === player.id);
+            if (idx >= 0) {
+                users[idx].username = player.username;
+                users[idx].score = player.score;
+            } else {
+                users.push({ id: player.id, username: player.username, score: player.score });
+            }
+
+            await fetch(NPOINT_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(users)
+            });
+        } catch(e) {}
     }
 
-    function openUsersModal() {
+    async function openUsersModal() {
         let list = el('modal-users-list');
-        list.innerHTML = '';
-        if (allPlayersList.length === 0) {
-            list.innerHTML = '<div style="color:#8b93b0; font-size:13px; text-align:center;">Список игроков пуст</div>';
-        } else {
-            allPlayersList.forEach(u => {
+        list.innerHTML = '<div style="color:#8b93b0; font-size:13px; text-align:center;">Загрузка списка из облака...</div>';
+        el('users-modal').classList.add('show');
+
+        try {
+            let res = await fetch(NPOINT_URL);
+            let users = await res.json();
+            
+            list.innerHTML = '';
+            if (!users || users.length === 0) {
+                list.innerHTML = '<div style="color:#8b93b0; font-size:13px; text-align:center;">Список игроков пуст</div>';
+                return;
+            }
+
+            users.forEach(u => {
                 list.innerHTML += `
                     <div class="admin-user-row">
-                        <div><b>@${u.username}</b><br><small style="color:#8b93b0">ID: ${u.id}</small></div>
+                        <div><b>@${u.username}</b><br><small style="color:#8b93b0">ID: ${u.id} | Баланс: ${u.score} BC</small></div>
                         <button class="btn" style="padding:6px 10px; font-size:12px; background:#f39c12;" onclick="selectUserFromModal(${u.id})">Выбрать</button>
                     </div>
                 `;
             });
+        } catch(e) {
+            list.innerHTML = '<div style="color:#e74c3c; font-size:13px; text-align:center;">Ошибка загрузки из облака</div>';
         }
-        el('users-modal').classList.add('show');
     }
 
     function closeUsersModal() {
@@ -864,17 +876,32 @@
         } else { alert("Неверно или уже использовано!"); }
     }
 
-    function grantBalanceToUser() {
+    async function grantBalanceToUser() {
         if (player.id !== OWNER_TELEGRAM_ID) return;
         let id = parseInt(el('grant-user-id').value), amt = parseFloat(el('grant-amount').value);
         if (isNaN(id) || isNaN(amt)) return alert("Заполните ID и сумму!");
-        if (id === player.id) {
-            player.score = Math.round((player.score + amt) * 100) / 100;
-            updateUI(); saveGame(); alert("Баланс изменен!");
-        } else {
-            let t = allPlayersList.find(p => p.id === id);
-            if (t) { t.score += amt; saveGame(); alert("Баланс игрока изменен!"); }
-            else alert("Игрок не найден");
+        
+        try {
+            let res = await fetch(NPOINT_URL);
+            let users = await res.json();
+            let t = users.find(u => u.id === id);
+            if (t) {
+                t.score = Math.round((t.score + amt) * 100) / 100;
+                await fetch(NPOINT_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(users)
+                });
+                if (id === player.id) {
+                    player.score = t.score;
+                    updateUI();
+                }
+                alert("Баланс игрока успешно изменен в облаке!");
+            } else {
+                alert("Игрок не найден в облачной базе!");
+            }
+        } catch(e) {
+            alert("Ошибка подключения к облаку");
         }
     }
 
