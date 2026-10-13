@@ -106,23 +106,30 @@
         input:checked + .slider { background-color: #f39c12; }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        .roulette-container { display: none; width: 100%; flex-direction: column; align-items: center; margin-top: 10px; }
+        /* Мульти-рулетки в ряды с прокруткой до 5 штук */
+        .roulette-container { display: none; width: 100%; flex-direction: column; align-items: center; margin-top: 5px; }
         .roulette-container.show { display: flex; }
-        .roulette-window {
-            width: 100%; height: 130px; background: #141722; border: 2px solid #f39c12;
-            border-radius: 14px; position: relative; overflow: hidden; display: flex; align-items: center;
+        .roulette-scroll-box {
+            width: 100%; max-height: 290px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+            scrollbar-width: thin; padding-right: 2px;
         }
-        .roulette-pointer { position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: #e74c3c; transform: translateX(-50%); z-index: 10; }
+        .roulette-row-wrapper { width: 100%; background: #141722; border: 1px solid #2a2e43; border-radius: 10px; padding: 4px; }
+        .roulette-row-title { font-size: 10px; color: #f39c12; font-weight: bold; margin-bottom: 2px; padding-left: 4px; }
+        .roulette-window {
+            width: 100%; height: 95px; background: #0d0f18; border: 1.5px solid #f39c12;
+            border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center;
+        }
+        .roulette-pointer { position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; background: #e74c3c; transform: translateX(-50%); z-index: 10; }
         .roulette-track { display: flex; position: absolute; left: 0; transition: transform 3.5s cubic-bezier(0.15, 0.85, 0.25, 1); }
         .roulette-item {
-            min-width: 100px; height: 110px; background: #1a1d29; border: 1px solid #2a2e43;
-            border-radius: 10px; margin: 0 6px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; text-align: center; padding: 8px;
+            min-width: 80px; height: 85px; background: #1a1d29; border: 1px solid #2a2e43;
+            border-radius: 6px; margin: 0 4px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; padding: 4px;
         }
-        .roulette-item-img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 4px; border-radius: 4px; }
-        .roulette-item-icon { font-size: 36px; margin-bottom: 6px; }
-        .roulette-item-title { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
-        .roulette-results-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 15px; width: 100%; max-height: 250px; overflow-y: auto; }
+        .roulette-item-img { width: 35px; height: 35px; object-fit: contain; margin-bottom: 2px; border-radius: 4px; }
+        .roulette-item-icon { font-size: 28px; margin-bottom: 4px; }
+        .roulette-item-title { font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 72px; }
+        .roulette-results-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; width: 100%; max-height: 220px; overflow-y: auto; }
 
         .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; margin-top: 10px; }
         .mine-cell {
@@ -248,13 +255,11 @@
                 </div>
             </div>
 
+            <!-- Мульти-рулетки в ряды -->
             <div class="roulette-container" id="roulette-container">
-                <div style="font-size: 13px; color: #f39c12; margin-bottom: 6px; font-weight: bold;" id="roulette-counter-label">Открытие кейса 1 из 1</div>
-                <div class="roulette-window">
-                    <div class="roulette-pointer"></div>
-                    <div class="roulette-track" id="roulette-track"></div>
-                </div>
-                <button class="btn" style="margin-top: 15px; background: #e74c3c; width: 100%;" onclick="skipRouletteAnimation()">⏭ Пропустить</button>
+                <div style="font-size: 13px; color: #f39c12; margin-bottom: 4px; font-weight: bold;" id="roulette-counter-label">Открытие кейсов...</div>
+                <div class="roulette-scroll-box" id="roulette-scroll-box"></div>
+                <button class="btn" style="margin-top: 10px; background: #e74c3c; width: 100%;" onclick="skipRouletteAnimation()">⏭ Пропустить</button>
             </div>
 
             <div id="roulette-results-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
@@ -303,8 +308,9 @@
                 <button class="btn" id="owner-bonus-btn" style="width:100%; display:none;" onclick="claimDevBonus()">👑 Награда владельца (+1000 BC)</button>
             </div>
 
-            <h2>🎒 Инвентарь</h2>
+            <h2>🎒 Инвентарь и Ломбард</h2>
             <div class="card" style="flex-direction: column; margin-bottom: 15px; width: 100%;">
+                <div style="font-size: 12px; color: #8b93b0; margin-bottom: 8px; text-align: center;">Внеси брейнрот из инвентаря, чтобы получить BC:</div>
                 <div id="inventory-empty-msg" style="color:#8b93b0; text-align:center; padding: 10px; display:none; font-size: 14px;">Инвентарь пуст!</div>
                 <div class="prizes-grid" id="inventory-grid" style="width: 100%; max-height: 260px; overflow-y: auto;"></div>
             </div>
@@ -376,13 +382,13 @@
         <div id="view-shop" class="view">
             <h2>Магазин</h2>
             
-            <!-- 1. Garama (150 BC) -->
+            <!-- 1. Garama (Исправленная ссылка на картинку с fallback) -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
-                    <img src="https://files.catbox.moe/kmkz5j.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" onerror="this.src='https://i.ibb.co/689V9c8/kmkz5j.jpg'" alt="Garama">
+                    <img src="https://i.ibb.co/689V9c8/kmkz5j.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" onerror="this.src='https://files.catbox.moe/kmkz5j.jpg'" alt="Garama">
                 </div>
                 <div style="flex:1;"><b>Garama</b><br><small style="color:#f39c12">150 BC</small></div>
-                <button class="btn" onclick="buyShopItem('Garama', 'https://files.catbox.moe/kmkz5j.jpg', 150, 75)">Купить</button>
+                <button class="btn" onclick="buyShopItem('Garama', 'https://i.ibb.co/689V9c8/kmkz5j.jpg', 150, 75)">Купить</button>
             </div>
 
             <!-- 2. IXOVER (1 000 000 BC) -->
@@ -407,7 +413,6 @@
     let activeCaseKey = 'linear';
     let currentCasePrice = 59;
     let currentWonPrizes = [];
-    let currentOpeningIndex = 0;
     let rouletteTimeout = null;
     let minesGame = { active: false, betItem: null, minesCount: 3, multiplier: 1.00, grid: [] };
     let selectedMinesItemIndex = null;
@@ -616,6 +621,7 @@
         openCases(amount);
     }
 
+    // Мульти-открытие: одновременный запуск рулеток в ряды (до 5 видимых с прокруткой)
     function openCases(count) {
         let cost = currentCasePrice * count;
         if (player.score < cost) return alert('Не хватает BC!');
@@ -630,26 +636,41 @@
             addLiveDrop(player.username, item);
         }
 
-        currentOpeningIndex = 0;
         el('case-main-box').style.display = 'none';
         el('case-prizes-info').style.display = 'none';
         el('back-to-cases-btn').style.display = 'none';
-
         el('roulette-container').classList.add('show');
-        startNextRouletteOpening();
-    }
+        el('roulette-counter-label').innerText = `Одновременное открытие: ${count} шт.`;
 
-    function startNextRouletteOpening() {
-        if (currentOpeningIndex >= currentWonPrizes.length) {
+        let scrollBox = el('roulette-scroll-box');
+        scrollBox.innerHTML = '';
+
+        currentWonPrizes.forEach((winningItem, index) => {
+            scrollBox.innerHTML += `
+                <div class="roulette-row-wrapper">
+                    <div class="roulette-row-title">Кейс #${index + 1}</div>
+                    <div class="roulette-window">
+                        <div class="roulette-pointer"></div>
+                        <div class="roulette-track" id="roulette-track-${index}"></div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Запускаем все рулетки одновременно
+        currentWonPrizes.forEach((winningItem, index) => {
+            buildRouletteTrackForIndex(index, winningItem);
+        });
+
+        if (rouletteTimeout) clearTimeout(rouletteTimeout);
+        rouletteTimeout = setTimeout(() => {
             showWonResults();
-            return;
-        }
-        el('roulette-counter-label').innerText = `Открытие кейса ${currentOpeningIndex + 1} из ${currentWonPrizes.length}`;
-        buildRouletteTrack(currentWonPrizes[currentOpeningIndex]);
+        }, 3700);
     }
 
-    function buildRouletteTrack(winningItem) {
-        let track = el('roulette-track');
+    function buildRouletteTrackForIndex(index, winningItem) {
+        let track = el(`roulette-track-${index}`);
+        if (!track) return;
         track.style.transition = 'none';
         track.style.transform = 'translateX(0px)';
         track.innerHTML = '';
@@ -662,14 +683,8 @@
         track.innerHTML = html;
         setTimeout(() => {
             track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.85, 0.25, 1)';
-            track.style.transform = `translateX(-${(24 * 112) - (el('roulette-container').clientWidth / 2) + 56}px)`;
+            track.style.transform = `translateX(-${(24 * 88) - (el('roulette-scroll-box').clientWidth / 2) + 44}px)`;
         }, 50);
-        
-        if (rouletteTimeout) clearTimeout(rouletteTimeout);
-        rouletteTimeout = setTimeout(() => {
-            currentOpeningIndex++;
-            startNextRouletteOpening();
-        }, 3600);
     }
 
     function skipRouletteAnimation() {
@@ -742,25 +757,25 @@
                     ${badge}
                     ${mediaHtml}
                     <div class="prize-title">${i.name}</div>
-                    <button class="btn" style="padding:4px; font-size:10px; margin-top:6px; width:100%;" onclick="sellInventoryGroup('${i.name}')">Продать все (+${i.sellPrice * i.count})</button>
+                    <div style="font-size:11px; color:#f39c12; margin:3px 0;">+${i.sellPrice} BC / шт</div>
+                    <button class="btn" style="padding:6px; font-size:11px; width:100%; background:#27ae60;" onclick="exchangeItem('${i.name}')">Внести</button>
                 </div>`;
         });
     }
 
-    function sellInventoryGroup(name) {
-        let totalSold = 0;
-        player.inventory = player.inventory.filter(item => {
-            if (item.name === name) {
-                totalSold += item.sellPrice;
-                return false;
-            }
-            return true;
-        });
-        player.score = Math.round((player.score + totalSold) * 100) / 100;
+    function exchangeItem(name) {
+        let index = player.inventory.findIndex(item => item.name === name);
+        if (index === -1) return;
+
+        let item = player.inventory.splice(index, 1)[0];
+        player.score = Math.round((player.score + item.sellPrice) * 100) / 100;
+        
         saveGame();
+        updateUI();
         renderInventory();
         renderMinesInventorySelector();
-        updateUI();
+        
+        alert(`✅ Успешно! Вы внесли "${item.name}" и получили +${item.sellPrice} BC.`);
     }
 
     function addLiveDrop(name, item) {
@@ -1002,7 +1017,7 @@
 
     function adminAddItemToCase() {
         if (player.id !== OWNER_TELEGRAM_ID) return;
-        let caseKey = el('admin-case-select').value;
+        let caseKey = el('admin-case-select.value');
         let name = el('admin-item-name').value.trim();
         let icon = el('admin-item-icon').value.trim() || "🎁";
         let chance = parseFloat(el('admin-item-chance').value);
