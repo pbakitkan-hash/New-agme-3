@@ -977,4 +977,53 @@
         container.innerHTML = '';
         casesDatabase[caseKey].items.forEach((item, index) => {
             container.innerHTML += `
-                <div style="backgrou
+                <div style="background:#0d0f18; padding:6px 10px; border-radius:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                    <span>${item.icon || '🖼️'} ${item.name} (${item.chance}%)</span>
+                    <button class="btn" style="padding:2px 6px; font-size:10px; background:#c0392b;" onclick="adminRemoveItemFromCase('${caseKey}', ${index})">✕</button>
+                </div>
+            `;
+        });
+    }
+
+    function buyShopItem(name, imgUrl, price, sellPrice) {
+        if (player.score < price) return alert(`Не хватает BC! Нужно ${price.toLocaleString()} BC.`);
+        player.score = Math.round((player.score - price) * 100) / 100;
+        player.inventory.push({ 
+            name: name, 
+            img: imgUrl, 
+            sellPrice: sellPrice 
+        });
+        saveGame();
+        updateUI();
+        renderInventory();
+        renderMinesInventorySelector();
+        alert(`🎉 ${name} успешно куплен и добавлен в инвентарь!`);
+    }
+
+    function adminAddItemToCase() {
+        if (player.id !== OWNER_TELEGRAM_ID) return;
+        let caseKey = el('admin-case-select').value;
+        let name = el('admin-item-name').value.trim();
+        let icon = el('admin-item-icon').value.trim() || "🎁";
+        let chance = parseFloat(el('admin-item-chance').value);
+        let price = parseFloat(el('admin-item-price').value);
+
+        if (!name || isNaN(chance) || isNaN(price)) return alert("Заполните все поля предмета!");
+
+        casesDatabase[caseKey].items.push({ name, icon, chance, sellPrice: price });
+        saveGame();
+        renderAdminCaseItemsList();
+        alert(`✅ Предмет "${name}" добавлен в кейс!`);
+    }
+
+    function adminRemoveItemFromCase(caseKey, index) {
+        if (player.id !== OWNER_TELEGRAM_ID) return;
+        casesDatabase[caseKey].items.splice(index, 1);
+        saveGame();
+        renderAdminCaseItemsList();
+    }
+
+    loadGame();
+</script>
+</body>
+</html>
