@@ -249,6 +249,7 @@
             </div>
 
             <div class="roulette-container" id="roulette-container">
+                <div style="font-size: 13px; color: #f39c12; margin-bottom: 6px; font-weight: bold;" id="roulette-counter-label">Открытие кейса 1 из 1</div>
                 <div class="roulette-window">
                     <div class="roulette-pointer"></div>
                     <div class="roulette-track" id="roulette-track"></div>
@@ -378,7 +379,7 @@
             <!-- 1. Garama (150 BC) -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
-                    <img src="https://files.catbox.moe/kmkz5j.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" alt="Garama">
+                    <img src="https://files.catbox.moe/kmkz5j.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" onerror="this.src='https://i.ibb.co/689V9c8/kmkz5j.jpg'" alt="Garama">
                 </div>
                 <div style="flex:1;"><b>Garama</b><br><small style="color:#f39c12">150 BC</small></div>
                 <button class="btn" onclick="buyShopItem('Garama', 'https://files.catbox.moe/kmkz5j.jpg', 150, 75)">Купить</button>
@@ -406,6 +407,7 @@
     let activeCaseKey = 'linear';
     let currentCasePrice = 59;
     let currentWonPrizes = [];
+    let currentOpeningIndex = 0;
     let rouletteTimeout = null;
     let minesGame = { active: false, betItem: null, minesCount: 3, multiplier: 1.00, grid: [] };
     let selectedMinesItemIndex = null;
@@ -508,7 +510,7 @@
             let users = await res.json();
             
             list.innerHTML = '';
-            if (!users || users.length === 0) {
+            if (!users || !Array.isArray(users) || users.length === 0) {
                 list.innerHTML = '<div style="color:#8b93b0; font-size:13px; text-align:center;">Список игроков пуст</div>';
                 return;
             }
@@ -628,16 +630,22 @@
             addLiveDrop(player.username, item);
         }
 
+        currentOpeningIndex = 0;
         el('case-main-box').style.display = 'none';
         el('case-prizes-info').style.display = 'none';
         el('back-to-cases-btn').style.display = 'none';
 
-        if (count > 5) {
+        el('roulette-container').classList.add('show');
+        startNextRouletteOpening();
+    }
+
+    function startNextRouletteOpening() {
+        if (currentOpeningIndex >= currentWonPrizes.length) {
             showWonResults();
-        } else {
-            el('roulette-container').classList.add('show');
-            buildRouletteTrack(currentWonPrizes[0]);
+            return;
         }
+        el('roulette-counter-label').innerText = `Открытие кейса ${currentOpeningIndex + 1} из ${currentWonPrizes.length}`;
+        buildRouletteTrack(currentWonPrizes[currentOpeningIndex]);
     }
 
     function buildRouletteTrack(winningItem) {
@@ -656,7 +664,12 @@
             track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.85, 0.25, 1)';
             track.style.transform = `translateX(-${(24 * 112) - (el('roulette-container').clientWidth / 2) + 56}px)`;
         }, 50);
-        rouletteTimeout = setTimeout(() => showWonResults(), 3600);
+        
+        if (rouletteTimeout) clearTimeout(rouletteTimeout);
+        rouletteTimeout = setTimeout(() => {
+            currentOpeningIndex++;
+            startNextRouletteOpening();
+        }, 3600);
     }
 
     function skipRouletteAnimation() {
@@ -665,6 +678,7 @@
     }
 
     function showWonResults() {
+        if (rouletteTimeout) clearTimeout(rouletteTimeout);
         el('roulette-container').classList.remove('show');
         let resultsList = el('won-prizes-list');
         resultsList.innerHTML = '';
@@ -675,7 +689,9 @@
             if (!grouped[p.name]) grouped[p.name] = { ...p, count: 0 };
             grouped[p.name].count++;
             if (isAutoSell) totalSold += p.sellPrice;
-            else player.inventory.push(p);
+            else {
+                player.inventory.push(p);
+            }
         });
 
         Object.values(grouped).forEach(g => {
@@ -709,16 +725,38 @@
         if (player.inventory.length === 0) { el('inventory-empty-msg').style.display = 'block'; return; }
         el('inventory-empty-msg').style.display = 'none';
 
-        player.inventory.forEach((i, idx) => {
+        let groupedInv = {};
+        player.inventory.forEach((item, idx) => {
+            let key = item.name;
+            if (!groupedInv[key]) {
+                groupedInv[key] = { ...item, count: 0, firstIndex: idx, sellPrice: item.sellPrice };
+            }
+            groupedInv[key].count++;
+        });
+
+        Object.values(groupedInv).forEach((i) => {
             let mediaHtml = i.img ? `<img src="${i.img}" class="prize-img">` : `<div class="prize-icon">${i.icon}</div>`;
-            grid.innerHTML += `<div class="prize-card">${mediaHtml}<div class="prize-title">${i.name}</div><button class="btn" style="padding:4px; font-size:10px; margin-top:6px; width:100%;" onclick="sellInventoryItem(${idx})">Продать (+${i.sellPrice})</button></div>`;
+            let badge = i.count > 1 ? `<span class="prize-count-badge">×${i.count}</span>` : '';
+            grid.innerHTML += `
+                <div class="prize-card">
+                    ${badge}
+                    ${mediaHtml}
+                    <div class="prize-title">${i.name}</div>
+                    <button class="btn" style="padding:4px; font-size:10px; margin-top:6px; width:100%;" onclick="sellInventoryGroup('${i.name}')">Продать все (+${i.sellPrice * i.count})</button>
+                </div>`;
         });
     }
 
-    function sellInventoryItem(index) {
-        let item = player.inventory[index];
-        player.score = Math.round((player.score + item.sellPrice) * 100) / 100;
-        player.inventory.splice(index, 1);
+    function sellInventoryGroup(name) {
+        let totalSold = 0;
+        player.inventory = player.inventory.filter(item => {
+            if (item.name === name) {
+                totalSold += item.sellPrice;
+                return false;
+            }
+            return true;
+        });
+        player.score = Math.round((player.score + totalSold) * 100) / 100;
         saveGame();
         renderInventory();
         renderMinesInventorySelector();
@@ -884,6 +922,7 @@
         try {
             let res = await fetch(NPOINT_URL);
             let users = await res.json();
+            if (!Array.isArray(users)) users = [];
             let t = users.find(u => u.id === id);
             if (t) {
                 t.score = Math.round((t.score + amt) * 100) / 100;
@@ -938,38 +977,4 @@
         container.innerHTML = '';
         casesDatabase[caseKey].items.forEach((item, index) => {
             container.innerHTML += `
-                <div style="background:#0d0f18; padding:6px 10px; border-radius:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-                    <span>${item.icon || '🖼️'} ${item.name} (${item.chance}%)</span>
-                    <button class="btn" style="padding:2px 6px; font-size:10px; background:#c0392b;" onclick="adminRemoveItemFromCase('${caseKey}', ${index})">✕</button>
-                </div>
-            `;
-        });
-    }
-
-    function adminAddItemToCase() {
-        if (player.id !== OWNER_TELEGRAM_ID) return;
-        let caseKey = el('admin-case-select').value;
-        let name = el('admin-item-name').value.trim();
-        let icon = el('admin-item-icon').value.trim() || "🎁";
-        let chance = parseFloat(el('admin-item-chance').value);
-        let price = parseFloat(el('admin-item-price').value);
-
-        if (!name || isNaN(chance) || isNaN(price)) return alert("Заполните все поля предмета!");
-
-        casesDatabase[caseKey].items.push({ name, icon, chance, sellPrice: price });
-        saveGame();
-        renderAdminCaseItemsList();
-        alert(`✅ Предмет "${name}" добавлен в кейс!`);
-    }
-
-    function adminRemoveItemFromCase(caseKey, index) {
-        if (player.id !== OWNER_TELEGRAM_ID) return;
-        casesDatabase[caseKey].items.splice(index, 1);
-        saveGame();
-        renderAdminCaseItemsList();
-    }
-
-    loadGame();
-</script>
-</body>
-</html>
+                <div style="backgrou
