@@ -168,6 +168,7 @@
         .mines-inventory-selector { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 8px; margin-bottom: 10px; }
         .mines-sel-item { min-width: 75px; height: 85px; background: #0d0f18; border: 2px solid #2a2e43; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; text-align: center; padding: 4px; }
         .mines-sel-item.selected { border-color: #f39c12; background: #1a1d29; }
+        .mines-sel-item.disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; }
         .mines-sel-img { width: 36px; height: 36px; object-fit: contain; margin-bottom: 3px; border-radius: 4px; }
     </style>
 </head>
@@ -239,9 +240,9 @@
                 <div style="color:#8b93b0; font-size:12px;">Инвентарь пуст</div>
             </div>
 
-            <div style="font-size:12px; color:#8b93b0; margin-bottom:8px; width:100%;">2. Выберите желаемый предмет для получения:</div>
+            <div style="font-size:12px; color:#8b93b0; margin-bottom:8px; width:100%;">2. Желаемый предмет (дороже вашего):</div>
             <div class="mines-inventory-selector" id="upgrader-target-selector">
-                <div style="color:#8b93b0; font-size:12px;">Выберите первый предмет</div>
+                <div style="color:#8b93b0; font-size:12px;">Сначала выберите свой предмет</div>
             </div>
 
             <div class="card" style="flex-direction: column; align-items: flex-start; gap: 8px;">
@@ -402,7 +403,7 @@
         <div id="view-shop" class="view">
             <h2>Магазин</h2>
             
-            <!-- 1. Garama (С исправленной рабочей ссылкой) -->
+            <!-- 1. Garama (Ваша рабочая ссылка) -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
                     <img src="https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" onerror="this.src='https://files.catbox.moe/kmkz5j.jpg'" alt="Garama">
@@ -820,6 +821,7 @@
             return;
         }
 
+        // Рендер исходных предметов инвентаря
         player.inventory.forEach((item, idx) => {
             let isSel = (upgraderSourceIndex === idx) ? 'selected' : '';
             let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon}</span>`;
@@ -831,6 +833,7 @@
             `;
         });
 
+        // Собираем все возможные призы для цели
         let allPossibleItems = [
             { name: "Garama", img: "https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg", sellPrice: 75 },
             { name: "IXOVER", img: "https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg", sellPrice: 500000 }
@@ -839,14 +842,21 @@
             c.items.forEach(ci => allPossibleItems.push(ci));
         });
 
+        let sourcePrice = (upgraderSourceIndex !== null && player.inventory[upgraderSourceIndex]) ? player.inventory[upgraderSourceIndex].sellPrice : 0;
+
         allPossibleItems.forEach((item) => {
             let isSel = (upgraderTargetItem && upgraderTargetItem.name === item.name) ? 'selected' : '';
+            let isLowerPrice = (upgraderSourceIndex !== null && item.sellPrice <= sourcePrice);
+            let disabledClass = isLowerPrice ? 'disabled' : '';
+            let clickAction = isLowerPrice ? `alert('Этот предмет дешевле или равен вашему!')` : `selectUpgraderTarget('${item.name}')`;
+            let subText = isLowerPrice ? `<span style="color:#e74c3c; font-size:8px;">Дешевле</span>` : `<span style="color:#f39c12; font-size:9px;">${item.sellPrice} BC</span>`;
+
             let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon || '🎁'}</span>`;
             targetContainer.innerHTML += `
-                <div class="mines-sel-item ${isSel}" onclick="selectUpgraderTarget('${item.name}')">
+                <div class="mines-sel-item ${isSel} ${disabledClass}" onclick="${clickAction}">
                     ${mediaHtml}
                     <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${item.name}</span>
-                    <span style="color:#f39c12; font-size:9px;">${item.sellPrice} BC</span>
+                    ${subText}
                 </div>
             `;
         });
@@ -855,6 +865,10 @@
 
     function selectUpgraderSource(idx) {
         upgraderSourceIndex = idx;
+        // Если выбранный целевой предмет стал дешевле нового исходного — сбрасываем его цель
+        if (upgraderTargetItem && player.inventory[idx] && upgraderTargetItem.sellPrice <= player.inventory[idx].sellPrice) {
+            upgraderTargetItem = null;
+        }
         renderUpgraderSelectors();
     }
 
@@ -885,8 +899,8 @@
         let targetPrice = upgraderTargetItem.sellPrice;
 
         if (sourcePrice >= targetPrice) {
-            chanceLabel.innerText = "95% (Максимум)";
-            startBtn.disabled = false;
+            chanceLabel.innerText = "Нельзя апгрейдить на дешевый предмет!";
+            startBtn.disabled = true;
             return;
         }
 
@@ -905,12 +919,15 @@
         let sourcePrice = sourceItem.sellPrice;
         let targetPrice = upgraderTargetItem.sellPrice;
 
-        let chance = (sourcePrice >= targetPrice) ? 95 : Math.floor((sourcePrice / targetPrice) * 90);
+        if (sourcePrice >= targetPrice) return alert("❌ Нельзя апгрейдить на равный или более дешевый предмет!");
+
+        let chance = Math.floor((sourcePrice / targetPrice) * 90);
         if (chance < 1) chance = 1;
         if (chance > 95) chance = 95;
 
         player.inventory.splice(upgraderSourceIndex, 1);
         upgraderSourceIndex = null;
+        upgraderTargetItem = null;
 
         let roll = Math.random() * 100;
         if (roll <= chance) {
@@ -1036,7 +1053,6 @@
             endMinesGame(false);
         } else {
             cell.className = 'mine-cell revealed safe'; cell.innerText = '💎';
-            // Аккуратно сниженный прирост множителя
             let baseStep = 0.05 + (minesGame.minesCount * 0.02);
             minesGame.multiplier = Math.round((minesGame.multiplier + baseStep) * 100) / 100;
             updateMinesUI();
