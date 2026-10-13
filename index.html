@@ -106,7 +106,6 @@
         input:checked + .slider { background-color: #f39c12; }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        /* Мульти-рулетки в ряды с прокруткой до 5 штук */
         .roulette-container { display: none; width: 100%; flex-direction: column; align-items: center; margin-top: 5px; }
         .roulette-container.show { display: flex; }
         .roulette-scroll-box {
@@ -200,6 +199,7 @@
             <button class="menu-close-btn" onclick="toggleMenu()">✕</button>
         </div>
         <button class="drawer-item active" onclick="switchView('cases', this)">🎁 Кейсы <span class="badge-new">ТОП</span></button>
+        <button class="drawer-item" onclick="switchView('upgrader', this)">🔄 Апгрейдер</button>
         <button class="drawer-item" onclick="switchView('profile', this)">👤 Профиль</button>
         <button class="drawer-item" onclick="switchView('farm', this)">🌿 Ферма</button>
         <button class="drawer-item" onclick="switchView('mines', this)">💣 Мины</button>
@@ -231,6 +231,27 @@
             </div>
         </div>
 
+        <!-- АПГРЕЙДЕР -->
+        <div id="view-upgrader" class="view">
+            <h2>🔄 Апгрейдер брейнротов</h2>
+            <div style="font-size:12px; color:#8b93b0; margin-bottom:8px; width:100%;">1. Выберите свой брейнрот для апгрейда:</div>
+            <div class="mines-inventory-selector" id="upgrader-source-selector">
+                <div style="color:#8b93b0; font-size:12px;">Инвентарь пуст</div>
+            </div>
+
+            <div style="font-size:12px; color:#8b93b0; margin-bottom:8px; width:100%;">2. Выберите желаемый предмет для получения:</div>
+            <div class="mines-inventory-selector" id="upgrader-target-selector">
+                <div style="color:#8b93b0; font-size:12px;">Выберите первый предмет</div>
+            </div>
+
+            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <div style="width:100%; display:flex; justify-content:space-between; font-size:14px;">
+                    <span>Шанс успеха:</span> <span id="upgrade-chance-label" style="color:#f39c12; font-weight:bold;">0%</span>
+                </div>
+                <button class="btn" style="width:100%; background:#8e44ad;" id="upgrade-start-btn" onclick="startUpgrade()" disabled>🚀 Сделать апгрейд</button>
+            </div>
+        </div>
+
         <!-- ДЕТАЛИ КЕЙСА -->
         <div id="view-case-detail" class="view">
             <button class="back-btn" onclick="switchView('cases', null)" id="back-to-cases-btn">← Назад</button>
@@ -255,7 +276,6 @@
                 </div>
             </div>
 
-            <!-- Мульти-рулетки в ряды -->
             <div class="roulette-container" id="roulette-container">
                 <div style="font-size: 13px; color: #f39c12; margin-bottom: 4px; font-weight: bold;" id="roulette-counter-label">Открытие кейсов...</div>
                 <div class="roulette-scroll-box" id="roulette-scroll-box"></div>
@@ -382,7 +402,7 @@
         <div id="view-shop" class="view">
             <h2>Магазин</h2>
             
-            <!-- 1. Garama (Исправленная ссылка на картинку с fallback) -->
+            <!-- 1. Garama (Исправленная прямая ссылка) -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
                     <img src="https://i.ibb.co/689V9c8/kmkz5j.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" onerror="this.src='https://files.catbox.moe/kmkz5j.jpg'" alt="Garama">
@@ -416,6 +436,10 @@
     let rouletteTimeout = null;
     let minesGame = { active: false, betItem: null, minesCount: 3, multiplier: 1.00, grid: [] };
     let selectedMinesItemIndex = null;
+
+    // Переменные для апгрейдера
+    let upgraderSourceIndex = null;
+    let upgraderTargetItem = null;
 
     let casesDatabase = {
         'linear': {
@@ -472,6 +496,7 @@
         updateUI();
         renderInventory();
         renderMinesInventorySelector();
+        renderUpgraderSelectors();
         initMinesGrid();
     }
 
@@ -558,6 +583,7 @@
         el('view-' + viewName).classList.add('active');
         if (viewName === 'profile') renderInventory();
         if (viewName === 'mines') renderMinesInventorySelector();
+        if (viewName === 'upgrader') renderUpgraderSelectors();
         el('drawer').classList.remove('open');
         el('overlay').classList.remove('show');
     }
@@ -621,7 +647,6 @@
         openCases(amount);
     }
 
-    // Мульти-открытие: одновременный запуск рулеток в ряды (до 5 видимых с прокруткой)
     function openCases(count) {
         let cost = currentCasePrice * count;
         if (player.score < cost) return alert('Не хватает BC!');
@@ -657,7 +682,6 @@
             `;
         });
 
-        // Запускаем все рулетки одновременно
         currentWonPrizes.forEach((winningItem, index) => {
             buildRouletteTrackForIndex(index, winningItem);
         });
@@ -720,6 +744,7 @@
         saveGame();
         renderInventory();
         renderMinesInventorySelector();
+        renderUpgraderSelectors();
         updateUI();
         el('roulette-results-view').style.display = 'flex';
     }
@@ -774,8 +799,143 @@
         updateUI();
         renderInventory();
         renderMinesInventorySelector();
+        renderUpgraderSelectors();
         
         alert(`✅ Успешно! Вы внесли "${item.name}" и получили +${item.sellPrice} BC.`);
+    }
+
+    // Апгрейдер логика
+    function renderUpgraderSelectors() {
+        let sourceContainer = el('upgrader-source-selector');
+        let targetContainer = el('upgrader-target-selector');
+        if (!sourceContainer || !targetContainer) return;
+
+        sourceContainer.innerHTML = '';
+        targetContainer.innerHTML = '';
+
+        if (player.inventory.length === 0) {
+            sourceContainer.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Инвентарь пуст</div>';
+            targetContainer.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Сначала выберите свой предмет</div>';
+            upgraderSourceIndex = null;
+            upgraderTargetItem = null;
+            updateUpgraderChance();
+            return;
+        }
+
+        // Рендерим инвентарь для выбора исходного предмета
+        player.inventory.forEach((item, idx) => {
+            let isSel = (upgraderSourceIndex === idx) ? 'selected' : '';
+            let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon}</span>`;
+            sourceContainer.innerHTML += `
+                <div class="mines-sel-item ${isSel}" onclick="selectUpgraderSource(${idx})">
+                    ${mediaHtml}
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${item.name}</span>
+                </div>
+            `;
+        });
+
+        // Собираем все уникальные предметы из кейсов и магазина для цели апгрейда
+        let allPossibleItems = [
+            { name: "Garama", img: "https://i.ibb.co/689V9c8/kmkz5j.jpg", sellPrice: 75 },
+            { name: "IXOVER", img: "https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg", sellPrice: 500000 }
+        ];
+        Object.values(casesDatabase).forEach(c => {
+            c.items.forEach(ci => allPossibleItems.push(ci));
+        });
+
+        allPossibleItems.forEach((item, idx) => {
+            let isSel = (upgraderTargetItem && upgraderTargetItem.name === item.name) ? 'selected' : '';
+            let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon || '🎁'}</span>`;
+            targetContainer.innerHTML += `
+                <div class="mines-sel-item ${isSel}" onclick="selectUpgraderTarget('${item.name}')">
+                    ${mediaHtml}
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${item.name}</span>
+                    <span style="color:#f39c12; font-size:9px;">${item.sellPrice} BC</span>
+                </div>
+            `;
+        });
+        updateUpgraderChance();
+    }
+
+    function selectUpgraderSource(idx) {
+        upgraderSourceIndex = idx;
+        renderUpgraderSelectors();
+    }
+
+    function selectUpgraderTarget(name) {
+        let allPossibleItems = [
+            { name: "Garama", img: "https://i.ibb.co/689V9c8/kmkz5j.jpg", sellPrice: 75 },
+            { name: "IXOVER", img: "https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg", sellPrice: 500000 }
+        ];
+        Object.values(casesDatabase).forEach(c => {
+            c.items.forEach(ci => allPossibleItems.push(ci));
+        });
+        upgraderTargetItem = allPossibleItems.find(i => i.name === name);
+        renderUpgraderSelectors();
+    }
+
+    function updateUpgraderChance() {
+        let startBtn = el('upgrade-start-btn');
+        let chanceLabel = el('upgrade-chance-label');
+        if (!startBtn || !chanceLabel) return;
+
+        if (upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) {
+            chanceLabel.innerText = "0%";
+            startBtn.disabled = true;
+            return;
+        }
+
+        let sourcePrice = player.inventory[upgraderSourceIndex].sellPrice;
+        let targetPrice = upgraderTargetItem.sellPrice;
+
+        if (sourcePrice >= targetPrice) {
+            chanceLabel.innerText = "95% (Максимум)";
+            startBtn.disabled = false;
+            return;
+        }
+
+        let chance = Math.floor((sourcePrice / targetPrice) * 90);
+        if (chance < 1) chance = 1;
+        if (chance > 95) chance = 95;
+
+        chanceLabel.innerText = chance + "%";
+        startBtn.disabled = false;
+    }
+
+    function startUpgrade() {
+        if (upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) return;
+
+        let sourceItem = player.inventory[upgraderSourceIndex];
+        let sourcePrice = sourceItem.sellPrice;
+        let targetPrice = upgraderTargetItem.sellPrice;
+
+        let chance = (sourcePrice >= targetPrice) ? 95 : Math.floor((sourcePrice / targetPrice) * 90);
+        if (chance < 1) chance = 1;
+        if (chance > 95) chance = 95;
+
+        // Удаляем предмет из инвентаря
+        player.inventory.splice(upgraderSourceIndex, 1);
+        upgraderSourceIndex = null;
+
+        let roll = Math.random() * 100;
+        if (roll <= chance) {
+            // Успех! Добавляем целевой предмет
+            player.inventory.push({
+                name: upgraderTargetItem.name,
+                icon: upgraderTargetItem.icon || '🎁',
+                img: upgraderTargetItem.img,
+                sellPrice: upgraderTargetItem.sellPrice
+            });
+            alert(`🎉 Успех! Вы выиграли апгрейд и получили "${upgraderTargetItem.name}"!`);
+        } else {
+            alert(`💥 Неудача! Предмет сгорел.`);
+        }
+
+        saveGame();
+        renderInventory();
+        renderMinesInventorySelector();
+        renderUpgraderSelectors();
+        updateUI();
     }
 
     function addLiveDrop(name, item) {
@@ -858,6 +1018,7 @@
         saveGame();
         renderInventory();
         renderMinesInventorySelector();
+        renderUpgraderSelectors();
 
         minesGame = { active: true, betItem: stakedItem, minesCount: count, multiplier: 1.00, grid: new Array(25).fill(false) };
         let placed = 0;
@@ -881,7 +1042,8 @@
             endMinesGame(false);
         } else {
             cell.className = 'mine-cell revealed safe'; cell.innerText = '💎';
-            let baseStep = 0.25 + (minesGame.minesCount * 0.35);
+            // Уменьшенный плавный прирост множителя (чтобы не рос по 4x)
+            let baseStep = 0.05 + (minesGame.minesCount * 0.02);
             minesGame.multiplier = Math.round((minesGame.multiplier + baseStep) * 100) / 100;
             updateMinesUI();
         }
@@ -909,6 +1071,7 @@
         }
         if (!won) alert("💥 Мина! Ваш брейнрот сгорел.");
         renderMinesInventorySelector();
+        renderUpgraderSelectors();
         el('mines-start-btn').style.display = 'block';
     }
 
@@ -971,7 +1134,7 @@
         let newItem = { name, icon, sellPrice: price };
         if (id === player.id) {
             player.inventory.push(newItem);
-            saveGame(); renderInventory(); renderMinesInventorySelector(); alert(`Предмет "${name}" выдан вам!`);
+            saveGame(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); alert(`Предмет "${name}" выдан вам!`);
         } else {
             alert(`Предмет подготовлен для игрока ${id}`);
         }
@@ -1012,12 +1175,13 @@
         updateUI();
         renderInventory();
         renderMinesInventorySelector();
+        renderUpgraderSelectors();
         alert(`🎉 ${name} успешно куплен и добавлен в инвентарь!`);
     }
 
     function adminAddItemToCase() {
         if (player.id !== OWNER_TELEGRAM_ID) return;
-        let caseKey = el('admin-case-select.value');
+        let caseKey = el('admin-case-select').value;
         let name = el('admin-item-name').value.trim();
         let icon = el('admin-item-icon').value.trim() || "🎁";
         let chance = parseFloat(el('admin-item-chance').value);
