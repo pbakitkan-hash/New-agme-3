@@ -130,6 +130,19 @@
         .roulette-item-title { font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 72px; }
         .roulette-results-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; width: 100%; max-height: 220px; overflow-y: auto; }
 
+        /* Рулетка апгрейдера */
+        .upgrade-roulette-window {
+            width: 100%; height: 110px; background: #0d0f18; border: 2px solid #8e44ad;
+            border-radius: 12px; position: relative; overflow: hidden; display: flex; align-items: center; margin-bottom: 12px;
+        }
+        .upgrade-pointer { position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: #f39c12; transform: translateX(-50%); z-index: 10; }
+        .upgrade-track { display: flex; position: absolute; left: 0; transition: transform 4s cubic-bezier(0.15, 0.85, 0.25, 1); }
+        .upgrade-roulette-item {
+            min-width: 90px; height: 98px; background: #1a1d29; border: 1px solid #2a2e43;
+            border-radius: 8px; margin: 0 4px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; padding: 6px;
+        }
+
         .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; margin-top: 10px; }
         .mine-cell {
             aspect-ratio: 1; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 8px;
@@ -235,12 +248,19 @@
         <!-- АПГРЕЙДЕР -->
         <div id="view-upgrader" class="view">
             <h2>🔄 Апгрейдер брейнротов</h2>
-            <div style="font-size:12px; color:#8b93b0; margin-bottom:8px; width:100%;">1. Выберите свой брейнрот для апгрейда:</div>
+            
+            <!-- Окно рулетки апгрейдера -->
+            <div class="upgrade-roulette-window" id="upgrade-roulette-window">
+                <div class="upgrade-pointer"></div>
+                <div class="upgrade-track" id="upgrade-track"></div>
+            </div>
+
+            <div style="font-size:12px; color:#8b93b0; margin-bottom:6px; width:100%;">1. Выберите свой брейнрот для апгрейда:</div>
             <div class="mines-inventory-selector" id="upgrader-source-selector">
                 <div style="color:#8b93b0; font-size:12px;">Инвентарь пуст</div>
             </div>
 
-            <div style="font-size:12px; color:#8b93b0; margin-bottom:8px; width:100%;">2. Желаемый предмет (дороже вашего):</div>
+            <div style="font-size:12px; color:#8b93b0; margin-bottom:6px; width:100%;">2. Желаемый предмет (дороже вашего):</div>
             <div class="mines-inventory-selector" id="upgrader-target-selector">
                 <div style="color:#8b93b0; font-size:12px;">Сначала выберите свой предмет</div>
             </div>
@@ -403,7 +423,7 @@
         <div id="view-shop" class="view">
             <h2>Магазин</h2>
             
-            <!-- 1. Garama (Ваша рабочая ссылка) -->
+            <!-- 1. Garama -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
                     <img src="https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" onerror="this.src='https://files.catbox.moe/kmkz5j.jpg'" alt="Garama">
@@ -412,7 +432,7 @@
                 <button class="btn" onclick="buyShopItem('Garama', 'https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg', 150, 75)">Купить</button>
             </div>
 
-            <!-- 2. IXOVER (1 000 000 BC) -->
+            <!-- 2. IXOVER -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
                     <img src="https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg" style="width:50px; height:50px; object-fit:cover; border-radius:6px; margin-bottom:4px;" alt="IXOVER">
@@ -440,6 +460,7 @@
 
     let upgraderSourceIndex = null;
     let upgraderTargetItem = null;
+    let isUpgrading = false;
 
     let casesDatabase = {
         'linear': {
@@ -497,6 +518,7 @@
         renderInventory();
         renderMinesInventorySelector();
         renderUpgraderSelectors();
+        initUpgradeTrackDummy();
         initMinesGrid();
     }
 
@@ -548,7 +570,7 @@
             users.forEach(u => {
                 list.innerHTML += `
                     <div class="admin-user-row">
-                        <div><b>@${u.username}</b><br><small style="color:#8b93b0">ID: ${u.id} | Баланс: ${u.score} BC</small></div>
+                        <div><b>@${u.username}</b><br><small style="color:#8b93b0">ID: ${u.id} \vert{} Баланс: ${u.score} BC</small></div>
                         <button class="btn" style="padding:6px 10px; font-size:12px; background:#f39c12;" onclick="selectUserFromModal(${u.id})">Выбрать</button>
                     </div>
                 `;
@@ -779,8 +801,7 @@
             let badge = i.count > 1 ? `<span class="prize-count-badge">×${i.count}</span>` : '';
             grid.innerHTML += `
                 <div class="prize-card">
-                    ${badge}
-                    ${mediaHtml}
+                    ${badge}${mediaHtml}
                     <div class="prize-title">${i.name}</div>
                     <div style="font-size:11px; color:#f39c12; margin:3px 0;">+${i.sellPrice} BC / шт</div>
                     <button class="btn" style="padding:6px; font-size:11px; width:100%; background:#27ae60;" onclick="exchangeItem('${i.name}')">Внести</button>
@@ -804,10 +825,11 @@
         alert(`✅ Успешно! Вы внесли "${item.name}" и получили +${item.sellPrice} BC.`);
     }
 
+    // --- АПГРЕЙДЕР ---
     function renderUpgraderSelectors() {
         let sourceContainer = el('upgrader-source-selector');
         let targetContainer = el('upgrader-target-selector');
-        if (!sourceContainer || !targetContainer) return;
+        if (!sourceContainer || !targetContainer || isUpgrading) return;
 
         sourceContainer.innerHTML = '';
         targetContainer.innerHTML = '';
@@ -821,7 +843,6 @@
             return;
         }
 
-        // Рендер исходных предметов инвентаря
         player.inventory.forEach((item, idx) => {
             let isSel = (upgraderSourceIndex === idx) ? 'selected' : '';
             let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon}</span>`;
@@ -833,7 +854,6 @@
             `;
         });
 
-        // Собираем все возможные призы для цели
         let allPossibleItems = [
             { name: "Garama", img: "https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg", sellPrice: 75 },
             { name: "IXOVER", img: "https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg", sellPrice: 500000 }
@@ -848,7 +868,7 @@
             let isSel = (upgraderTargetItem && upgraderTargetItem.name === item.name) ? 'selected' : '';
             let isLowerPrice = (upgraderSourceIndex !== null && item.sellPrice <= sourcePrice);
             let disabledClass = isLowerPrice ? 'disabled' : '';
-            let clickAction = isLowerPrice ? `alert('Этот предмет дешевле или равен вашему!')` : `selectUpgraderTarget('${item.name}')`;
+            let clickAction = isLowerPrice ? `` : `selectUpgraderTarget('${item.name}')`;
             let subText = isLowerPrice ? `<span style="color:#e74c3c; font-size:8px;">Дешевле</span>` : `<span style="color:#f39c12; font-size:9px;">${item.sellPrice} BC</span>`;
 
             let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon || '🎁'}</span>`;
@@ -864,8 +884,8 @@
     }
 
     function selectUpgraderSource(idx) {
+        if (isUpgrading) return;
         upgraderSourceIndex = idx;
-        // Если выбранный целевой предмет стал дешевле нового исходного — сбрасываем его цель
         if (upgraderTargetItem && player.inventory[idx] && upgraderTargetItem.sellPrice <= player.inventory[idx].sellPrice) {
             upgraderTargetItem = null;
         }
@@ -873,6 +893,7 @@
     }
 
     function selectUpgraderTarget(name) {
+        if (isUpgrading) return;
         let allPossibleItems = [
             { name: "Garama", img: "https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg", sellPrice: 75 },
             { name: "IXOVER", img: "https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg", sellPrice: 500000 }
@@ -880,8 +901,26 @@
         Object.values(casesDatabase).forEach(c => {
             c.items.forEach(ci => allPossibleItems.push(ci));
         });
-        upgraderTargetItem = allPossibleItems.find(i => i.name === name);
-        renderUpgraderSelectors();
+        let target = allPossibleItems.find(i => i.name === name);
+        let sourcePrice = (upgraderSourceIndex !== null && player.inventory[upgraderSourceIndex]) ? player.inventory[upgraderSourceIndex].sellPrice : 0;
+        
+        if (target && target.sellPrice > sourcePrice) {
+            upgraderTargetItem = target;
+            renderUpgraderSelectors();
+        }
+    }
+
+    function getCalculatedChance() {
+        if (upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) return 0;
+        let sourcePrice = player.inventory[upgraderSourceIndex].sellPrice;
+        let targetPrice = upgraderTargetItem.sellPrice;
+        if (sourcePrice >= targetPrice) return 0;
+        
+        // Корректный честный расчет шанса (даже для IXOVER)
+        let chance = Math.floor((sourcePrice / targetPrice) * 95);
+        if (chance < 1) chance = 1; // минимум 1% для супер-дорогих целей
+        if (chance > 95) chance = 95;
+        return chance;
     }
 
     function updateUpgraderChance() {
@@ -889,64 +928,97 @@
         let chanceLabel = el('upgrade-chance-label');
         if (!startBtn || !chanceLabel) return;
 
-        if (upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) {
+        let chance = getCalculatedChance();
+        if (chance <= 0) {
             chanceLabel.innerText = "0%";
             startBtn.disabled = true;
             return;
         }
 
-        let sourcePrice = player.inventory[upgraderSourceIndex].sellPrice;
-        let targetPrice = upgraderTargetItem.sellPrice;
-
-        if (sourcePrice >= targetPrice) {
-            chanceLabel.innerText = "Нельзя апгрейдить на дешевый предмет!";
-            startBtn.disabled = true;
-            return;
-        }
-
-        let chance = Math.floor((sourcePrice / targetPrice) * 90);
-        if (chance < 1) chance = 1;
-        if (chance > 95) chance = 95;
-
         chanceLabel.innerText = chance + "%";
-        startBtn.disabled = false;
+        startBtn.disabled = isUpgrading;
+    }
+
+    function initUpgradeTrackDummy() {
+        let track = el('upgrade-track');
+        if (!track) return;
+        track.innerHTML = '';
+        for (let i = 0; i < 20; i++) {
+            track.innerHTML += `
+                <div class="upgrade-roulette-item">
+                    <span style="font-size:24px;">❓</span>
+                    <span style="font-size:10px; font-weight:bold;">Апгрейд</span>
+                </div>
+            `;
+        }
     }
 
     function startUpgrade() {
-        if (upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) return;
+        if (isUpgrading || upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) return;
 
         let sourceItem = player.inventory[upgraderSourceIndex];
-        let sourcePrice = sourceItem.sellPrice;
-        let targetPrice = upgraderTargetItem.sellPrice;
+        let chance = getCalculatedChance();
+        if (chance <= 0) return alert("❌ Неверные условия апгрейда!");
 
-        if (sourcePrice >= targetPrice) return alert("❌ Нельзя апгрейдить на равный или более дешевый предмет!");
-
-        let chance = Math.floor((sourcePrice / targetPrice) * 90);
-        if (chance < 1) chance = 1;
-        if (chance > 95) chance = 95;
+        isUpgrading = true;
+        el('upgrade-start-btn').disabled = true;
 
         player.inventory.splice(upgraderSourceIndex, 1);
         upgraderSourceIndex = null;
-        upgraderTargetItem = null;
-
-        let roll = Math.random() * 100;
-        if (roll <= chance) {
-            player.inventory.push({
-                name: upgraderTargetItem.name,
-                icon: upgraderTargetItem.icon || '🎁',
-                img: upgraderTargetItem.img,
-                sellPrice: upgraderTargetItem.sellPrice
-            });
-            alert(`🎉 Успех! Вы выиграли апгрейд и получили "${upgraderTargetItem.name}"!`);
-        } else {
-            alert(`💥 Неудача! Предмет сгорел.`);
-        }
-
         saveGame();
         renderInventory();
         renderMinesInventorySelector();
-        renderUpgraderSelectors();
-        updateUI();
+
+        let roll = Math.random() * 100;
+        let isWin = (roll <= chance);
+
+        let track = el('upgrade-track');
+        track.style.transition = 'none';
+        track.style.transform = 'translateX(0px)';
+        track.innerHTML = '';
+
+        let winningItem = isWin ? upgraderTargetItem : sourceItem;
+        let losingItem = sourceItem;
+
+        let html = '';
+        for (let i = 0; i < 35; i++) {
+            let item = (i === 27) ? winningItem : (Math.random() > 0.5 ? winningItem : losingItem);
+            let mediaHtml = item.img ? `<img src="${item.img}" class="prize-img" style="width:45px; height:45px;">` : `<span style="font-size:30px;">${item.icon || '🎁'}</span>`;
+            html += `
+                <div class="upgrade-roulette-item">
+                    ${mediaHtml}
+                    <span style="font-size:10px; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:82px;">${item.name}</span>
+                    <span style="font-size:9px; color:#f39c12;">${item.sellPrice} BC</span>
+                </div>
+            `;
+        }
+        track.innerHTML = html;
+
+        setTimeout(() => {
+            track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
+            track.style.transform = `translateX(-${(27 * 98) - (el('upgrade-roulette-window').clientWidth / 2) + 49}px)`;
+        }, 50);
+
+        setTimeout(() => {
+            isUpgrading = false;
+            if (isWin) {
+                player.inventory.push({
+                    name: upgraderTargetItem.name,
+                    icon: upgraderTargetItem.icon || '🎁',
+                    img: upgraderTargetItem.img,
+                    sellPrice: upgraderTargetItem.sellPrice
+                });
+                alert(`🎉 Успех! Вы выиграли апгрейд и получили "${upgraderTargetItem.name}"!`);
+            } else {
+                alert(`💥 Неудача! Предмет сгорел.`);
+            }
+            upgraderTargetItem = null;
+            saveGame();
+            renderInventory();
+            renderMinesInventorySelector();
+            renderUpgraderSelectors();
+            updateUI();
+        }, 4200);
     }
 
     function addLiveDrop(name, item) {
