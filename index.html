@@ -402,13 +402,13 @@
         <div id="view-shop" class="view">
             <h2>Магазин</h2>
             
-            <!-- 1. Garama (Исправленная прямая ссылка) -->
+            <!-- 1. Garama (С исправленной рабочей ссылкой) -->
             <div class="card" style="align-items: center;">
                 <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
-                    <img src="https://i.ibb.co/689V9c8/kmkz5j.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" onerror="this.src='https://files.catbox.moe/kmkz5j.jpg'" alt="Garama">
+                    <img src="https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" onerror="this.src='https://files.catbox.moe/kmkz5j.jpg'" alt="Garama">
                 </div>
                 <div style="flex:1;"><b>Garama</b><br><small style="color:#f39c12">150 BC</small></div>
-                <button class="btn" onclick="buyShopItem('Garama', 'https://i.ibb.co/689V9c8/kmkz5j.jpg', 150, 75)">Купить</button>
+                <button class="btn" onclick="buyShopItem('Garama', 'https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg', 150, 75)">Купить</button>
             </div>
 
             <!-- 2. IXOVER (1 000 000 BC) -->
@@ -437,7 +437,6 @@
     let minesGame = { active: false, betItem: null, minesCount: 3, multiplier: 1.00, grid: [] };
     let selectedMinesItemIndex = null;
 
-    // Переменные для апгрейдера
     let upgraderSourceIndex = null;
     let upgraderTargetItem = null;
 
@@ -804,7 +803,6 @@
         alert(`✅ Успешно! Вы внесли "${item.name}" и получили +${item.sellPrice} BC.`);
     }
 
-    // Апгрейдер логика
     function renderUpgraderSelectors() {
         let sourceContainer = el('upgrader-source-selector');
         let targetContainer = el('upgrader-target-selector');
@@ -822,7 +820,6 @@
             return;
         }
 
-        // Рендерим инвентарь для выбора исходного предмета
         player.inventory.forEach((item, idx) => {
             let isSel = (upgraderSourceIndex === idx) ? 'selected' : '';
             let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon}</span>`;
@@ -834,16 +831,15 @@
             `;
         });
 
-        // Собираем все уникальные предметы из кейсов и магазина для цели апгрейда
         let allPossibleItems = [
-            { name: "Garama", img: "https://i.ibb.co/689V9c8/kmkz5j.jpg", sellPrice: 75 },
+            { name: "Garama", img: "https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg", sellPrice: 75 },
             { name: "IXOVER", img: "https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg", sellPrice: 500000 }
         ];
         Object.values(casesDatabase).forEach(c => {
             c.items.forEach(ci => allPossibleItems.push(ci));
         });
 
-        allPossibleItems.forEach((item, idx) => {
+        allPossibleItems.forEach((item) => {
             let isSel = (upgraderTargetItem && upgraderTargetItem.name === item.name) ? 'selected' : '';
             let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon || '🎁'}</span>`;
             targetContainer.innerHTML += `
@@ -864,7 +860,7 @@
 
     function selectUpgraderTarget(name) {
         let allPossibleItems = [
-            { name: "Garama", img: "https://i.ibb.co/689V9c8/kmkz5j.jpg", sellPrice: 75 },
+            { name: "Garama", img: "https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg", sellPrice: 75 },
             { name: "IXOVER", img: "https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg", sellPrice: 500000 }
         ];
         Object.values(casesDatabase).forEach(c => {
@@ -913,13 +909,11 @@
         if (chance < 1) chance = 1;
         if (chance > 95) chance = 95;
 
-        // Удаляем предмет из инвентаря
         player.inventory.splice(upgraderSourceIndex, 1);
         upgraderSourceIndex = null;
 
         let roll = Math.random() * 100;
         if (roll <= chance) {
-            // Успех! Добавляем целевой предмет
             player.inventory.push({
                 name: upgraderTargetItem.name,
                 icon: upgraderTargetItem.icon || '🎁',
@@ -1042,7 +1036,7 @@
             endMinesGame(false);
         } else {
             cell.className = 'mine-cell revealed safe'; cell.innerText = '💎';
-            // Уменьшенный плавный прирост множителя (чтобы не рос по 4x)
+            // Аккуратно сниженный прирост множителя
             let baseStep = 0.05 + (minesGame.minesCount * 0.02);
             minesGame.multiplier = Math.round((minesGame.multiplier + baseStep) * 100) / 100;
             updateMinesUI();
