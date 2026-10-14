@@ -1,1333 +1,706 @@
+cat > /mnt/user-data/outputs/index.html <<'EOF'
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Brainrot Case</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-        body {
-            background-color: #0d0f18; color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0; padding: 0; display: flex; justify-content: center;
-            height: 100vh; overflow: hidden;
-        }
-        .app-wrapper {
-            width: 100%; max-width: 480px; height: 100%;
-            background: #0d0f18; display: flex; flex-direction: column;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8); position: relative;
-        }
-        .live-bar {
-            background: #141722; border-bottom: 1px solid #23283d;
-            padding: 6px 12px; display: flex; align-items: center; gap: 8px;
-            font-size: 12px; overflow-x: auto; white-space: nowrap;
-        }
-        .live-tag { background: #e74c3c; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; }
-        .live-feed { display: flex; align-items: center; gap: 6px; scrollbar-width: none; }
-        .live-item { display: inline-flex; align-items: center; background: #1a1d29; border: 1px solid #2a2e43; padding: 3px 8px; border-radius: 6px; gap: 6px; font-size: 11px; }
-
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 16px; background: #141722; border-bottom: 1px solid #23283d;
-        }
-        .balance-badge {
-            background: #1a1d29; border: 1px solid #2a2e43; padding: 5px 10px; border-radius: 20px;
-            color: #f39c12; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 5px;
-        }
-        .bc-icon {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 20px; height: 20px; background: #f39c12; color: #0d0f18;
-            border-radius: 50%; font-size: 11px; font-weight: 900;
-        }
-        .profile-avatar-btn {
-            width: 36px; height: 36px; background: #23283d; border: 2px solid #f39c12; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; font-weight: bold; color: #f39c12; font-size: 14px; cursor: pointer;
-        }
-
-        .content { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; align-items: center; }
-        .view { display: none; width: 100%; flex-direction: column; align-items: center; }
-        .view.active { display: flex; }
-
-        .drawer {
-            position: absolute; top: 0; right: -100%; width: 280px; height: 100%;
-            background: #141722; border-left: 1px solid #23283d; z-index: 1000;
-            transition: right 0.25s ease; display: flex; flex-direction: column; padding: 20px; overflow-y: auto;
-        }
-        .drawer.open { right: 0; }
-        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 18px; font-weight: bold; }
-        .menu-close-btn { background: #23283d; border: none; color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
-        .drawer-item {
-            background: #1a1d29; border: 1px solid #2a2e43; color: #fff; font-size: 15px; text-align: left;
-            padding: 12px 14px; border-radius: 10px; cursor: pointer; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-        }
-        .drawer-item.active { border-color: #f39c12; color: #f39c12; font-weight: bold; }
-        .badge-new { background: #e74c3c; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 900; display: none; }
-        .overlay.show { display: block; }
-
-        .card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 14px; padding: 16px; width: 100%; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .btn { background: #f39c12; border: none; color: #fff; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; }
-        .btn:active { opacity: 0.8; }
-        .btn:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.5; }
-        h2 { margin-top: 0; font-size: 22px; width: 100%; text-align: left; }
-
-        .back-btn { background: #23283d; border: none; color: #fff; padding: 8px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; align-self: flex-start; font-weight: bold; }
-        .prizes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
-        .prize-card { background: #1a1d29; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
-        .prize-img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; border-radius: 6px; }
-        .prize-icon { font-size: 32px; margin-bottom: 5px; }
-        .prize-title { font-size: 12px; font-weight: bold; word-break: break-word; }
-        .prize-count-badge { position: absolute; top: 6px; right: 6px; background: #e74c3c; color: #fff; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 6px; z-index: 2; }
-        .prize-chance { font-size: 11px; color: #8b93b0; margin-top: 3px; }
-
-        .input-field, .select-field {
-            width: 100%; padding: 12px; background: #0d0f18; border: 1px solid #2a2e43;
-            border-radius: 10px; color: #fff; font-size: 14px; margin-bottom: 10px; outline: none;
-        }
-        .admin-panel { display: none; width: 100%; background: #141722; border: 1px dashed #f39c12; border-radius: 14px; padding: 14px; margin-top: 15px; }
-        .admin-panel.show { display: block; }
-        .admin-user-row { background: #0d0f18; border: 1px solid #2a2e43; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
-
-        .case-buttons-group { display: flex; gap: 6px; width: 100%; margin-bottom: 15px; }
-        .case-buttons-group .btn { flex: 1; padding: 10px 4px; font-size: 13px; text-align: center; }
-        .plus-btn { background: #27ae60 !important; font-size: 20px !important; }
-
-        .autosell-toggle-box {
-            display: flex; justify-content: space-between; align-items: center;
-            width: 100%; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 10px;
-            padding: 10px 14px; margin-bottom: 15px; font-size: 14px; font-weight: bold;
-        }
-        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #23283d; transition: .2s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
-        input:checked + .slider { background-color: #f39c12; }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        .roulette-container { display: none; width: 100%; flex-direction: column; align-items: center; margin-top: 5px; }
-        .roulette-container.show { display: flex; }
-        .roulette-scroll-box {
-            width: 100%; max-height: 290px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
-            scrollbar-width: thin; padding-right: 2px;
-        }
-        .roulette-row-wrapper { width: 100%; background: #141722; border: 1px solid #2a2e43; border-radius: 10px; padding: 4px; }
-        .roulette-row-title { font-size: 10px; color: #f39c12; font-weight: bold; margin-bottom: 2px; padding-left: 4px; }
-        .roulette-window {
-            width: 100%; height: 95px; background: #0d0f18; border: 1.5px solid #f39c12;
-            border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center;
-        }
-        .roulette-pointer { position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; background: #e74c3c; transform: translateX(-50%); z-index: 10; }
-        .roulette-track { display: flex; position: absolute; left: 0; transition: transform 3.5s cubic-bezier(0.15, 0.85, 0.25, 1); }
-        .roulette-item {
-            min-width: 80px; height: 85px; background: #1a1d29; border: 1px solid #2a2e43;
-            border-radius: 6px; margin: 0 4px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; text-align: center; padding: 4px;
-        }
-        .roulette-item-img { width: 35px; height: 35px; object-fit: contain; margin-bottom: 2px; border-radius: 4px; }
-        .roulette-item-icon { font-size: 28px; margin-bottom: 4px; }
-        .roulette-item-title { font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 72px; }
-        .roulette-results-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; width: 100%; max-height: 220px; overflow-y: auto; }
-
-        /* Круговая рулетка апгрейдера */
-        .circle-roulette-box {
-            position: relative; width: 160px; height: 160px; margin: 10px auto;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .circle-roulette-box canvas {
-            width: 100%; height: 100%; border-radius: 50%;
-            box-shadow: 0 0 15px rgba(142, 68, 173, 0.4);
-        }
-        .circle-pointer {
-            position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent;
-            border-top: 14px solid #f39c12; z-index: 10; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
-        }
-
-        .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; margin-top: 10px; }
-        .mine-cell {
-            aspect-ratio: 1; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer;
-        }
-        .mine-cell.revealed { background: #141722; cursor: default; }
-        .mine-cell.mine { background: #c0392b !important; }
-        .mine-cell.safe { background: #27ae60 !important; }
-
-        .farm-stats { display: flex; justify-content: space-around; width: 100%; background: #1a1d29; border-radius: 14px; padding: 14px; margin-bottom: 20px; border: 1px solid #2a2e43; }
-        .farm-stat-item { text-align: center; font-size: 13px; color: #8b93b0; }
-        .farm-stat-value { font-size: 16px; font-weight: bold; color: #fff; margin-top: 4px; }
-        .energy-box { width: 100%; background: #1a1d29; border: 1px solid #2a2e43; border-radius: 12px; padding: 14px; margin-bottom: 25px; }
-        .energy-info { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #8b93b0; }
-        .energy-bar-bg { width: 100%; height: 12px; background: #0d0f18; border-radius: 6px; overflow: hidden; }
-        .energy-bar-fill { height: 100%; width: 100%; background: #f39c12; transition: width 0.2s; }
-        .character-container { position: relative; margin: 15px 0; cursor: pointer; text-align: center; }
-        .character-img { width: 160px; height: 160px; object-fit: contain; filter: drop-shadow(0 0 15px rgba(243,156,18,0.3)); }
-        .char-name { font-size: 22px; font-weight: bold; font-style: italic; margin-top: 10px; color: #f39c12; }
-
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 2000; display: none;
-            justify-content: center; align-items: center; padding: 20px;
-        }
-        .modal-overlay.show { display: flex; }
-        .modal-card {
-            background: #141722; border: 1px solid #f39c12; border-radius: 14px;
-            width: 100%; max-width: 380px; max-height: 80vh; display: flex;
-            flex-direction: column; padding: 16px; position: relative;
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: bold; font-size: 16px; color: #f39c12; }
-        .modal-close { background: #23283d; border: none; color: #fff; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
-        .modal-users-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-
-        .mines-inventory-selector { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 8px; margin-bottom: 10px; }
-        .mines-sel-item { min-width: 75px; height: 85px; background: #0d0f18; border: 2px solid #2a2e43; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; text-align: center; padding: 4px; }
-        .mines-sel-item.selected { border-color: #f39c12; background: #1a1d29; }
-        .mines-sel-item.disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; }
-        .mines-sel-img { width: 36px; height: 36px; object-fit: contain; margin-bottom: 3px; border-radius: 4px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Brainrot Case</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;user-select:none;-webkit-user-select:none}
+input,textarea,select{user-select:text;-webkit-user-select:text}
+body{background:#0d0f18;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;display:flex;justify-content:center;height:100vh;overflow:hidden}
+.app-wrapper{width:100%;max-width:480px;height:100%;background:#0d0f18;display:flex;flex-direction:column;box-shadow:0 0 20px #000c;position:relative}
+.live-bar{background:#141722;border-bottom:1px solid #23283d;padding:6px 12px;display:flex;align-items:center;gap:8px;font-size:12px;overflow-x:auto;white-space:nowrap}
+.live-tag{background:#e74c3c;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:10px}
+.live-feed{display:flex;align-items:center;gap:6px}
+.live-item{display:inline-flex;align-items:center;background:#1a1d29;border:1px solid #2a2e43;padding:3px 8px;border-radius:6px;gap:6px;font-size:11px}
+.header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#141722;border-bottom:1px solid #23283d}
+.balance-badge{background:#1a1d29;border:1px solid #2a2e43;padding:5px 10px;border-radius:20px;color:#f39c12;font-weight:bold;font-size:15px;display:flex;align-items:center;gap:5px}
+.bc-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;background:#f39c12;color:#0d0f18;border-radius:50%;font-size:11px;font-weight:900}
+.profile-avatar-btn{width:36px;height:36px;background:#23283d;border:2px solid #f39c12;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#f39c12;font-size:14px;cursor:pointer}
+.content{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;align-items:center}
+.view{display:none;width:100%;flex-direction:column;align-items:center}
+.view.active{display:flex}
+.drawer{position:absolute;top:0;right:-100%;width:280px;height:100%;background:#141722;border-left:1px solid #23283d;z-index:1000;transition:right .25s ease;display:flex;flex-direction:column;padding:20px;overflow-y:auto}
+.drawer.open{right:0}
+.drawer-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;font-size:18px;font-weight:bold}
+.menu-close-btn{background:#23283d;border:none;color:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
+.drawer-item{background:#1a1d29;border:1px solid #2a2e43;color:#fff;font-size:15px;text-align:left;padding:12px 14px;border-radius:10px;cursor:pointer;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.drawer-item.active{border-color:#f39c12;color:#f39c12;font-weight:bold}
+.badge-new{background:#e74c3c;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold;color:#fff}
+.overlay{position:absolute;inset:0;background:#0009;z-index:900;display:none}
+.overlay.show{display:block}
+.card{background:#1a1d29;border:1px solid #2a2e43;border-radius:14px;padding:16px;width:100%;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.btn{background:#f39c12;border:none;color:#fff;padding:10px 18px;border-radius:10px;font-weight:bold;cursor:pointer;font-size:15px}
+.btn:active{opacity:.8}
+.btn:disabled{background:#555!important;cursor:not-allowed;opacity:.5}
+h2{margin-top:0;font-size:22px;width:100%;text-align:left}
+.back-btn{background:#23283d;border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;margin-bottom:15px;align-self:flex-start;font-weight:bold}
+.prizes-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:10px}
+.prize-card{background:#1a1d29;border:1px solid #2a2e43;border-radius:10px;padding:10px;text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+.prize-img{width:60px;height:60px;object-fit:contain;margin-bottom:5px;border-radius:6px}
+.prize-icon{font-size:32px;margin-bottom:5px}
+.prize-title{font-size:12px;font-weight:bold;word-break:break-word}
+.prize-count-badge{position:absolute;top:6px;right:6px;background:#e74c3c;color:#fff;font-size:11px;font-weight:bold;padding:2px 6px;border-radius:6px;z-index:2}
+.prize-chance{font-size:11px;color:#8b93b0;margin-top:3px}
+.input-field,.select-field{width:100%;padding:12px;background:#0d0f18;border:1px solid #2a2e43;border-radius:10px;color:#fff;font-size:14px;margin-bottom:10px;outline:none}
+.input-field:focus{border-color:#f39c12}
+.admin-panel{display:none;width:100%;background:#141722;border:1px dashed #f39c12;border-radius:14px;padding:14px;margin-top:15px}
+.admin-panel.show{display:block}
+.admin-user-row{background:#0d0f18;border:1px solid #2a2e43;border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.case-buttons-group{display:flex;gap:6px;width:100%;margin-bottom:15px}
+.case-buttons-group .btn{flex:1;padding:10px 4px;font-size:13px;text-align:center}
+.plus-btn{background:#27ae60!important;font-size:20px!important}
+.autosell-toggle-box{display:flex;justify-content:space-between;align-items:center;width:100%;background:#1a1d29;border:1px solid #2a2e43;border-radius:10px;padding:10px 14px;margin-bottom:15px;font-size:14px;font-weight:bold}
+.switch{position:relative;display:inline-block;width:44px;height:24px}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;inset:0;background:#23283d;transition:.2s;border-radius:24px}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%}
+input:checked+.slider{background:#f39c12}
+input:checked+.slider:before{transform:translateX(20px)}
+.roulette-container{display:none;width:100%;flex-direction:column;align-items:center;margin-top:5px}
+.roulette-container.show{display:flex}
+.roulette-scroll-box{width:100%;max-height:290px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.roulette-row-wrapper{width:100%;background:#141722;border:1px solid #2a2e43;border-radius:10px;padding:4px}
+.roulette-row-title{font-size:10px;color:#f39c12;font-weight:bold;margin-bottom:2px;padding-left:4px}
+.roulette-window{width:100%;height:95px;background:#0d0f18;border:1.5px solid #f39c12;border-radius:8px;position:relative;overflow:hidden;display:flex;align-items:center}
+.roulette-pointer{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#e74c3c;transform:translateX(-50%);z-index:10}
+.roulette-track{display:flex;position:absolute;left:0}
+.roulette-item{min-width:80px;height:85px;background:#1a1d29;border:1px solid #2a2e43;border-radius:6px;margin:0 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4px}
+.roulette-item-img{width:35px;height:35px;object-fit:contain;margin-bottom:2px;border-radius:4px}
+.roulette-item-icon{font-size:28px;margin-bottom:4px}
+.roulette-item-title{font-size:10px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72px}
+.roulette-results-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px;width:100%;max-height:220px;overflow-y:auto}
+.circle-roulette-box{position:relative;width:180px;height:180px;margin:10px auto;display:flex;align-items:center;justify-content:center}
+.circle-roulette-box canvas{width:100%;height:100%;border-radius:50%;box-shadow:0 0 15px #8e44ad66}
+.circle-pointer{position:absolute;top:-8px;left:50%;transform:translateX(-50%);border-left:9px solid transparent;border-right:9px solid transparent;border-top:16px solid #f39c12;z-index:10;filter:drop-shadow(0 2px 2px #0008)}
+.mines-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%;margin-top:10px}
+.mine-cell{aspect-ratio:1;background:#1a1d29;border:1px solid #2a2e43;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
+.mine-cell.revealed{background:#141722;cursor:default}
+.mine-cell.mine{background:#c0392b!important}
+.mine-cell.safe{background:#27ae60!important}
+.farm-stats{display:flex;justify-content:space-around;width:100%;background:#1a1d29;border-radius:14px;padding:14px;margin-bottom:20px;border:1px solid #2a2e43}
+.farm-stat-item{text-align:center;font-size:13px;color:#8b93b0}
+.farm-stat-value{font-size:16px;font-weight:bold;color:#fff;margin-top:4px}
+.energy-box{width:100%;background:#1a1d29;border:1px solid #2a2e43;border-radius:12px;padding:14px;margin-bottom:25px}
+.energy-info{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px;color:#8b93b0}
+.energy-bar-bg{width:100%;height:12px;background:#0d0f18;border-radius:6px;overflow:hidden}
+.energy-bar-fill{height:100%;width:100%;background:#f39c12;transition:width .2s}
+.character-container{position:relative;margin:15px 0;cursor:pointer;text-align:center}
+.character-img{width:160px;height:160px;object-fit:contain;filter:drop-shadow(0 0 15px #f39c124d)}
+.char-name{font-size:22px;font-weight:bold;font-style:italic;margin-top:10px;color:#f39c12}
+.modal-overlay{position:fixed;inset:0;background:#000b;z-index:2000;display:none;justify-content:center;align-items:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal-card{background:#141722;border:1px solid #f39c12;border-radius:14px;width:100%;max-width:380px;max-height:80vh;display:flex;flex-direction:column;padding:16px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-weight:bold;font-size:16px;color:#f39c12}
+.modal-close{background:#23283d;border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer}
+.modal-users-list{overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.mines-inventory-selector{display:flex;gap:8px;overflow-x:auto;width:100%;padding-bottom:8px;margin-bottom:10px}
+.mines-sel-item{min-width:75px;height:85px;background:#0d0f18;border:2px solid #2a2e43;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:10px;text-align:center;padding:4px}
+.mines-sel-item.selected{border-color:#f39c12;background:#1a1d29}
+.mines-sel-item.disabled{opacity:.4;cursor:not-allowed;border-color:#555}
+.mines-sel-img{width:36px;height:36px;object-fit:contain;margin-bottom:3px;border-radius:4px}
+.sel-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+</style>
 </head>
 <body>
-
 <div class="app-wrapper">
-    <div class="live-bar">
-        <span class="live-tag">LIVE</span>
-        <div class="live-feed" id="live-feed">
-            <span id="no-drops-msg" style="color: #8b93b0; font-size: 11px;">Ожидание дропов...</span>
-        </div>
+  <div class="live-bar"><span class="live-tag">LIVE</span>
+    <div class="live-feed" id="live-feed"><span id="no-drops-msg" style="color:#8b93b0;font-size:11px">Ожидание дропов...</span></div></div>
+  <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+  <div class="modal-overlay" id="users-modal"><div class="modal-card">
+    <div class="modal-header"><span>👥 Выберите игрока</span><button class="modal-close" onclick="closeUsersModal()">✕</button></div>
+    <div class="modal-users-list" id="modal-users-list"></div></div></div>
+
+  <div class="drawer" id="drawer">
+    <div class="drawer-header"><span>МЕНЮ</span><button class="menu-close-btn" onclick="toggleMenu()">✕</button></div>
+    <button class="drawer-item active" onclick="switchView('cases',this)">🎁 Кейсы <span class="badge-new">ТОП</span></button>
+    <button class="drawer-item" onclick="switchView('upgrader',this)">🔄 Апгрейдер</button>
+    <button class="drawer-item" onclick="switchView('profile',this)">👤 Профиль</button>
+    <button class="drawer-item" onclick="switchView('farm',this)">🌿 Ферма</button>
+    <button class="drawer-item" onclick="switchView('mines',this)">💣 Мины</button>
+    <button class="drawer-item" onclick="switchView('shop',this)">🛒 Магазин</button>
+  </div>
+
+  <div class="header"><div>BRAINROT CASE</div>
+    <div onclick="toggleMenu()" style="display:flex;align-items:center;gap:10px;cursor:pointer">
+      <div class="balance-badge"><span class="bc-icon">BC</span><span id="balance">0.00</span></div>
+      <div class="profile-avatar-btn" id="header-avatar">P</div></div></div>
+
+  <div class="content">
+    <!-- КЕЙСЫ -->
+    <div id="view-cases" class="view active">
+      <h2>Доступные кейсы</h2>
+      <div class="card" onclick="openCaseDetails('linear')" style="cursor:pointer">
+        <div><b>Линейный кейс</b><br><small style="color:#8b93b0">59 BC</small></div>
+        <button class="btn" onclick="event.stopPropagation();openCaseDetails('linear')">Смотреть</button></div>
+      <div class="card" onclick="openCaseDetails('all_or_nothing')" style="cursor:pointer;border-color:#e74c3c">
+        <div><b>Всё или ничего</b> 🔥<br><small style="color:#e74c3c">100 BC</small></div>
+        <button class="btn" style="background:#e74c3c" onclick="event.stopPropagation();openCaseDetails('all_or_nothing')">Смотреть</button></div>
     </div>
 
-    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
-
-    <div class="modal-overlay" id="users-modal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <span>👥 Выберите игрока</span>
-                <button class="modal-close" onclick="closeUsersModal()">✕</button>
-            </div>
-            <div class="modal-users-list" id="modal-users-list"></div>
-        </div>
+    <!-- АПГРЕЙДЕР -->
+    <div id="view-upgrader" class="view">
+      <h2>🔄 Апгрейдер брейнротов</h2>
+      <div class="circle-roulette-box"><div class="circle-pointer"></div><canvas id="upgrade-circle-canvas" width="360" height="360"></canvas></div>
+      <div style="font-size:12px;color:#8b93b0;margin-bottom:6px;width:100%">1. Выберите свой брейнрот для апгрейда:</div>
+      <div class="mines-inventory-selector" id="upgrader-source-selector"></div>
+      <div style="font-size:12px;color:#8b93b0;margin-bottom:6px;width:100%">2. Желаемый предмет (дороже вашего):</div>
+      <div class="mines-inventory-selector" id="upgrader-target-selector"></div>
+      <div class="card" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <div style="width:100%;display:flex;justify-content:space-between;font-size:14px"><span>Шанс успеха:</span><span id="upgrade-chance-label" style="color:#27ae60;font-weight:bold">0%</span></div>
+        <div id="upgrade-formula" style="font-size:11px;color:#8b93b0"></div>
+        <button class="btn" style="width:100%;background:#8e44ad" id="upgrade-start-btn" onclick="startUpgrade()" disabled>🚀 Сделать апгрейд</button>
+      </div>
     </div>
 
-    <div class="drawer" id="drawer">
-        <div class="drawer-header">
-            <span>МЕНЮ</span>
-            <button class="menu-close-btn" onclick="toggleMenu()">✕</button>
+    <!-- ДЕТАЛИ КЕЙСА -->
+    <div id="view-case-detail" class="view">
+      <button class="back-btn" onclick="switchView('cases',null)" id="back-to-cases-btn">← Назад</button>
+      <h2 id="detail-case-title">Кейс</h2>
+      <div id="case-main-box" style="display:flex;flex-direction:column;align-items:center;width:100%">
+        <div style="font-size:60px;margin:10px 0" id="case-box-icon">📦</div>
+        <div class="autosell-toggle-box"><span>⚡ Авто-продажа выпавшего</span>
+          <label class="switch"><input type="checkbox" id="autosell-checkbox"><span class="slider"></span></label></div>
+        <div class="case-buttons-group">
+          <button class="btn" onclick="openCases(1)">х1<br><span style="font-size:10px" id="price-x1"></span></button>
+          <button class="btn" onclick="openCases(3)" style="background:#9b59b6">х3<br><span style="font-size:10px" id="price-x3"></span></button>
+          <button class="btn" onclick="openCases(5)" style="background:#e67e22">х5<br><span style="font-size:10px" id="price-x5"></span></button>
+          <button class="btn plus-btn" onclick="openCustomAmountCases()">+</button>
         </div>
-        <button class="drawer-item active" onclick="switchView('cases', this)">🎁 Кейсы <span class="badge-new">ТОП</span></button>
-        <button class="drawer-item" onclick="switchView('upgrader', this)">🔄 Апгрейдер</button>
-        <button class="drawer-item" onclick="switchView('profile', this)">👤 Профиль</button>
-        <button class="drawer-item" onclick="switchView('farm', this)">🌿 Ферма</button>
-        <button class="drawer-item" onclick="switchView('mines', this)">💣 Мины</button>
-        <button class="drawer-item" onclick="switchView('shop', this)">🛒 Магазин</button>
+      </div>
+      <div class="roulette-container" id="roulette-container">
+        <div style="font-size:13px;color:#f39c12;margin-bottom:4px;font-weight:bold" id="roulette-counter-label"></div>
+        <div class="roulette-scroll-box" id="roulette-scroll-box"></div>
+        <button class="btn" style="margin-top:10px;background:#e74c3c;width:100%" onclick="skipRouletteAnimation()">⏭ Пропустить</button>
+      </div>
+      <div id="roulette-results-view" style="display:none;width:100%;flex-direction:column;align-items:center">
+        <h3 style="color:#f39c12;margin:5px 0">🎉 Вы выиграли:</h3>
+        <div class="roulette-results-list" id="won-prizes-list"></div>
+        <button class="btn" style="width:100%;margin-top:15px" onclick="resetCaseView()">Забрать</button>
+      </div>
+      <div id="case-prizes-info" style="width:100%">
+        <div style="font-weight:bold;font-size:16px;margin-top:5px">Возможные призы:</div>
+        <div class="prizes-grid" id="prizes-grid"></div>
+      </div>
     </div>
 
-    <div class="header">
-        <div class="header-left">BRAINROT CASE</div>
-        <div class="header-right" onclick="toggleMenu()" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-            <div class="balance-badge">
-                <span class="bc-icon">BC</span> 
-                <span id="balance">0.00</span>
-            </div>
-            <div class="profile-avatar-btn" id="header-avatar">P</div>
-        </div>
+    <!-- МИНЫ -->
+    <div id="view-mines" class="view">
+      <h2>💣 Мины</h2>
+      <div style="font-size:12px;color:#e74c3c;margin-bottom:8px;width:100%">Выберите брейнрот из инвентаря для ставки (мин от 3):</div>
+      <div class="mines-inventory-selector" id="mines-inventory-selector"></div>
+      <div class="card" style="flex-direction:column;align-items:flex-start;gap:10px">
+        <div style="width:100%;display:flex;justify-content:space-between;align-items:center"><span>Мины (3-24):</span>
+          <input type="number" id="mines-count" class="input-field" value="3" min="3" max="24" style="width:120px;margin-bottom:0"></div>
+        <button class="btn" style="width:100%;background:#27ae60" id="mines-start-btn" onclick="startMinesGame()" disabled>🎲 Выберите брейнрот</button>
+      </div>
+      <div id="mines-game-box" style="display:none;width:100%;flex-direction:column;align-items:center">
+        <div style="font-size:15px;margin-bottom:10px;font-weight:bold">Множитель: <span id="mines-multiplier" style="color:#f39c12">1.00x</span></div>
+        <div class="mines-grid" id="mines-grid"></div>
+        <button class="btn" style="width:100%;margin-top:15px;background:#e74c3c" onclick="cashoutMinesGame()">💰 Забрать приз</button>
+      </div>
     </div>
 
-    <div class="content">
-        <!-- КЕЙСЫ -->
-        <div id="view-cases" class="view active">
-            <h2>Доступные кейсы</h2>
-            <div class="card" onclick="openCaseDetails('linear')" style="cursor: pointer;">
-                <div><b>Линейный кейс</b><br><small style="color:#8b93b0" id="linear-case-sub">4 предмета • 59 BC</small></div>
-                <button class="btn" onclick="event.stopPropagation(); openCaseDetails('linear')">Смотреть</button>
-            </div>
-            <div class="card" onclick="openCaseDetails('all_or_nothing')" style="cursor: pointer; border-color: #e74c3c;">
-                <div><b>Всё или ничего</b> 🔥<br><small style="color:#e74c3c" id="all-case-sub">2 предмета • 100 BC</small></div>
-                <button class="btn" style="background: #e74c3c;" onclick="event.stopPropagation(); openCaseDetails('all_or_nothing')">Смотреть</button>
-            </div>
-        </div>
-
-        <!-- АПГРЕЙДЕР -->
-        <div id="view-upgrader" class="view">
-            <h2>🔄 Апгрейдер брейнротов</h2>
-            
-            <!-- Круговая рулетка -->
-            <div class="circle-roulette-box">
-                <div class="circle-pointer"></div>
-                <canvas id="upgrade-circle-canvas" width="200" height="200"></canvas>
-            </div>
-
-            <div style="font-size:12px; color:#8b93b0; margin-bottom:6px; width:100%;">1. Выберите свой брейнрот для апгрейда:</div>
-            <div class="mines-inventory-selector" id="upgrader-source-selector">
-                <div style="color:#8b93b0; font-size:12px;">Инвентарь пуст</div>
-            </div>
-
-            <div style="font-size:12px; color:#8b93b0; margin-bottom:6px; width:100%;">2. Желаемый предмет (дороже вашего):</div>
-            <div class="mines-inventory-selector" id="upgrader-target-selector">
-                <div style="color:#8b93b0; font-size:12px;">Сначала выберите свой предмет</div>
-            </div>
-
-            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-                <div style="width:100%; display:flex; justify-content:space-between; font-size:14px;">
-                    <span>Шанс успеха:</span> <span id="upgrade-chance-label" style="color:#27ae60; font-weight:bold;">0%</span>
-                </div>
-                <button class="btn" style="width:100%; background:#8e44ad;" id="upgrade-start-btn" onclick="startUpgrade()" disabled>🚀 Сделать апгрейд</button>
-            </div>
-        </div>
-
-        <!-- ДЕТАЛИ КЕЙСА -->
-        <div id="view-case-detail" class="view">
-            <button class="back-btn" onclick="switchView('cases', null)" id="back-to-cases-btn">← Назад</button>
-            <h2 id="detail-case-title">Кейс</h2>
-            
-            <div id="case-main-box" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-                <div style="font-size: 60px; margin: 10px 0;" id="case-box-icon">📦</div>
-                
-                <div class="autosell-toggle-box">
-                    <span>⚡ Авто-продажа выпавшего</span>
-                    <label class="switch">
-                        <input type="checkbox" id="autosell-checkbox">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="case-buttons-group">
-                    <button class="btn" onclick="openCases(1)">х1<br><span style="font-size:10px;" id="price-x1">59 BC</span></button>
-                    <button class="btn" onclick="openCases(3)" style="background: #9b59b6;">х3<br><span style="font-size:10px;" id="price-x3">177 BC</span></button>
-                    <button class="btn" onclick="openCases(5)" style="background: #e67e22;">х5<br><span style="font-size:10px;" id="price-x5">295 BC</span></button>
-                    <button class="btn plus-btn" onclick="openCustomAmountCases()">+</button>
-                </div>
-            </div>
-
-            <div class="roulette-container" id="roulette-container">
-                <div style="font-size: 13px; color: #f39c12; margin-bottom: 4px; font-weight: bold;" id="roulette-counter-label">Открытие кейсов...</div>
-                <div class="roulette-scroll-box" id="roulette-scroll-box"></div>
-                <button class="btn" style="margin-top: 10px; background: #e74c3c; width: 100%;" onclick="skipRouletteAnimation()">⏭ Пропустить</button>
-            </div>
-
-            <div id="roulette-results-view" style="display: none; width: 100%; flex-direction: column; align-items: center;">
-                <h3 style="color: #f39c12; margin: 5px 0;">🎉 Вы выиграли:</h3>
-                <div class="roulette-results-list" id="won-prizes-list"></div>
-                <button class="btn" style="width: 100%; margin-top: 15px;" onclick="resetCaseView()">Забрать</button>
-            </div>
-
-            <div id="case-prizes-info" style="width: 100%;">
-                <div style="font-weight: bold; font-size: 16px; margin-top: 5px;">Возможные призы:</div>
-                <div class="prizes-grid" id="prizes-grid"></div>
-            </div>
-        </div>
-
-        <!-- МИНЫ -->
-        <div id="view-mines" class="view">
-            <h2>💣 Мины</h2>
-            <div style="font-size:12px; color:#e74c3c; margin-bottom:8px; width:100%;">Выберите брейнрот из инвентаря для ставки (минимальная ставка от 3):</div>
-            
-            <div class="mines-inventory-selector" id="mines-inventory-selector">
-                <div style="color:#8b93b0; font-size:12px;">Инвентарь пуст</div>
-            </div>
-
-            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 10px;">
-                <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
-                    <span>Мины (3-24):</span>
-                    <input type="number" id="mines-count" class="input-field" value="3" min="3" max="24" style="width: 120px; margin-bottom: 0;">
-                </div>
-                <button class="btn" style="width: 100%; background: #27ae60;" id="mines-start-btn" onclick="startMinesGame()" disabled>🎲 Выберите брейнрот</button>
-            </div>
-
-            <div id="mines-game-box" style="display: none; width: 100%; flex-direction: column; align-items: center;">
-                <div style="font-size: 15px; margin-bottom: 10px; font-weight: bold;">Множитель: <span id="mines-multiplier" style="color: #f39c12;">1.00x</span></div>
-                <div class="mines-grid" id="mines-grid"></div>
-                <button class="btn" style="width: 100%; margin-top: 15px; background: #e74c3c;" onclick="cashoutMinesGame()">💰 Забрать приз</button>
-            </div>
-        </div>
-
-        <!-- ПРОФИЛЬ -->
-        <div id="view-profile" class="view">
-            <h2>Профиль игрока</h2>
-            <div class="card" style="flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 15px;">
-                <div id="user-tg-name">👤 <b>@Player</b></div>
-                <div>🆔 ID: <span id="user-tg-id">123456789</span></div>
-                <div>💰 Баланс: <span id="prof-balance">0.00</span> BC</div>
-                <button class="btn" id="owner-bonus-btn" style="width:100%; display:none;" onclick="claimDevBonus()">👑 Награда владельца (+1000 BC)</button>
-            </div>
-
-            <h2>🎒 Инвентарь и Ломбард</h2>
-            <div class="card" style="flex-direction: column; margin-bottom: 15px; width: 100%;">
-                <div style="font-size: 12px; color: #8b93b0; margin-bottom: 8px; text-align: center;">Внеси брейнрот из инвентаря, чтобы получить BC:</div>
-                <div id="inventory-empty-msg" style="color:#8b93b0; text-align:center; padding: 10px; display:none; font-size: 14px;">Инвентарь пуст!</div>
-                <div class="prizes-grid" id="inventory-grid" style="width: 100%; max-height: 260px; overflow-y: auto;"></div>
-            </div>
-
-            <h2>Промокод</h2>
-            <div class="card" style="flex-direction: column;">
-                <input type="text" id="promo-input" class="input-field" placeholder="Введи промокод...">
-                <button class="btn" style="width: 100%;" onclick="activatePromo()">Активировать</button>
-            </div>
-
-            <!-- АДМИН-ПАНЕЛЬ -->
-            <div class="admin-panel" id="admin-promo-panel">
-                <h3 style="margin-top:0; color:#f39c12; font-size:16px;">⚙️ Панель Владельца</h3>
-                
-                <button class="btn" style="width:100%; background:#e67e22; margin-bottom:12px;" onclick="openUsersModal()">👥 Выбрать игрока из списка</button>
-
-                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">💳 Изменение баланса игрока:</div>
-                <input type="number" id="grant-user-id" class="input-field" placeholder="ID игрока">
-                <input type="number" id="grant-amount" class="input-field" placeholder="Сумма BC (+/-)">
-                <button class="btn" style="width: 100%; background: #2980b9; margin-bottom: 15px;" onclick="grantBalanceToUser()">Изменить баланс</button>
-
-                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">🎁 Выдать брейнрота игроку:</div>
-                <input type="number" id="give-item-user-id" class="input-field" placeholder="ID игрока">
-                <input type="text" id="give-item-name" class="input-field" placeholder="Название предмета">
-                <input type="text" id="give-item-icon" class="input-field" placeholder="Иконка (напр. 👑)">
-                <input type="number" id="give-item-price" class="input-field" placeholder="Цена продажи (BC)">
-                <button class="btn" style="width: 100%; background: #e67e22; margin-bottom: 15px;" onclick="adminGiveItemToUser()">Выдать брейнрота</button>
-
-                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">🎫 Создать промокод:</div>
-                <input type="text" id="admin-promo-code" class="input-field" placeholder="Код (напр. SUPER)">
-                <input type="number" id="admin-promo-reward" class="input-field" placeholder="Награда (BC)">
-                <button class="btn" style="width: 100%; background: #8e44ad; margin-bottom: 15px;" onclick="adminCreatePromo()">Создать промокод</button>
-
-                <div style="font-size:13px; font-weight:bold; margin-bottom:6px; color:#8b93b0;">📦 Управление предметами кейсов:</div>
-                <select id="admin-case-select" class="select-field" onchange="renderAdminCaseItemsList()">
-                    <option value="linear">Линейный кейс</option>
-                    <option value="all_or_nothing">Всё или ничего</option>
-                </select>
-                
-                <div id="admin-case-items-list" style="margin-bottom:10px; max-height:120px; overflow-y:auto;"></div>
-
-                <input type="text" id="admin-item-name" class="input-field" placeholder="Название предмета">
-                <input type="text" id="admin-item-icon" class="input-field" placeholder="Иконка (эмодзи)">
-                <input type="number" id="admin-item-chance" class="input-field" placeholder="Шанс (%)">
-                <input type="number" id="admin-item-price" class="input-field" placeholder="Цена продажи (BC)">
-                <button class="btn" style="width: 100%; background: #27ae60;" onclick="adminAddItemToCase()">Добавить предмет в кейс</button>
-            </div>
-        </div>
-
-        <!-- ФЕРМА -->
-        <div id="view-farm" class="view">
-            <div class="farm-stats">
-                <div class="farm-stat-item">Уровень<div class="farm-stat-value" id="level">11</div></div>
-                <div class="farm-stat-item">Баланс<div class="farm-stat-value" id="coins">0.00</div></div>
-                <div class="farm-stat-item">Энергия<div class="farm-stat-value"><span id="energy">100</span>/100</div></div>
-            </div>
-            <div class="energy-box">
-                <div class="energy-info"><span>Энергия</span><span><span id="energy-text">100</span>/100</span></div>
-                <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-bar"></div></div>
-            </div>
-            <div class="character-container" id="click-target">
-                <img src="https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png" class="character-img" alt="Noobini">
-                <div class="char-name">Noobini Pizzanini</div>
-                <div style="color: #8b93b0; font-size: 14px; margin-top: 5px;">Тапай, чтобы фармить!</div>
-            </div>
-        </div>
-
-        <!-- МАГАЗИН -->
-        <div id="view-shop" class="view">
-            <h2>Магазин</h2>
-            
-            <!-- 1. Garama -->
-            <div class="card" style="align-items: center;">
-                <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
-                    <img src="https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg" style="width:50px; height:50px; object-fit:contain; border-radius:6px; margin-bottom:4px;" onerror="this.src='https://files.catbox.moe/kmkz5j.jpg'" alt="Garama">
-                </div>
-                <div style="flex:1;"><b>Garama</b><br><small style="color:#f39c12">150 BC</small></div>
-                <button class="btn" onclick="buyShopItem('Garama', 'https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg', 150, 75)">Купить</button>
-            </div>
-
-            <!-- 2. IXOVER -->
-            <div class="card" style="align-items: center;">
-                <div style="display:flex; flex-direction:column; align-items:center; margin-right: 12px;">
-                    <img src="https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg" style="width:50px; height:50px; object-fit:cover; border-radius:6px; margin-bottom:4px;" alt="IXOVER">
-                </div>
-                <div style="flex:1;"><b>IXOVER</b><br><small style="color:#f39c12">1 000 000 BC</small></div>
-                <button class="btn" onclick="buyShopItem('IXOVER', 'https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg', 1000000, 500000)">Купить</button>
-            </div>
-        </div>
+    <!-- ПРОФИЛЬ -->
+    <div id="view-profile" class="view">
+      <h2>Профиль игрока</h2>
+      <div class="card" style="flex-direction:column;align-items:flex-start;gap:12px;margin-bottom:15px">
+        <div id="user-tg-name">👤 <b>@Player</b></div>
+        <div>🆔 ID: <span id="user-tg-id">123456789</span></div>
+        <div>💰 Баланс: <span id="prof-balance">0.00</span> BC</div>
+        <button class="btn" id="owner-bonus-btn" style="width:100%;display:none" onclick="claimDevBonus()">👑 Награда владельца (+1000 BC)</button>
+      </div>
+      <h2>🎒 Инвентарь и Ломбард</h2>
+      <div class="card" style="flex-direction:column;margin-bottom:15px;width:100%">
+        <div style="font-size:12px;color:#8b93b0;margin-bottom:8px;text-align:center">Внеси брейнрот из инвентаря, чтобы получить BC:</div>
+        <div id="inventory-empty-msg" style="color:#8b93b0;text-align:center;padding:10px;display:none;font-size:14px">Инвентарь пуст!</div>
+        <div class="prizes-grid" id="inventory-grid" style="width:100%;max-height:260px;overflow-y:auto"></div>
+      </div>
+      <h2>Промокод</h2>
+      <div class="card" style="flex-direction:column">
+        <input type="text" id="promo-input" class="input-field" placeholder="Введи промокод...">
+        <button class="btn" style="width:100%" onclick="activatePromo()">Активировать</button>
+      </div>
+      <div class="admin-panel" id="admin-promo-panel">
+        <h3 style="margin-top:0;color:#f39c12;font-size:16px">⚙ Панель Владельца</h3>
+        <button class="btn" style="width:100%;background:#e67e22;margin-bottom:12px" onclick="openUsersModal()">👥 Выбрать игрока из списка</button>
+        <div style="font-size:13px;font-weight:bold;margin-bottom:6px;color:#8b93b0">💳 Изменение баланса игрока:</div>
+        <input type="number" id="grant-user-id" class="input-field" placeholder="ID игрока">
+        <input type="number" id="grant-amount" class="input-field" placeholder="Сумма BC (+/-)">
+        <button class="btn" style="width:100%;background:#2980b9;margin-bottom:15px" onclick="grantBalanceToUser()">Изменить баланс</button>
+        <div style="font-size:13px;font-weight:bold;margin-bottom:6px;color:#8b93b0">🎁 Выдать брейнрота игроку:</div>
+        <input type="number" id="give-item-user-id" class="input-field" placeholder="ID игрока">
+        <input type="text" id="give-item-name" class="input-field" placeholder="Название предмета">
+        <input type="text" id="give-item-icon" class="input-field" placeholder="Иконка (напр. 👑)">
+        <input type="number" id="give-item-price" class="input-field" placeholder="Цена продажи (BC)">
+        <button class="btn" style="width:100%;background:#e67e22;margin-bottom:15px" onclick="adminGiveItemToUser()">Выдать брейнрота</button>
+        <div style="font-size:13px;font-weight:bold;margin-bottom:6px;color:#8b93b0">🎫 Создать промокод:</div>
+        <input type="text" id="admin-promo-code" class="input-field" placeholder="Код (напр. SUPER)">
+        <input type="number" id="admin-promo-reward" class="input-field" placeholder="Награда (BC)">
+        <button class="btn" style="width:100%;background:#8e44ad;margin-bottom:15px" onclick="adminCreatePromo()">Создать промокод</button>
+        <div style="font-size:13px;font-weight:bold;margin-bottom:6px;color:#8b93b0">📦 Управление предметами кейсов:</div>
+        <select id="admin-case-select" class="select-field" onchange="renderAdminCaseItemsList()">
+          <option value="linear">Линейный кейс</option><option value="all_or_nothing">Всё или ничего</option></select>
+        <div id="admin-case-items-list" style="margin-bottom:10px;max-height:120px;overflow-y:auto"></div>
+        <input type="text" id="admin-item-name" class="input-field" placeholder="Название предмета">
+        <input type="text" id="admin-item-icon" class="input-field" placeholder="Иконка (эмодзи)">
+        <input type="number" id="admin-item-chance" class="input-field" placeholder="Шанс (%)">
+        <input type="number" id="admin-item-price" class="input-field" placeholder="Цена продажи (BC)">
+        <button class="btn" style="width:100%;background:#27ae60" onclick="adminAddItemToCase()">Добавить предмет в кейс</button>
+      </div>
     </div>
+
+    <!-- ФЕРМА -->
+    <div id="view-farm" class="view">
+      <div class="farm-stats">
+        <div class="farm-stat-item">Уровень<div class="farm-stat-value" id="level">11</div></div>
+        <div class="farm-stat-item">Баланс<div class="farm-stat-value" id="coins">0.00</div></div>
+        <div class="farm-stat-item">Энергия<div class="farm-stat-value"><span id="energy">100</span>/100</div></div>
+      </div>
+      <div class="energy-box">
+        <div class="energy-info"><span>Энергия</span><span><span id="energy-text">100</span>/100</span></div>
+        <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-bar"></div></div>
+      </div>
+      <div class="character-container" id="click-target">
+        <img src="https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png" class="character-img" alt="Noobini">
+        <div class="char-name">Noobini Pizzanini</div>
+        <div style="color:#8b93b0;font-size:14px;margin-top:5px">Тапай, чтобы фармить!</div>
+      </div>
+    </div>
+
+    <!-- МАГАЗИН -->
+    <div id="view-shop" class="view">
+      <h2>Магазин</h2>
+      <div class="card" style="align-items:center">
+        <img src="https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg" style="width:50px;height:50px;object-fit:contain;border-radius:6px;margin-right:12px" onerror="this.src='https://files.catbox.moe/kmkz5j.jpg'" alt="Garama">
+        <div style="flex:1"><b>Garama</b><br><small style="color:#f39c12">150 BC</small></div>
+        <button class="btn" onclick="buyShopItem('Garama','https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg',150,75)">Купить</button></div>
+      <div class="card" style="align-items:center">
+        <img src="https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg" style="width:50px;height:50px;object-fit:cover;border-radius:6px;margin-right:12px" alt="IXOVER">
+        <div style="flex:1"><b>IXOVER</b><br><small style="color:#f39c12">1 000 000 BC</small></div>
+        <button class="btn" onclick="buyShopItem('IXOVER','https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg',1000000,500000)">Купить</button></div>
+    </div>
+  </div>
 </div>
 
 <script>
-    const OWNER_TELEGRAM_ID = 6638127989;
-    const NPOINT_URL = "https://api.npoint.io/2816c8000051e7c162ec";
-    
-    let player = { id: 123456789, username: "Player", score: 0, energy: 100, level: 11, inventory: [] };
-    let promoCodes = { "Uuu": { reward: 100, usedBy: [] }, "ADMIN1000": { reward: 1000, usedBy: [] } };
-    let maxEnergy = 100;
-    let activeCaseKey = 'linear';
-    let currentCasePrice = 59;
-    let currentWonPrizes = [];
-    let rouletteTimeout = null;
-    let minesGame = { active: false, betItem: null, minesCount: 3, multiplier: 1.00, grid: [] };
-    let selectedMinesItemIndex = null;
+const OWNER_TELEGRAM_ID = 6638127989;
+const NPOINT_URL = "https://api.npoint.io/2816c8000051e7c162ec";
+const el = id => document.getElementById(id);
+const rnd2 = n => Math.round(n * 100) / 100;
 
-    let upgraderSourceIndex = null;
-    let upgraderTargetItem = null;
-    let isUpgrading = false;
+let player = { id: 123456789, username: "Player", score: 0, energy: 100, level: 11, inventory: [] };
+let promoCodes = { "Uuu": { reward: 100, usedBy: [] }, "ADMIN1000": { reward: 1000, usedBy: [] } };
+let maxEnergy = 100, activeCaseKey = 'linear', currentCasePrice = 59, currentWonPrizes = [], rouletteTimeout = null;
+let minesGame = { active: false, betItem: null, minesCount: 3, multiplier: 1, grid: [] };
+let selectedMinesItemIndex = null, upgraderSourceIndex = null, upgraderTargetItem = null, isUpgrading = false;
 
-    let casesDatabase = {
-        'linear': {
-            name: 'Линейный кейс', price: 59, icon: '📦',
-            items: [
-                { name: "Noobini Pizzanini", icon: "🍕", chance: 50, sellPrice: 20 },
-                { name: "Noobini Santanini", icon: "🎅", chance: 30, sellPrice: 45 },
-                { name: "Skibidi Bot", icon: "🤖", chance: 15, sellPrice: 120 },
-                { name: "Golden Raccoon", icon: "👑", chance: 5, sellPrice: 400 }
-            ]
-        },
-        'all_or_nothing': {
-            name: 'Всё или ничего', price: 100, icon: '🔥',
-            items: [
-                { name: "Noobini Pizzanini", icon: "🍕", chance: 99.99, sellPrice: 5 },
-                { name: "Strawberry Elephant", icon: "🐘", chance: 0.01, sellPrice: 50000 }
-            ]
-        }
-    };
+let casesDatabase = {
+  linear: { name: 'Линейный кейс', price: 59, icon: '📦', items: [
+    { name: "Noobini Pizzanini", icon: "🍕", chance: 50, sellPrice: 20 },
+    { name: "Noobini Santanini", icon: "🎅", chance: 30, sellPrice: 45 },
+    { name: "Skibidi Bot", icon: "🤖", chance: 15, sellPrice: 120 },
+    { name: "Golden Raccoon", icon: "👑", chance: 5, sellPrice: 400 }] },
+  all_or_nothing: { name: 'Всё или ничего', price: 100, icon: '🔥', items: [
+    { name: "Noobini Pizzanini", icon: "🍕", chance: 99.99, sellPrice: 5 },
+    { name: "Strawberry Elephant", icon: "🐘", chance: 0.01, sellPrice: 50000 }] }
+};
 
-    const el = (id) => document.getElementById(id);
-
-    async function loadGame() {
-        try {
-            let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-            if (tgUser && tgUser.id) {
-                player.id = tgUser.id;
-                player.username = tgUser.username || tgUser.first_name || "Player";
-            }
-            let saved = localStorage.getItem('brainrot_save_' + player.id) || localStorage.getItem('brainrot_save');
-            if (saved) {
-                let p = JSON.parse(saved);
-                player.score = p.score ?? 0;
-                player.energy = p.energy ?? 100;
-                player.level = p.level ?? 11;
-                player.inventory = p.inventory || [];
-            }
-
-            await syncPlayerToCloud();
-
-            el('user-tg-name').innerHTML = `👤 <b>@${player.username}</b>`;
-            el('user-tg-id').innerText = player.id;
-            el('header-avatar').innerText = player.username.charAt(0).toUpperCase();
-
-            if (player.id === OWNER_TELEGRAM_ID) {
-                el('admin-promo-panel').classList.add('show');
-                el('owner-bonus-btn').style.display = 'block';
-                renderAdminCaseItemsList();
-            } else {
-                el('admin-promo-panel').classList.remove('show');
-                el('owner-bonus-btn').style.display = 'none';
-            }
-        } catch(e) {}
-        updateUI();
-        renderInventory();
-        renderMinesInventorySelector();
-        renderUpgraderSelectors();
-        drawCircleRoulette(0);
-        initMinesGrid();
+/* ---------- загрузка / облако ---------- */
+async function loadGame() {
+  try {
+    let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (tgUser && tgUser.id) { player.id = tgUser.id; player.username = tgUser.username || tgUser.first_name || "Player"; }
+    let saved = localStorage.getItem('brainrot_save_' + player.id) || localStorage.getItem('brainrot_save');
+    if (saved) {
+      let p = JSON.parse(saved);
+      player.score = p.score ?? 0; player.energy = p.energy ?? 100;
+      player.level = p.level ?? 11; player.inventory = p.inventory || [];
     }
-
-    async function saveGame() {
-        try {
-            localStorage.setItem('brainrot_save_' + player.id, JSON.stringify(player));
-            await syncPlayerToCloud();
-        } catch(e) {}
-    }
-
-    async function syncPlayerToCloud() {
-        if (!NPOINT_URL) return;
-        try {
-            let res = await fetch(NPOINT_URL);
-            let users = await res.json();
-            if (!Array.isArray(users)) users = [];
-
-            let idx = users.findIndex(u => u.id === player.id);
-            if (idx >= 0) {
-                users[idx].username = player.username;
-                users[idx].score = player.score;
-            } else {
-                users.push({ id: player.id, username: player.username, score: player.score });
-            }
-
-            await fetch(NPOINT_URL, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(users)
-            });
-        } catch(e) {}
-    }
-
-    async function openUsersModal() {
-        let list = el('modal-users-list');
-        list.innerHTML = '<div style="color:#8b93b0; font-size:13px; text-align:center;">Загрузка списка из облака...</div>';
-        el('users-modal').classList.add('show');
-
-        try {
-            let res = await fetch(NPOINT_URL);
-            let users = await res.json();
-            
-            list.innerHTML = '';
-            if (!users || !Array.isArray(users) || users.length === 0) {
-                list.innerHTML = '<div style="color:#8b93b0; font-size:13px; text-align:center;">Список игроков пуст</div>';
-                return;
-            }
-
-            users.forEach(u => {
-                list.innerHTML += `
-                    <div class="admin-user-row">
-                        <div><b>@${u.username}</b><br><small style="color:#8b93b0">ID: ${u.id} \vert{} Баланс: ${u.score} BC</small></div>
-                        <button class="btn" style="padding:6px 10px; font-size:12px; background:#f39c12;" onclick="selectUserFromModal(${u.id})">Выбрать</button>
-                    </div>
-                `;
-            });
-        } catch(e) {
-            list.innerHTML = '<div style="color:#e74c3c; font-size:13px; text-align:center;">Ошибка загрузки из облака</div>';
-        }
-    }
-
-    function closeUsersModal() {
-        el('users-modal').classList.remove('show');
-    }
-
-    function selectUserFromModal(id) {
-        el('grant-user-id').value = id;
-        el('give-item-user-id').value = id;
-        closeUsersModal();
-        alert(`Игрок с ID ${id} выбран!`);
-    }
-
-    function toggleMenu() {
-        el('drawer').classList.toggle('open');
-        el('overlay').classList.toggle('show');
-    }
-
-    function switchView(viewName, btn) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        if (btn && btn.classList.contains('drawer-item')) {
-            document.querySelectorAll('.drawer-item').forEach(i => i.classList.remove('active'));
-            btn.classList.add('active');
-        }
-        el('view-' + viewName).classList.add('active');
-        if (viewName === 'profile') renderInventory();
-        if (viewName === 'mines') renderMinesInventorySelector();
-        if (viewName === 'upgrader') renderUpgraderSelectors();
-        el('drawer').classList.remove('open');
-        el('overlay').classList.remove('show');
-    }
-
-    function updateUI() {
-        let s = player.score.toFixed(2);
-        if(el('balance')) el('balance').innerText = s;
-        if(el('coins')) el('coins').innerText = s;
-        if(el('prof-balance')) el('prof-balance').innerText = s;
-        if(el('energy')) el('energy').innerText = player.energy;
-        if(el('energy-text')) el('energy-text').innerText = player.energy;
-        if(el('energy-bar')) el('energy-bar').style.width = `${(player.energy / maxEnergy) * 100}%`;
-    }
-
-    el('click-target').onclick = (e) => {
-        if (player.energy > 0) {
-            player.score = Math.round((player.score + 0.01) * 100) / 100;
-            player.energy--;
-            updateUI();
-            saveGame();
-        }
-    };
-
-    setInterval(() => {
-        if (player.energy < maxEnergy) { player.energy++; updateUI(); saveGame(); }
-    }, 2000);
-
-    function openCaseDetails(key) {
-        activeCaseKey = key;
-        let c = casesDatabase[key];
-        currentCasePrice = c.price;
-        el('detail-case-title').innerText = `Кейс: ${c.name}`;
-        el('case-box-icon').innerText = c.icon;
-        el('price-x1').innerText = `${c.price} BC`;
-        el('price-x3').innerText = `${c.price * 3} BC`;
-        el('price-x5').innerText = `${c.price * 5} BC`;
-        
-        let grid = el('prizes-grid');
-        grid.innerHTML = '';
-        c.items.forEach(i => {
-            let mediaHtml = i.img ? `<img src="${i.img}" class="prize-img">` : `<div class="prize-icon">${i.icon}</div>`;
-            grid.innerHTML += `<div class="prize-card">${mediaHtml}<div class="prize-title">${i.name}</div><div class="prize-chance">${i.chance}%</div><div style="font-size:10px; color:#f39c12;">+${i.sellPrice} BC</div></div>`;
-        });
-        resetCaseView();
-        switchView('case-detail', null);
-    }
-
-    function getRandomItem() {
-        let items = casesDatabase[activeCaseKey].items;
-        let rand = Math.random() * 100, cur = 0;
-        for (let i of items) { cur += i.chance; if (rand <= cur) return i; }
-        return items[0];
-    }
-
-    function openCustomAmountCases() {
-        let amount = prompt("Сколько открыть? (до 15)", "5");
-        if (amount === null) return;
-        amount = parseInt(amount);
-        if (isNaN(amount) || amount <= 0) return alert("Неверно!");
-        if (amount > 15) amount = 15;
-        openCases(amount);
-    }
-
-    function openCases(count) {
-        let cost = currentCasePrice * count;
-        if (player.score < cost) return alert('Не хватает BC!');
-        player.score = Math.round((player.score - cost) * 100) / 100;
-        updateUI();
-        saveGame();
-
-        currentWonPrizes = [];
-        for (let i = 0; i < count; i++) {
-            let item = getRandomItem();
-            currentWonPrizes.push(item);
-            addLiveDrop(player.username, item);
-        }
-
-        el('case-main-box').style.display = 'none';
-        el('case-prizes-info').style.display = 'none';
-        el('back-to-cases-btn').style.display = 'none';
-        el('roulette-container').classList.add('show');
-        el('roulette-counter-label').innerText = `Одновременное открытие: ${count} шт.`;
-
-        let scrollBox = el('roulette-scroll-box');
-        scrollBox.innerHTML = '';
-
-        currentWonPrizes.forEach((winningItem, index) => {
-            scrollBox.innerHTML += `
-                <div class="roulette-row-wrapper">
-                    <div class="roulette-row-title">Кейс #${index + 1}</div>
-                    <div class="roulette-window">
-                        <div class="roulette-pointer"></div>
-                        <div class="roulette-track" id="roulette-track-${index}"></div>
-                    </div>
-                </div>
-            `;
-        });
-
-        currentWonPrizes.forEach((winningItem, index) => {
-            buildRouletteTrackForIndex(index, winningItem);
-        });
-
-        if (rouletteTimeout) clearTimeout(rouletteTimeout);
-        rouletteTimeout = setTimeout(() => {
-            showWonResults();
-        }, 3700);
-    }
-
-    function buildRouletteTrackForIndex(index, winningItem) {
-        let track = el(`roulette-track-${index}`);
-        if (!track) return;
-        track.style.transition = 'none';
-        track.style.transform = 'translateX(0px)';
-        track.innerHTML = '';
-        let html = '';
-        for (let i = 0; i < 30; i++) {
-            let item = (i === 24) ? winningItem : getRandomItem();
-            let mediaHtml = item.img ? `<img src="${item.img}" class="roulette-item-img">` : `<div class="roulette-item-icon">${item.icon}</div>`;
-            html += `<div class="roulette-item">${mediaHtml}<div class="roulette-item-title">${item.name}</div></div>`;
-        }
-        track.innerHTML = html;
-        setTimeout(() => {
-            track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.85, 0.25, 1)';
-            track.style.transform = `translateX(-${(24 * 88) - (el('roulette-scroll-box').clientWidth / 2) + 44}px)`;
-        }, 50);
-    }
-
-    function skipRouletteAnimation() {
-        if (rouletteTimeout) clearTimeout(rouletteTimeout);
-        showWonResults();
-    }
-
-    function showWonResults() {
-        if (rouletteTimeout) clearTimeout(rouletteTimeout);
-        el('roulette-container').classList.remove('show');
-        let resultsList = el('won-prizes-list');
-        resultsList.innerHTML = '';
-        let isAutoSell = el('autosell-checkbox').checked;
-        let totalSold = 0, grouped = {};
-
-        currentWonPrizes.forEach(p => {
-            if (!grouped[p.name]) grouped[p.name] = { ...p, count: 0 };
-            grouped[p.name].count++;
-            if (isAutoSell) totalSold += p.sellPrice;
-            else {
-                player.inventory.push(p);
-            }
-        });
-
-        Object.values(grouped).forEach(g => {
-            let mediaHtml = g.img ? `<img src="${g.img}" class="prize-img">` : `<div class="prize-icon">${g.icon}</div>`;
-            resultsList.innerHTML += `<div class="prize-card" style="width: 110px;"><span class="prize-count-badge">×${g.count}</span>${mediaHtml}<div class="prize-title">${g.name}</div>${isAutoSell ? `<div style="font-size:10px; color:#27ae60;">+${g.sellPrice * g.count} BC</div>` : ''}</div>`;
-        });
-
-        if (isAutoSell) {
-            player.score = Math.round((player.score + totalSold) * 100) / 100;
-        }
-        saveGame();
-        renderInventory();
-        renderMinesInventorySelector();
-        renderUpgraderSelectors();
-        updateUI();
-        el('roulette-results-view').style.display = 'flex';
-    }
-
-    function resetCaseView() {
-        if (rouletteTimeout) clearTimeout(rouletteTimeout);
-        el('roulette-results-view').style.display = 'none';
-        el('roulette-container').classList.remove('show');
-        el('case-main-box').style.display = 'flex';
-        el('case-prizes-info').style.display = 'block';
-        el('back-to-cases-btn').style.display = 'block';
-    }
-
-    function renderInventory() {
-        let grid = el('inventory-grid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        if (player.inventory.length === 0) { el('inventory-empty-msg').style.display = 'block'; return; }
-        el('inventory-empty-msg').style.display = 'none';
-
-        let groupedInv = {};
-        player.inventory.forEach((item, idx) => {
-            let key = item.name;
-            if (!groupedInv[key]) {
-                groupedInv[key] = { ...item, count: 0, firstIndex: idx, sellPrice: item.sellPrice };
-            }
-            groupedInv[key].count++;
-        });
-
-        Object.values(groupedInv).forEach((i) => {
-            let mediaHtml = i.img ? `<img src="${i.img}" class="prize-img">` : `<div class="prize-icon">${i.icon}</div>`;
-            let badge = i.count > 1 ? `<span class="prize-count-badge">×${i.count}</span>` : '';
-            grid.innerHTML += `
-                <div class="prize-card">
-                    ${badge}${mediaHtml}
-                    <div class="prize-title">${i.name}</div>
-                    <div style="font-size:11px; color:#f39c12; margin:3px 0;">+${i.sellPrice} BC / шт</div>
-                    <button class="btn" style="padding:6px; font-size:11px; width:100%; background:#27ae60;" onclick="exchangeItem('${i.name}')">Внести</button>
-                </div>`;
-        });
-    }
-
-    function exchangeItem(name) {
-        let index = player.inventory.findIndex(item => item.name === name);
-        if (index === -1) return;
-
-        let item = player.inventory.splice(index, 1)[0];
-        player.score = Math.round((player.score + item.sellPrice) * 100) / 100;
-        
-        saveGame();
-        updateUI();
-        renderInventory();
-        renderMinesInventorySelector();
-        renderUpgraderSelectors();
-        
-        alert(`✅ Успешно! Вы внесли "${item.name}" и получили +${item.sellPrice} BC.`);
-    }
-
-    // --- СОБИРАЕМ ВСЕ ПРЕДМЕТЫ ДЛЯ АПГРЕЙДЕРА ЕДИНОГО СПИСКА ---
-    function getAllAvailableUpgradeItems() {
-        let map = {};
-        // Добавляем предметы из магазина
-        map["Garama"] = { name: "Garama", img: "https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg", sellPrice: 75 };
-        map["IXOVER"] = { name: "IXOVER", img: "https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg", sellPrice: 500000 };
-
-        // Добавляем все предметы из всех кейсов
-        Object.values(casesDatabase).forEach(c => {
-            c.items.forEach(ci => {
-                map[ci.name] = { 
-                    name: ci.name, 
-                    icon: ci.icon, 
-                    img: ci.img, 
-                    sellPrice: ci.sellPrice 
-                };
-            });
-        });
-        return Object.values(map);
-    }
-
-    function renderUpgraderSelectors() {
-        let sourceContainer = el('upgrader-source-selector');
-        let targetContainer = el('upgrader-target-selector');
-        if (!sourceContainer || !targetContainer || isUpgrading) return;
-
-        sourceContainer.innerHTML = '';
-        targetContainer.innerHTML = '';
-
-        if (player.inventory.length === 0) {
-            sourceContainer.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Инвентарь пуст</div>';
-            targetContainer.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Сначала выберите свой предмет</div>';
-            upgraderSourceIndex = null;
-            upgraderTargetItem = null;
-            updateUpgraderChance();
-            drawCircleRoulette(0);
-            return;
-        }
-
-        player.inventory.forEach((item, idx) => {
-            let isSel = (upgraderSourceIndex === idx) ? 'selected' : '';
-            let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon}</span>`;
-            sourceContainer.innerHTML += `
-                <div class="mines-sel-item ${isSel}" onclick="selectUpgraderSource(${idx})">
-                    ${mediaHtml}
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${item.name}</span>
-                </div>
-            `;
-        });
-
-        let allPossibleItems = getAllAvailableUpgradeItems();
-        let sourcePrice = (upgraderSourceIndex !== null && player.inventory[upgraderSourceIndex]) ? player.inventory[upgraderSourceIndex].sellPrice : 0;
-
-        allPossibleItems.forEach((item) => {
-            let isSel = (upgraderTargetItem && upgraderTargetItem.name === item.name) ? 'selected' : '';
-            let isLowerPrice = (upgraderSourceIndex !== null && item.sellPrice <= sourcePrice);
-            let disabledClass = isLowerPrice ? 'disabled' : '';
-            let clickAction = isLowerPrice ? `` : `selectUpgraderTarget('${item.name}')`;
-            let subText = isLowerPrice ? `<span style="color:#e74c3c; font-size:8px;">Дешевле</span>` : `<span style="color:#f39c12; font-size:9px;">${item.sellPrice} BC</span>`;
-
-            let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon || '🎁'}</span>`;
-            targetContainer.innerHTML += `
-                <div class="mines-sel-item ${isSel} ${disabledClass}" onclick="${clickAction}">
-                    ${mediaHtml}
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${item.name}</span>
-                    ${subText}
-                </div>
-            `;
-        });
-        updateUpgraderChance();
-    }
-
-    function selectUpgraderSource(idx) {
-        if (isUpgrading) return;
-        upgraderSourceIndex = idx;
-        if (upgraderTargetItem && player.inventory[idx] && upgraderTargetItem.sellPrice <= player.inventory[idx].sellPrice) {
-            upgraderTargetItem = null;
-        }
-        renderUpgraderSelectors();
-    }
-
-    function selectUpgraderTarget(name) {
-        if (isUpgrading) return;
-        let allPossibleItems = getAllAvailableUpgradeItems();
-        let target = allPossibleItems.find(i => i.name === name);
-        let sourcePrice = (upgraderSourceIndex !== null && player.inventory[upgraderSourceIndex]) ? player.inventory[upgraderSourceIndex].sellPrice : 0;
-        
-        if (target && target.sellPrice > sourcePrice) {
-            upgraderTargetItem = target;
-            renderUpgraderSelectors();
-        }
-    }
-
-    function getCalculatedChance() {
-        if (upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) return 0;
-        let sourcePrice = player.inventory[upgraderSourceIndex].sellPrice;
-        let targetPrice = upgraderTargetItem.sellPrice;
-        if (sourcePrice >= targetPrice) return 0;
-        
-        let chance = Math.floor((sourcePrice / targetPrice) * 95);
-        if (chance < 1) chance = 1;
-        if (chance > 95) chance = 95;
-        return chance;
-    }
-
-    function updateUpgraderChance() {
-        let startBtn = el('upgrade-start-btn');
-        let chanceLabel = el('upgrade-chance-label');
-        if (!startBtn || !chanceLabel) return;
-
-        let chance = getCalculatedChance();
-        if (chance <= 0) {
-            chanceLabel.innerText = "0%";
-            chanceLabel.style.color = "#e74c3c";
-            startBtn.disabled = true;
-            drawCircleRoulette(0);
-            return;
-        }
-
-        chanceLabel.innerText = chance + "%";
-        chanceLabel.style.color = "#27ae60";
-        startBtn.disabled = isUpgrading;
-        drawCircleRoulette(chance);
-    }
-
-    function drawCircleRoulette(chance, rotationAngle = 0) {
-        let canvas = el('upgrade-circle-canvas');
-        if (!canvas) return;
-        let ctx = canvas.getContext('2d');
-        let cx = canvas.width / 2;
-        let cy = canvas.height / 2;
-        let r = 90;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        let successAngle = (chance / 100) * (Math.PI * 2);
-
-        // Красный сектор (неудача)
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, r, rotationAngle + successAngle, rotationAngle + Math.PI * 2);
-        ctx.fillStyle = '#c0392b';
-        ctx.fill();
-
-        // Зеленый сектор (успех)
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, r, rotationAngle, rotationAngle + successAngle);
-        ctx.fillStyle = '#27ae60';
-        ctx.fill();
-
-        // Внутренний кружок
-        ctx.beginPath();
-        ctx.arc(cx, cy, 45, 0, Math.PI * 2);
-        ctx.fillStyle = '#141722';
-        ctx.fill();
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#2a2e43';
-        ctx.stroke();
-
-        // Текст шанса
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(chance + '%', cx, cy);
-    }
-
-    function startUpgrade() {
-        if (isUpgrading || upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) return;
-
-        let chance = getCalculatedChance();
-        if (chance <= 0) return alert("❌ Неверные условия апгрейда!");
-
-        isUpgrading = true;
-        el('upgrade-start-btn').disabled = true;
-
-        player.inventory.splice(upgraderSourceIndex, 1);
-        upgraderSourceIndex = null;
-        saveGame();
-        renderInventory();
-        renderMinesInventorySelector();
-
-        let roll = Math.random() * 100;
-        let isWin = (roll <= chance);
-
-        let startTime = null;
-        let duration = 3500;
-        let totalRotations = Math.PI * 2 * 6;
-        
-        let targetAngle;
-        if (isWin) {
-            targetAngle = (-Math.PI / 2) - (Math.random() * (chance / 100) * (Math.PI * 2));
-        } else {
-            let failRadians = ((100 - chance) / 100) * (Math.PI * 2);
-            targetAngle = (-Math.PI / 2) - ((chance / 100) * (Math.PI * 2) + Math.random() * failRadians);
-        }
-
-        let finalRotation = totalRotations + targetAngle;
-
-        function animateSpin(timestamp) {
-            if (!startTime) startTime = timestamp;
-            let progress = (timestamp - startTime) / duration;
-            if (progress > 1) progress = 1;
-
-            let ease = 1 - Math.pow(1 - progress, 3);
-            let currentAngle = finalRotation * ease;
-
-            drawCircleRoulette(chance, currentAngle);
-
-            if (progress < 1) {
-                requestAnimationFrame(animateSpin);
-            } else {
-                isUpgrading = false;
-                if (isWin) {
-                    player.inventory.push({
-                        name: upgraderTargetItem.name,
-                        icon: upgraderTargetItem.icon || '🎁',
-                        img: upgraderTargetItem.img,
-                        sellPrice: upgraderTargetItem.sellPrice
-                    });
-                    alert(`🎉 Успех! Вы выиграли апгрейд и получили "${upgraderTargetItem.name}"!`);
-                } else {
-                    alert(`💥 Неудача! Предмет сгорел.`);
-                }
-                upgraderTargetItem = null;
-                saveGame();
-                renderInventory();
-                renderMinesInventorySelector();
-                renderUpgraderSelectors();
-                updateUI();
-            }
-        }
-
-        requestAnimationFrame(animateSpin);
-    }
-
-    function addLiveDrop(name, item) {
-        let feed = el('live-feed');
-        if (!feed) return;
-        let empty = el('no-drops-msg');
-        if (empty) empty.remove();
-        feed.insertAdjacentHTML('afterbegin', `<div class="live-item"><span>${item.icon || '🎁'}</span> <b>${name}</b> <span style="color:#f39c12">${item.sellPrice} BC</span></div>`);
-    }
-
-    function renderMinesInventorySelector() {
-        let container = el('mines-inventory-selector');
-        if (!container) return;
-        container.innerHTML = '';
-        
-        let startBtn = el('mines-start-btn');
-
-        if (player.inventory.length === 0) {
-            container.innerHTML = '<div style="color:#8b93b0; font-size:12px;">Инвентарь пуст. Купите брейнрот или выбейте в кейсах!</div>';
-            selectedMinesItemIndex = null;
-            if (startBtn) {
-                startBtn.disabled = true;
-                startBtn.innerText = "🛑 Инвентарь пуст";
-            }
-            return;
-        }
-
-        player.inventory.forEach((item, idx) => {
-            let isSel = (selectedMinesItemIndex === idx) ? 'selected' : '';
-            let mediaHtml = item.img ? `<img src="${item.img}" class="mines-sel-img">` : `<span style="font-size:24px;">${item.icon}</span>`;
-            container.innerHTML += `
-                <div class="mines-sel-item ${isSel}" onclick="selectMinesItem(${idx})">
-                    ${mediaHtml}
-                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%;">${item.name}</span>
-                </div>
-            `;
-        });
-
-        if (startBtn) {
-            if (selectedMinesItemIndex !== null && player.inventory[selectedMinesItemIndex]) {
-                startBtn.disabled = false;
-                startBtn.innerText = "🎲 Начать игру";
-            } else {
-                startBtn.disabled = true;
-                startBtn.innerText = "🎲 Выберите брейнрот";
-            }
-        }
-    }
-
-    function selectMinesItem(index) {
-        selectedMinesItemIndex = index;
-        renderMinesInventorySelector();
-    }
-
-    function initMinesGrid() {
-        let grid = el('mines-grid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        for (let i = 0; i < 25; i++) {
-            let cell = document.createElement('div');
-            cell.className = 'mine-cell';
-            cell.innerText = '❓';
-            cell.onclick = () => clickMineCell(i);
-            grid.appendChild(cell);
-        }
-    }
-
-    function startMinesGame() {
-        if (selectedMinesItemIndex === null || !player.inventory[selectedMinesItemIndex]) {
-            return alert("🛑 Обязательно выберите брейнрот из инвентаря для ставки!");
-        }
-
-        let count = parseInt(el('mines-count').value);
-        if (isNaN(count) || count < 3) count = 3;
-        if (count > 24) count = 24;
-
-        let stakedItem = player.inventory.splice(selectedMinesItemIndex, 1)[0];
-        selectedMinesItemIndex = null;
-
-        saveGame();
-        renderInventory();
-        renderMinesInventorySelector();
-        renderUpgraderSelectors();
-
-        minesGame = { active: true, betItem: stakedItem, minesCount: count, multiplier: 1.00, grid: new Array(25).fill(false) };
-        let placed = 0;
-        while (placed < count) {
-            let pos = Math.floor(Math.random() * 25);
-            if (!minesGame.grid[pos]) { minesGame.grid[pos] = true; placed++; }
-        }
-        el('mines-game-box').style.display = 'flex';
-        el('mines-start-btn').style.display = 'none';
-        updateMinesUI();
-        initMinesGrid();
-    }
-
-    function clickMineCell(index) {
-        if (!minesGame.active) return;
-        let cell = el('mines-grid').children[index];
-        if (cell.classList.contains('revealed')) return;
-
-        if (minesGame.grid[index]) {
-            cell.className = 'mine-cell revealed mine'; cell.innerText = '💣';
-            endMinesGame(false);
-        } else {
-            cell.className = 'mine-cell revealed safe'; cell.innerText = '💎';
-            let baseStep = 0.05 + (minesGame.minesCount * 0.02);
-            minesGame.multiplier = Math.round((minesGame.multiplier + baseStep) * 100) / 100;
-            updateMinesUI();
-        }
-    }
-
-    function updateMinesUI() {
-        el('mines-multiplier').innerText = minesGame.multiplier.toFixed(2) + 'x';
-    }
-
-    function cashoutMinesGame() {
-        if (!minesGame.active) return;
-        let rewardBC = Math.round((minesGame.betItem.sellPrice * minesGame.multiplier) * 100) / 100;
-        player.score = Math.round((player.score + rewardBC) * 100) / 100;
-        updateUI();
-        saveGame();
-        alert(`🎉 Победа! Вы забрали награду: +${rewardBC} BC!`);
-        endMinesGame(true);
-    }
-
-    function endMinesGame(won) {
-        minesGame.active = false;
-        let grid = el('mines-grid');
-        for (let i = 0; i < 25; i++) {
-            if (minesGame.grid[i]) { grid.children[i].className = 'mine-cell revealed mine'; grid.children[i].innerText = '💣'; }
-        }
-        if (!won) alert("💥 Мина! Ваш брейнрот сгорел.");
-        renderMinesInventorySelector();
-        renderUpgraderSelectors();
-        el('mines-start-btn').style.display = 'block';
-    }
-
-    function claimDevBonus() {
-        if (player.id !== OWNER_TELEGRAM_ID) {
-            alert("❌ Ошибка: У вас нет прав для получения этой награды!");
-            return;
-        }
-        player.score += 1000; updateUI(); saveGame(); alert("+1000 BC получено!");
-    }
-
-    function activatePromo() {
-        let code = el('promo-input').value.trim();
-        if (promoCodes[code] && !promoCodes[code].usedBy.includes(player.id)) {
-            player.score += promoCodes[code].reward;
-            promoCodes[code].usedBy.push(player.id);
-            updateUI(); saveGame(); alert(`Активировано! +${promoCodes[code].reward} BC`);
-        } else { alert("Неверно или уже использовано!"); }
-    }
-
-    async function grantBalanceToUser() {
-        if (player.id !== OWNER_TELEGRAM_ID) return;
-        let id = parseInt(el('grant-user-id').value), amt = parseFloat(el('grant-amount').value);
-        if (isNaN(id) || isNaN(amt)) return alert("Заполните ID и сумму!");
-        
-        try {
-            let res = await fetch(NPOINT_URL);
-            let users = await res.json();
-            if (!Array.isArray(users)) users = [];
-            let t = users.find(u => u.id === id);
-            if (t) {
-                t.score = Math.round((t.score + amt) * 100) / 100;
-                await fetch(NPOINT_URL, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(users)
-                });
-                if (id === player.id) {
-                    player.score = t.score;
-                    updateUI();
-                }
-                alert("Баланс игрока успешно изменен в облаке!");
-            } else {
-                alert("Игрок не найден в облачной базе!");
-            }
-        } catch(e) {
-            alert("Ошибка подключения к облаку");
-        }
-    }
-
-    function adminGiveItemToUser() {
-        if (player.id !== OWNER_TELEGRAM_ID) return;
-        let id = parseInt(el('give-item-user-id').value);
-        let name = el('give-item-name').value.trim();
-        let icon = el('give-item-icon').value.trim() || "🎁";
-        let price = parseFloat(el('give-item-price').value);
-
-        if (isNaN(id) || !name || isNaN(price)) return alert("Заполните все поля предмета!");
-
-        let newItem = { name, icon, sellPrice: price };
-        if (id === player.id) {
-            player.inventory.push(newItem);
-            saveGame(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); alert(`Предмет "${name}" выдан вам!`);
-        } else {
-            alert(`Предмет подготовлен для игрока ${id}`);
-        }
-    }
-
-    function adminCreatePromo() {
-        if (player.id !== OWNER_TELEGRAM_ID) return;
-        let code = el('admin-promo-code').value.trim();
-        let reward = parseFloat(el('admin-promo-reward').value);
-        if (!code || isNaN(reward) || reward <= 0) return alert("Заполните промокод и награду!");
-        promoCodes[code] = { reward, usedBy: [] };
-        alert(`🎫 Промокод "${code}" на ${reward} BC создан!`);
-    }
-
-    function renderAdminCaseItemsList() {
-        let caseKey = el('admin-case-select').value;
-        let container = el('admin-case-items-list');
-        container.innerHTML = '';
-        casesDatabase[caseKey].items.forEach((item, index) => {
-            container.innerHTML += `
-                <div style="background:#0d0f18; padding:6px 10px; border-radius:6px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-                    <span>${item.icon || '🖼️'} ${item.name} (${item.chance}%)</span>
-                    <button class="btn" style="padding:2px 6px; font-size:10px; background:#c0392b;" onclick="adminRemoveItemFromCase('${caseKey}', ${index})">✕</button>
-                </div>
-            `;
-        });
-    }
-
-    function buyShopItem(name, imgUrl, price, sellPrice) {
-        if (player.score < price) return alert(`Не хватает BC! Нужно ${price.toLocaleString()} BC.`);
-        player.score = Math.round((player.score - price) * 100) / 100;
-        player.inventory.push({ 
-            name: name, 
-            img: imgUrl, 
-            sellPrice: sellPrice 
-        });
-        saveGame();
-        updateUI();
-        renderInventory();
-        renderMinesInventorySelector();
-        renderUpgraderSelectors();
-        alert(`🎉 ${name} успешно куплен и добавлен в инвентарь!`);
-    }
-
-    function adminAddItemToCase() {
-        if (player.id !== OWNER_TELEGRAM_ID) return;
-        let caseKey = el('admin-case-select').value;
-        let name = el('admin-item-name').value.trim();
-        let icon = el('admin-item-icon').value.trim() || "🎁";
-        let chance = parseFloat(el('admin-item-chance').value);
-        let price = parseFloat(el('admin-item-price').value);
-
-        if (!name || isNaN(chance) || isNaN(price)) return alert("Заполните все поля предмета!");
-
-        casesDatabase[caseKey].items.push({ name, icon, chance, sellPrice: price });
-        saveGame();
-        renderAdminCaseItemsList();
-        alert(`✅ Предмет "${name}" добавлен в кейс!`);
-    }
-
-    function adminRemoveItemFromCase(caseKey, index) {
-        if (player.id !== OWNER_TELEGRAM_ID) return;
-        casesDatabase[caseKey].items.splice(index, 1);
-        saveGame();
-        renderAdminCaseItemsList();
-    }
-
-    loadGame();
+    await syncPlayerToCloud();
+    el('user-tg-name').innerHTML = `👤 <b>@${player.username}</b>`;
+    el('user-tg-id').innerText = player.id;
+    el('header-avatar').innerText = player.username.charAt(0).toUpperCase();
+    let owner = player.id === OWNER_TELEGRAM_ID;
+    el('admin-promo-panel').classList.toggle('show', owner);
+    el('owner-bonus-btn').style.display = owner ? 'block' : 'none';
+    if (owner) renderAdminCaseItemsList();
+  } catch (e) {}
+  updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); initMinesGrid();
+}
+async function saveGame() {
+  try { localStorage.setItem('brainrot_save_' + player.id, JSON.stringify(player)); await syncPlayerToCloud(); } catch (e) {}
+}
+async function syncPlayerToCloud() {
+  if (!NPOINT_URL) return;
+  try {
+    let users = await (await fetch(NPOINT_URL)).json();
+    if (!Array.isArray(users)) users = [];
+    let u = users.find(x => x.id === player.id);
+    if (u) { u.username = player.username; u.score = player.score; }
+    else users.push({ id: player.id, username: player.username, score: player.score });
+    await fetch(NPOINT_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(users) });
+  } catch (e) {}
+}
+async function openUsersModal() {
+  let list = el('modal-users-list');
+  list.innerHTML = '<div style="color:#8b93b0;font-size:13px;text-align:center">Загрузка списка из облака...</div>';
+  el('users-modal').classList.add('show');
+  try {
+    let users = await (await fetch(NPOINT_URL)).json();
+    list.innerHTML = '';
+    if (!Array.isArray(users) || !users.length) { list.innerHTML = '<div style="color:#8b93b0;font-size:13px;text-align:center">Список игроков пуст</div>'; return; }
+    users.forEach(u => list.innerHTML += `<div class="admin-user-row"><div><b>@${u.username}</b><br><small style="color:#8b93b0">ID: ${u.id} • Баланс: ${u.score} BC</small></div><button class="btn" style="padding:6px 10px;font-size:12px" onclick="selectUserFromModal(${u.id})">Выбрать</button></div>`);
+  } catch (e) { list.innerHTML = '<div style="color:#e74c3c;font-size:13px;text-align:center">Ошибка загрузки из облака</div>'; }
+}
+function closeUsersModal() { el('users-modal').classList.remove('show'); }
+function selectUserFromModal(id) {
+  el('grant-user-id').value = id; el('give-item-user-id').value = id; closeUsersModal(); alert(`Игрок с ID ${id} выбран!`);
+}
+
+/* ---------- навигация / UI ---------- */
+function toggleMenu() { el('drawer').classList.toggle('open'); el('overlay').classList.toggle('show'); }
+function switchView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  if (btn && btn.classList.contains('drawer-item')) {
+    document.querySelectorAll('.drawer-item').forEach(i => i.classList.remove('active')); btn.classList.add('active');
+  }
+  el('view-' + name).classList.add('active');
+  if (name === 'profile') renderInventory();
+  if (name === 'mines') renderMinesInventorySelector();
+  if (name === 'upgrader') renderUpgraderSelectors();
+  el('drawer').classList.remove('open'); el('overlay').classList.remove('show');
+}
+function updateUI() {
+  let s = player.score.toFixed(2);
+  ['balance', 'coins', 'prof-balance'].forEach(i => el(i).innerText = s);
+  el('energy').innerText = player.energy; el('energy-text').innerText = player.energy;
+  el('energy-bar').style.width = (player.energy / maxEnergy * 100) + '%';
+}
+const media = (i, cls) => i.img ? `<img src="${i.img}" class="${cls}">` : `<div class="${cls === 'prize-img' ? 'prize-icon' : ''}">${i.icon || '🎁'}</div>`;
+
+/* ---------- ферма ---------- */
+el('click-target').onclick = () => {
+  if (player.energy > 0) { player.score = rnd2(player.score + 0.01); player.energy--; updateUI(); saveGame(); }
+};
+setInterval(() => { if (player.energy < maxEnergy) { player.energy++; updateUI(); saveGame(); } }, 2000);
+
+/* ---------- кейсы ---------- */
+function openCaseDetails(key) {
+  activeCaseKey = key; let c = casesDatabase[key]; currentCasePrice = c.price;
+  el('detail-case-title').innerText = `Кейс: ${c.name}`; el('case-box-icon').innerText = c.icon;
+  el('price-x1').innerText = c.price + ' BC'; el('price-x3').innerText = c.price * 3 + ' BC'; el('price-x5').innerText = c.price * 5 + ' BC';
+  el('prizes-grid').innerHTML = c.items.map(i => `<div class="prize-card">${media(i, 'prize-img')}<div class="prize-title">${i.name}</div><div class="prize-chance">${i.chance}%</div><div style="font-size:10px;color:#f39c12">+${i.sellPrice} BC</div></div>`).join('');
+  resetCaseView(); switchView('case-detail', null);
+}
+function getRandomItem() {
+  let items = casesDatabase[activeCaseKey].items, r = Math.random() * 100, cur = 0;
+  for (let i of items) { cur += i.chance; if (r <= cur) return i; }
+  return items[0];
+}
+function openCustomAmountCases() {
+  let a = prompt("Сколько открыть? (до 15)", "5"); if (a === null) return;
+  a = parseInt(a); if (isNaN(a) || a <= 0) return alert("Неверно!");
+  openCases(Math.min(a, 15));
+}
+function openCases(count) {
+  let cost = currentCasePrice * count;
+  if (player.score < cost) return alert('Не хватает BC!');
+  player.score = rnd2(player.score - cost); updateUI(); saveGame();
+  currentWonPrizes = [];
+  for (let i = 0; i < count; i++) { let it = getRandomItem(); currentWonPrizes.push(it); addLiveDrop(player.username, it); }
+  el('case-main-box').style.display = 'none'; el('case-prizes-info').style.display = 'none'; el('back-to-cases-btn').style.display = 'none';
+  el('roulette-container').classList.add('show'); el('roulette-counter-label').innerText = `Одновременное открытие: ${count} шт.`;
+  el('roulette-scroll-box').innerHTML = currentWonPrizes.map((_, i) => `<div class="roulette-row-wrapper"><div class="roulette-row-title">Кейс #${i + 1}</div><div class="roulette-window"><div class="roulette-pointer"></div><div class="roulette-track" id="roulette-track-${i}"></div></div></div>`).join('');
+  currentWonPrizes.forEach((w, i) => buildRouletteTrack(i, w));
+  clearTimeout(rouletteTimeout); rouletteTimeout = setTimeout(showWonResults, 3700);
+}
+function buildRouletteTrack(index, win) {
+  let track = el('roulette-track-' + index); if (!track) return;
+  track.style.transition = 'none'; track.style.transform = 'translateX(0)';
+  let h = '';
+  for (let i = 0; i < 30; i++) {
+    let it = i === 24 ? win : getRandomItem();
+    h += `<div class="roulette-item">${it.img ? `<img src="${it.img}" class="roulette-item-img">` : `<div class="roulette-item-icon">${it.icon}</div>`}<div class="roulette-item-title">${it.name}</div></div>`;
+  }
+  track.innerHTML = h;
+  setTimeout(() => {
+    track.style.transition = 'transform 3.5s cubic-bezier(0.15,0.85,0.25,1)';
+    track.style.transform = `translateX(-${24 * 88 - el('roulette-scroll-box').clientWidth / 2 + 44}px)`;
+  }, 50);
+}
+function skipRouletteAnimation() { clearTimeout(rouletteTimeout); showWonResults(); }
+function showWonResults() {
+  clearTimeout(rouletteTimeout);
+  el('roulette-container').classList.remove('show');
+  let auto = el('autosell-checkbox').checked, sold = 0, grouped = {};
+  currentWonPrizes.forEach(p => {
+    if (!grouped[p.name]) grouped[p.name] = { ...p, count: 0 };
+    grouped[p.name].count++;
+    if (auto) sold += p.sellPrice; else player.inventory.push(p);
+  });
+  el('won-prizes-list').innerHTML = Object.values(grouped).map(g => `<div class="prize-card" style="width:110px"><span class="prize-count-badge">×${g.count}</span>${media(g, 'prize-img')}<div class="prize-title">${g.name}</div>${auto ? `<div style="font-size:10px;color:#27ae60">+${g.sellPrice * g.count} BC</div>` : ''}</div>`).join('');
+  if (auto) player.score = rnd2(player.score + sold);
+  refreshAll(); el('roulette-results-view').style.display = 'flex';
+}
+function resetCaseView() {
+  clearTimeout(rouletteTimeout);
+  el('roulette-results-view').style.display = 'none'; el('roulette-container').classList.remove('show');
+  el('case-main-box').style.display = 'flex'; el('case-prizes-info').style.display = 'block'; el('back-to-cases-btn').style.display = 'block';
+}
+function refreshAll() { saveGame(); updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); }
+
+/* ---------- инвентарь ---------- */
+function renderInventory() {
+  let grid = el('inventory-grid'); grid.innerHTML = '';
+  if (!player.inventory.length) { el('inventory-empty-msg').style.display = 'block'; return; }
+  el('inventory-empty-msg').style.display = 'none';
+  let g = {};
+  player.inventory.forEach(it => { (g[it.name] = g[it.name] || { ...it, count: 0 }).count++; });
+  Object.values(g).forEach(i => grid.innerHTML += `<div class="prize-card">${i.count > 1 ? `<span class="prize-count-badge">×${i.count}</span>` : ''}${media(i, 'prize-img')}<div class="prize-title">${i.name}</div><div style="font-size:11px;color:#f39c12;margin:3px 0">+${i.sellPrice} BC / шт</div><button class="btn" style="padding:6px;font-size:11px;width:100%;background:#27ae60" onclick="exchangeItem(this.dataset.n)" data-n="${i.name.replace(/"/g, '&quot;')}">Внести</button></div>`);
+}
+function exchangeItem(name) {
+  let idx = player.inventory.findIndex(i => i.name === name); if (idx < 0) return;
+  let it = player.inventory.splice(idx, 1)[0];
+  player.score = rnd2(player.score + it.sellPrice); refreshAll();
+  alert(`✅ Успешно! Вы внесли "${it.name}" и получили +${it.sellPrice} BC.`);
+}
+
+/* ---------- АПГРЕЙДЕР ---------- */
+function getAllAvailableUpgradeItems() { // единый пул: магазин + все кейсы
+  let map = {
+    "Garama": { name: "Garama", img: "https://i.ibb.co.com/jvNNf89p/Screenshot-20261013-024819.jpg", sellPrice: 75 },
+    "IXOVER": { name: "IXOVER", img: "https://i.ibb.co/M5MPzfxW/IMG-20261013-084359-426.jpg", sellPrice: 500000 }
+  };
+  Object.values(casesDatabase).forEach(c => c.items.forEach(ci => { map[ci.name] = { name: ci.name, icon: ci.icon, img: ci.img, sellPrice: ci.sellPrice }; }));
+  return Object.values(map).sort((a, b) => a.sellPrice - b.sellPrice);
+}
+function fmtChance(c) { // меньше 1% — 8 знаков после запятой
+  if (c <= 0) return "0%";
+  if (c < 1) return c.toFixed(8) + "%";
+  return (Math.round(c * 100) / 100) + "%";
+}
+const visAngle = c => Math.max(c / 100 * Math.PI * 2, 0.035); // минимальный видимый сектор
+function getCalculatedChance() { // наш предмет / желаемый × 95%, максимум 95%
+  if (upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) return 0;
+  let s = player.inventory[upgraderSourceIndex].sellPrice, t = upgraderTargetItem.sellPrice;
+  if (s >= t) return 0;
+  return Math.min(95, s / t * 95);
+}
+function renderUpgraderSelectors() {
+  let src = el('upgrader-source-selector'), tgt = el('upgrader-target-selector');
+  if (isUpgrading) return;
+  src.innerHTML = ''; tgt.innerHTML = '';
+  if (!player.inventory.length) {
+    src.innerHTML = '<div style="color:#8b93b0;font-size:12px">Инвентарь пуст</div>';
+    tgt.innerHTML = '<div style="color:#8b93b0;font-size:12px">Сначала выберите свой предмет</div>';
+    upgraderSourceIndex = null; upgraderTargetItem = null; updateUpgraderChance(); return;
+  }
+  if (upgraderSourceIndex !== null && !player.inventory[upgraderSourceIndex]) upgraderSourceIndex = null;
+  player.inventory.forEach((it, idx) => {
+    src.innerHTML += `<div class="mines-sel-item ${upgraderSourceIndex === idx ? 'selected' : ''}" onclick="selectUpgraderSource(${idx})">${media(it, 'mines-sel-img')}<span class="sel-name">${it.name}</span><span style="color:#f39c12;font-size:9px">${it.sellPrice} BC</span></div>`;
+  });
+  let sp = upgraderSourceIndex !== null ? player.inventory[upgraderSourceIndex].sellPrice : 0;
+  getAllAvailableUpgradeItems().forEach((it, k) => {
+    let low = upgraderSourceIndex !== null && it.sellPrice <= sp;
+    let sel = upgraderTargetItem && upgraderTargetItem.name === it.name;
+    let d = document.createElement('div');
+    d.className = 'mines-sel-item' + (sel ? ' selected' : '') + (low ? ' disabled' : '');
+    d.innerHTML = `${media(it, 'mines-sel-img')}<span class="sel-name">${it.name}</span>${low ? '<span style="color:#e74c3c;font-size:8px">Дешевле</span>' : `<span style="color:#f39c12;font-size:9px">${it.sellPrice} BC</span>`}`;
+    if (!low) d.onclick = () => selectUpgraderTarget(it.name);
+    tgt.appendChild(d);
+  });
+  updateUpgraderChance();
+}
+function selectUpgraderSource(idx) {
+  if (isUpgrading) return; upgraderSourceIndex = idx;
+  if (upgraderTargetItem && upgraderTargetItem.sellPrice <= player.inventory[idx].sellPrice) upgraderTargetItem = null;
+  renderUpgraderSelectors();
+}
+function selectUpgraderTarget(name) {
+  if (isUpgrading) return;
+  let t = getAllAvailableUpgradeItems().find(i => i.name === name);
+  let sp = upgraderSourceIndex !== null ? player.inventory[upgraderSourceIndex].sellPrice : 0;
+  if (t && t.sellPrice > sp) { upgraderTargetItem = t; renderUpgraderSelectors(); }
+}
+function updateUpgraderChance() {
+  let btn = el('upgrade-start-btn'), lab = el('upgrade-chance-label'), fm = el('upgrade-formula');
+  let c = getCalculatedChance();
+  if (c <= 0) { lab.innerText = "0%"; lab.style.color = "#e74c3c"; btn.disabled = true; fm.innerText = ''; drawCircleRoulette(0); return; }
+  let s = player.inventory[upgraderSourceIndex].sellPrice, t = upgraderTargetItem.sellPrice;
+  lab.innerText = fmtChance(c); lab.style.color = "#27ae60";
+  fm.innerText = `${s} / ${t} × 95% = ${fmtChance(c)}`;
+  btn.disabled = isUpgrading; drawCircleRoulette(c);
+}
+function drawCircleRoulette(chance, rot = 0) {
+  let cv = el('upgrade-circle-canvas'), ctx = cv.getContext('2d');
+  let cx = cv.width / 2, cy = cv.height / 2, r = cx - 10;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  let a = chance > 0 ? visAngle(chance) : 0;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, rot + a, rot + Math.PI * 2); ctx.fillStyle = '#c0392b'; ctx.fill();
+  if (a) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, rot, rot + a); ctx.fillStyle = '#27ae60'; ctx.fill(); }
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.5, 0, Math.PI * 2); ctx.fillStyle = '#141722'; ctx.fill();
+  ctx.lineWidth = 5; ctx.strokeStyle = '#2a2e43'; ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 26px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(chance > 0 && chance < 1 ? '<1%' : fmtChance(chance), cx, cy);
+}
+function startUpgrade() {
+  if (isUpgrading || upgraderSourceIndex === null || !player.inventory[upgraderSourceIndex] || !upgraderTargetItem) return;
+  let chance = getCalculatedChance(); if (chance <= 0) return alert("❌ Неверные условия апгрейда!");
+  isUpgrading = true; el('upgrade-start-btn').disabled = true;
+  let target = upgraderTargetItem;
+  player.inventory.splice(upgraderSourceIndex, 1); upgraderSourceIndex = null;
+  saveGame(); renderInventory(); renderMinesInventorySelector();
+  let isWin = Math.random() * 100 < chance;       // точный шанс, без округления
+  let a = visAngle(chance), tA;
+  tA = isWin ? -Math.PI / 2 - Math.random() * a
+             : -Math.PI / 2 - (a + Math.random() * (Math.PI * 2 - a));
+  let finalRot = Math.PI * 2 * 6 + tA, t0 = null, dur = 4000;
+  (function frame(ts) {
+    if (!t0) t0 = ts;
+    let p = Math.min(1, (ts - t0) / dur), ease = 1 - Math.pow(1 - p, 3);
+    drawCircleRoulette(chance, finalRot * ease);
+    if (p < 1) return requestAnimationFrame(frame);
+    isUpgrading = false;
+    if (isWin) {
+      player.inventory.push({ name: target.name, icon: target.icon || '🎁', img: target.img, sellPrice: target.sellPrice });
+      alert(`🎉 Успех! Вы получили "${target.name}"!`);
+    } else alert(`💥 Неудача! Предмет сгорел.`);
+    upgraderTargetItem = null; refreshAll();
+  })(performance.now());
+}
+
+/* ---------- LIVE ---------- */
+function addLiveDrop(name, item) {
+  let empty = el('no-drops-msg'); if (empty) empty.remove();
+  el('live-feed').insertAdjacentHTML('afterbegin', `<div class="live-item"><span>${item.icon || '🎁'}</span> <b>${name}</b> <span style="color:#f39c12">${item.sellPrice} BC</span></div>`);
+}
+
+/* ---------- МИНЫ ---------- */
+function renderMinesInventorySelector() {
+  let c = el('mines-inventory-selector'), b = el('mines-start-btn'); c.innerHTML = '';
+  if (!player.inventory.length) {
+    c.innerHTML = '<div style="color:#8b93b0;font-size:12px">Инвентарь пуст. Купите брейнрот или выбейте в кейсах!</div>';
+    selectedMinesItemIndex = null; b.disabled = true; b.innerText = "🛑 Инвентарь пуст"; return;
+  }
+  player.inventory.forEach((it, idx) => c.innerHTML += `<div class="mines-sel-item ${selectedMinesItemIndex === idx ? 'selected' : ''}" onclick="selectMinesItem(${idx})">${media(it, 'mines-sel-img')}<span class="sel-name">${it.name}</span></div>`);
+  let ok = selectedMinesItemIndex !== null && player.inventory[selectedMinesItemIndex];
+  b.disabled = !ok; b.innerText = ok ? "🎲 Начать игру" : "🎲 Выберите брейнрот";
+}
+function selectMinesItem(i) { selectedMinesItemIndex = i; renderMinesInventorySelector(); }
+function initMinesGrid() {
+  let g = el('mines-grid'); g.innerHTML = '';
+  for (let i = 0; i < 25; i++) { let c = document.createElement('div'); c.className = 'mine-cell'; c.innerText = '❓'; c.onclick = () => clickMineCell(i); g.appendChild(c); }
+}
+function startMinesGame() {
+  if (selectedMinesItemIndex === null || !player.inventory[selectedMinesItemIndex]) return alert("🛑 Выберите брейнрот для ставки!");
+  let n = parseInt(el('mines-count').value); if (isNaN(n) || n < 3) n = 3; if (n > 24) n = 24;
+  let item = player.inventory.splice(selectedMinesItemIndex, 1)[0]; selectedMinesItemIndex = null;
+  saveGame(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors();
+  minesGame = { active: true, betItem: item, minesCount: n, multiplier: 1, grid: new Array(25).fill(false) };
+  for (let placed = 0; placed < n;) { let p = Math.floor(Math.random() * 25); if (!minesGame.grid[p]) { minesGame.grid[p] = true; placed++; } }
+  el('mines-game-box').style.display = 'flex'; el('mines-start-btn').style.display = 'none';
+  updateMinesUI(); initMinesGrid();
+}
+function clickMineCell(i) {
+  if (!minesGame.active) return;
+  let c = el('mines-grid').children[i]; if (c.classList.contains('revealed')) return;
+  if (minesGame.grid[i]) { c.className = 'mine-cell revealed mine'; c.innerText = '💣'; endMinesGame(false); }
+  else {
+    c.className = 'mine-cell revealed safe'; c.innerText = '💎';
+    let step = 0.035 + minesGame.minesCount * 0.014;   // множитель уменьшен
+    minesGame.multiplier = rnd2(minesGame.multiplier + step); updateMinesUI();
+  }
+}
+function updateMinesUI() { el('mines-multiplier').innerText = minesGame.multiplier.toFixed(2) + 'x'; }
+function cashoutMinesGame() {
+  if (!minesGame.active) return;
+  let r = rnd2(minesGame.betItem.sellPrice * minesGame.multiplier);
+  player.score = rnd2(player.score + r); updateUI(); saveGame();
+  alert(`🎉 Победа! Вы забрали награду: +${r} BC!`); endMinesGame(true);
+}
+function endMinesGame(won) {
+  minesGame.active = false;
+  let g = el('mines-grid');
+  for (let i = 0; i < 25; i++) if (minesGame.grid[i]) { g.children[i].className = 'mine-cell revealed mine'; g.children[i].innerText = '💣'; }
+  if (!won) alert("💥 Мина! Ваш брейнрот сгорел.");
+  renderMinesInventorySelector(); renderUpgraderSelectors(); el('mines-start-btn').style.display = 'block';
+}
+
+/* ---------- профиль / промо / админка ---------- */
+function claimDevBonus() {
+  if (player.id !== OWNER_TELEGRAM_ID) return alert("❌ У вас нет прав!");
+  player.score += 1000; updateUI(); saveGame(); alert("+1000 BC получено!");
+}
+function activatePromo() {
+  let code = el('promo-input').value.trim();
+  if (promoCodes[code] && !promoCodes[code].usedBy.includes(player.id)) {
+    player.score += promoCodes[code].reward; promoCodes[code].usedBy.push(player.id);
+    updateUI(); saveGame(); alert(`Активировано! +${promoCodes[code].reward} BC`);
+  } else alert("Неверно или уже использовано!");
+}
+async function grantBalanceToUser() {
+  if (player.id !== OWNER_TELEGRAM_ID) return;
+  let id = parseInt(el('grant-user-id').value), amt = parseFloat(el('grant-amount').value);
+  if (isNaN(id) || isNaN(amt)) return alert("Заполните ID и сумму!");
+  try {
+    let users = await (await fetch(NPOINT_URL)).json(); if (!Array.isArray(users)) users = [];
+    let t = users.find(u => u.id === id);
+    if (!t) return alert("Игрок не найден в облачной базе!");
+    t.score = rnd2(t.score + amt);
+    await fetch(NPOINT_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(users) });
+    if (id === player.id) { player.score = t.score; updateUI(); }
+    alert("Баланс игрока успешно изменен в облаке!");
+  } catch (e) { alert("Ошибка подключения к облаку"); }
+}
+function adminGiveItemToUser() {
+  if (player.id !== OWNER_TELEGRAM_ID) return;
+  let id = parseInt(el('give-item-user-id').value), name = el('give-item-name').value.trim();
+  let icon = el('give-item-icon').value.trim() || "🎁", price = parseFloat(el('give-item-price').value);
+  if (isNaN(id) || !name || isNaN(price)) return alert("Заполните все поля предмета!");
+  if (id === player.id) { player.inventory.push({ name, icon, sellPrice: price }); refreshAll(); alert(`Предмет "${name}" выдан вам!`); }
+  else alert(`Предмет подготовлен для игрока ${id}`);
+}
+function adminCreatePromo() {
+  if (player.id !== OWNER_TELEGRAM_ID) return;
+  let code = el('admin-promo-code').value.trim(), reward = parseFloat(el('admin-promo-reward').value);
+  if (!code || isNaN(reward) || reward <= 0) return alert("Заполните промокод и награду!");
+  promoCodes[code] = { reward, usedBy: [] }; alert(`🎫 Промокод "${code}" на ${reward} BC создан!`);
+}
+function renderAdminCaseItemsList() {
+  let k = el('admin-case-select').value;
+  el('admin-case-items-list').innerHTML = casesDatabase[k].items.map((it, i) => `<div style="background:#0d0f18;padding:6px 10px;border-radius:6px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;font-size:12px"><span>${it.icon || '🖼'} ${it.name} (${it.chance}%)</span><button class="btn" style="padding:2px 6px;font-size:10px;background:#c0392b" onclick="adminRemoveItemFromCase('${k}',${i})">✕</button></div>`).join('');
+}
+function adminAddItemToCase() {
+  if (player.id !== OWNER_TELEGRAM_ID) return;
+  let k = el('admin-case-select').value, name = el('admin-item-name').value.trim(), icon = el('admin-item-icon').value.trim() || "🎁";
+  let chance = parseFloat(el('admin-item-chance').value), price = parseFloat(el('admin-item-price').value);
+  if (!name || isNaN(chance) || isNaN(price)) return alert("Заполните все поля предмета!");
+  casesDatabase[k].items.push({ name, icon, chance, sellPrice: price });
+  saveGame(); renderAdminCaseItemsList(); renderUpgraderSelectors(); alert(`✅ Предмет "${name}" добавлен в кейс!`);
+}
+function adminRemoveItemFromCase(k, i) {
+  if (player.id !== OWNER_TELEGRAM_ID) return;
+  casesDatabase[k].items.splice(i, 1); saveGame(); renderAdminCaseItemsList(); renderUpgraderSelectors();
+}
+
+/* ---------- магазин ---------- */
+function buyShopItem(name, img, price, sellPrice) {
+  if (player.score < price) return alert(`Не хватает BC! Нужно ${price.toLocaleString()} BC.`);
+  player.score = rnd2(player.score - price);
+  player.inventory.push({ name, img, sellPrice }); refreshAll();
+  alert(`🎉 ${name} успешно куплен и добавлен в инвентарь!`);
+}
+
+try { window.Telegram?.WebApp?.ready(); window.Telegram?.WebApp?.expand(); } catch (e) {}
+loadGame();
 </script>
 </body>
 </html>
+EOF
+node -e "
+const s=require('fs').readFileSync('/mnt/user-data/outputs/index.html','utf8');
+const js=s.split('<script>')[2].split('</script>')[0];
+try{new Function(js);console.log('JS OK',s.length)}catch(e){console.log('ERR',e.message)}" 2>&1 | head
