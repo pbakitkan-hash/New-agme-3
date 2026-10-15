@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Brainrot Case</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -157,6 +157,113 @@ b{font-weight:600}
 .roulette-item-icon{font-size:calc(var(--rh,90px)*.36);margin:0;line-height:1.1}
 .roulette-item-img{width:auto;height:calc(var(--rh,90px)*.42);max-width:80%;margin:0}
 .roulette-item-title{font-size:calc(var(--rh,90px)*.11);max-width:100%}
+
+/* ===== тема: объём, свечение ===== */
+html,body{height:100%}
+body{background:radial-gradient(1100px 600px at 50% -8%,#222650 0%,#0d0f18 62%) fixed;height:100vh;height:100dvh}
+button{touch-action:manipulation}
+.app-wrapper{background:linear-gradient(180deg,#121628,#0b0d16)}
+.live-bar{background:linear-gradient(180deg,#171b2e,#12152a)}
+.header{background:linear-gradient(180deg,#1a1f38,#131730);box-shadow:0 4px 16px #0006;position:relative;z-index:5}
+.header>div:first-child{background:linear-gradient(90deg,#ffd166,#f39c12);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:14px}
+.balance-badge{background:linear-gradient(180deg,#232846,#171b33);box-shadow:inset 0 1px 0 #ffffff14,0 3px 8px #0005}
+.profile-avatar-btn{width:46px;height:46px;font-size:19px;border-width:2px;background:linear-gradient(145deg,#343b66,#1a1f38);box-shadow:0 0 0 3px #f39c1230,0 5px 12px #0008;transition:transform .12s}
+.profile-avatar-btn:hover{transform:scale(1.06)}.profile-avatar-btn:active{transform:scale(.94)}
+.header>div:last-child{padding:4px 2px;gap:8px!important}
+.btn{background-image:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 50%,rgba(0,0,0,.2))!important;box-shadow:0 3px 0 #0005,0 6px 14px #0006,inset 0 1px 0 #fff4;text-shadow:0 1px 1px #0006;transition:transform .08s,box-shadow .08s,filter .15s}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #0005,0 3px 8px #0006,inset 0 1px 0 #fff4;opacity:1}
+.btn:disabled{box-shadow:none;transform:none;filter:none}
+.card{background:linear-gradient(180deg,#1e2338,#161a2d);box-shadow:0 8px 20px #0005,inset 0 1px 0 #ffffff12;transition:transform .15s,box-shadow .15s}
+#view-cases .card:hover{transform:translateY(-2px);box-shadow:0 12px 26px #0007,inset 0 1px 0 #ffffff18}
+.prize-card{background:linear-gradient(180deg,#1e2338,#141829);box-shadow:0 5px 12px #0005,inset 0 1px 0 #ffffff10;transition:transform .12s}
+.prize-card:hover{transform:translateY(-2px)}
+.prize-img,.prize-icon,.roulette-item-icon{filter:drop-shadow(0 4px 6px #0009)}
+.drawer{background:linear-gradient(180deg,#171b30,#10132a)}
+.drawer-item{background:linear-gradient(180deg,#1e2338,#171b2e);box-shadow:0 3px 8px #0004;transition:transform .12s}
+.drawer-item:hover{transform:translateX(-3px)}
+.mines-sel-item{background:linear-gradient(180deg,#1b2038,#111427);box-shadow:0 4px 10px #0005;transition:transform .12s}
+.mines-sel-item:hover{transform:translateY(-2px)}
+#case-box-icon{animation:floaty 3s ease-in-out infinite;filter:drop-shadow(0 10px 14px #000a)}
+@keyframes floaty{50%{transform:translateY(-8px) rotate(2deg)}}
+.hint{font-size:11px;color:#8b93b0;text-align:center;margin-top:6px;width:100%}
+.content::-webkit-scrollbar,.fs-rows::-webkit-scrollbar,.pick-grid::-webkit-scrollbar{width:7px;height:7px}
+.content::-webkit-scrollbar-thumb,.pick-grid::-webkit-scrollbar-thumb,.mines-inventory-selector::-webkit-scrollbar-thumb{background:#2f3659;border-radius:6px}
+/* мины */
+.mines-grid{max-width:520px;margin-left:auto;margin-right:auto;gap:7px}
+.mine-cell{background:linear-gradient(180deg,#2c3354,#1a1f38);border:1px solid #3b4470;box-shadow:0 4px 0 #0b0d1a,0 7px 12px #0007,inset 0 1px 0 #ffffff22;transition:transform .12s,box-shadow .12s}
+.mine-cell:not(.revealed):not(.idle):hover{transform:translateY(-2px)}
+.mine-cell:not(.revealed):not(.idle):active{transform:translateY(3px);box-shadow:0 1px 0 #0b0d1a,0 2px 6px #0007}
+.mine-cell.revealed{box-shadow:inset 0 3px 8px #0008;animation:flip .35s}
+.mine-cell.safe{background:radial-gradient(circle at 30% 25%,#5cf09a,#1e8449)!important;box-shadow:0 0 16px #2ecc7188,inset 0 -3px 6px #0005!important}
+.mine-cell.mine{background:radial-gradient(circle at 30% 25%,#ff8272,#a93226)!important;box-shadow:0 0 16px #e74c3c88,inset 0 -3px 6px #0005!important;animation:shake .4s}
+@keyframes flip{0%{transform:rotateY(90deg) scale(.8)}100%{transform:none}}
+@keyframes shake{20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+/* апгрейдер */
+.circle-roulette-box{width:min(76vw,280px);height:auto;aspect-ratio:1;margin:6px auto 12px}
+.circle-roulette-box canvas{border-radius:0;box-shadow:none}
+.slots{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:2px 0 10px}
+.slot{flex:1;max-width:200px;min-height:132px;border-radius:14px;border:2px dashed #3a4268;background:linear-gradient(180deg,#1b2038,#121528);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;padding:8px;box-shadow:inset 0 2px 10px #0006,0 6px 16px #0005;transition:transform .12s,border-color .15s}
+.slot:hover{border-color:#f39c12;transform:translateY(-2px)}
+.slot.filled{border-style:solid;border-color:#f39c1299}
+.slot-plus{font-size:36px;color:#f39c12;line-height:1}
+.slot-name{font-size:12px;font-weight:600;text-align:center}
+.slot-price{font-size:11px;color:#f39c12}
+.slot-img{width:64px;height:64px;object-fit:contain;border-radius:8px;filter:drop-shadow(0 4px 6px #0008)}
+.slot-emoji{font-size:48px;line-height:1.1;filter:drop-shadow(0 4px 6px #0008)}
+.up-arrow{font-size:24px;color:#f39c12;text-shadow:0 0 12px #f39c12aa}
+.modal-card.wide{max-width:560px}
+.pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:auto;min-height:0;padding:2px}
+.pick-item{position:relative;background:linear-gradient(180deg,#1b2038,#131629);border:2px solid #2a2e43;border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;transition:transform .12s,border-color .12s}
+.pick-item:hover{transform:translateY(-2px);border-color:#f39c12}
+.pick-item.sel{border-color:#2ecc71;box-shadow:0 0 12px #2ecc7155}
+.pick-item.low{opacity:.4;cursor:not-allowed}
+.pick-item.low:hover{transform:none;border-color:#2a2e43}
+.pick-img{width:44px;height:44px;object-fit:contain;border-radius:6px}
+.pick-emoji{font-size:32px;line-height:1.1}
+.pick-name{font-weight:600;word-break:break-word}
+.pick-chance{color:#2ecc71;font-size:10px}
+/* ракета */
+.rk-wrap{position:relative;width:100%;max-width:720px;border-radius:16px;overflow:hidden;border:1px solid #3b4470;box-shadow:0 12px 30px #0009,inset 0 0 40px #0006}
+.rk-wrap canvas{width:100%;height:auto;display:block}
+.rk-hud{position:absolute;left:0;right:0;top:10px;text-align:center;pointer-events:none}
+#rk-mult{font-size:44px;font-weight:800;letter-spacing:1px;text-shadow:0 0 18px currentColor,0 3px 0 #0006}
+#rk-sub{font-size:12px;color:#d6dbf0;margin-top:2px;text-shadow:0 1px 3px #000}
+.rk-hist{display:flex;gap:5px;overflow-x:auto;width:100%;max-width:720px;padding:8px 0;min-height:38px}
+.rk-chip{flex:0 0 auto;font-size:11px;font-weight:600;padding:3px 9px;border-radius:12px;background:#1a1d29}
+.rk-chip.ok{color:#2ecc71;border:1px solid #2ecc7166}.rk-chip.bad{color:#ff6b6b;border:1px solid #ff6b6b66}.rk-chip.none{color:#6f7898}
+#view-rocket .card{max-width:720px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#0d0f18;border-radius:10px;padding:3px;gap:3px;width:100%}
+.seg button{border:0;border-radius:8px;padding:9px;background:none;color:#8b93b0;font-weight:600;font-size:13px;cursor:pointer}
+.seg button.on{background:linear-gradient(180deg,#8f6bff,#6a46e0);color:#fff;box-shadow:0 2px 8px #6a46e066}
+/* ПК / ноутбук */
+@media (min-width:760px){
+ .app-wrapper{max-width:780px;border-left:1px solid #23283d;border-right:1px solid #23283d}
+ .content{padding:16px 28px}.drawer{width:300px}
+ .prizes-grid{grid-template-columns:repeat(4,1fr)}.pick-grid{grid-template-columns:repeat(4,1fr)}
+ .btn{font-size:13.5px}.mines-sel-item{min-width:84px;height:92px}
+}
+@media (min-width:1100px){
+ .app-wrapper{max-width:960px}.prizes-grid{grid-template-columns:repeat(5,1fr)}
+ #rk-mult{font-size:58px}
+}
+@media (max-width:360px){.prizes-grid{gap:5px}#rk-mult{font-size:36px}.slot{min-height:118px}}
+
+/* ферма / ракета: дополнения */
+.farm-char{font-size:120px;line-height:1.1;filter:drop-shadow(0 12px 18px #000a);user-select:none}
+.farm-char.tap{animation:tap .15s}
+@keyframes tap{50%{transform:scale(.88) rotate(-4deg)}}
+.float-num{position:absolute;color:#ffd166;font-weight:700;pointer-events:none;animation:rise .7s ease-out forwards;text-shadow:0 2px 4px #000}
+@keyframes rise{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-56px)}}
+.rk-q{padding:7px 8px;background:#2d3556;flex:0 0 auto}
+.rk-prize{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:#000a;border:1px solid #f39c1288;border-radius:20px;padding:5px 14px;font-size:13px;font-weight:600;pointer-events:none;display:none;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+
+/* апгрейдер: графика */
+.circle-roulette-box{width:min(86vw,330px);margin:2px auto 4px}
+.up-result{min-height:24px;font-weight:700;font-size:15px;text-align:center;margin:0 0 8px}
+.up-result.win{color:#46f08c;text-shadow:0 0 12px #46f08c88}
+.up-result.lose{color:#ff6b6b;text-shadow:0 0 12px #ff6b6b88}
+@media (min-width:760px){.circle-roulette-box{width:360px}}
 </style>
 </head>
 <body>
@@ -173,6 +280,13 @@ b{font-weight:600}
     <div class="modal-header"><span>👥 Выберите игрока</span><button class="modal-close" onclick="closeUsersModal()">✕</button></div>
     <div class="modal-users-list" id="modal-users-list"></div></div></div>
 
+  <div class="modal-overlay" id="picker-modal" onclick="if(event.target===this)closePicker()">
+    <div class="modal-card wide">
+      <div class="modal-header"><span id="picker-title">Выбор</span><button class="modal-close" onclick="closePicker()">✕</button></div>
+      <input type="search" id="picker-search" class="input-field" placeholder="Поиск по названию..." oninput="renderPicker()">
+      <div class="pick-grid" id="picker-grid"></div>
+    </div></div>
+
   <div class="drawer" id="drawer">
     <div class="drawer-header"><span>МЕНЮ</span><button class="menu-close-btn" onclick="toggleMenu()">✕</button></div>
     <button class="drawer-item active" onclick="switchView('cases',this)">🎁 Кейсы <span class="badge-new">ТОП</span></button>
@@ -180,6 +294,7 @@ b{font-weight:600}
     <button class="drawer-item" onclick="switchView('profile',this)">👤 Профиль</button>
     <button class="drawer-item" onclick="switchView('farm',this)">🌿 Ферма</button>
     <button class="drawer-item" onclick="switchView('mines',this)">💣 Мины</button>
+    <button class="drawer-item" onclick="switchView('rocket',this)">🚀 Ракета <span class="badge-new">NEW</span></button>
     <button class="drawer-item" onclick="switchView('shop',this)">🛒 Магазин</button>
   </div>
 
@@ -197,16 +312,18 @@ b{font-weight:600}
 
     <!-- АПГРЕЙДЕР -->
     <div id="view-upgrader" class="view">
-      <h2>🔄 Апгрейдер брейнротов</h2>
-      <div class="circle-roulette-box"><canvas id="upgrade-circle-canvas" width="360" height="360"></canvas></div>
-      <div style="font-size:12px;color:#8b93b0;margin-bottom:6px;width:100%">1. Выберите свой брейнрот для апгрейда:</div>
-      <div class="mines-inventory-selector" id="upgrader-source-selector"></div>
-      <div style="font-size:12px;color:#8b93b0;margin-bottom:6px;width:100%">2. Желаемый предмет (дороже вашего):</div>
-      <div class="mines-inventory-selector" id="upgrader-target-selector"></div>
-      <div class="card" style="flex-direction:column;align-items:flex-start;gap:8px">
-        <div style="width:100%;display:flex;justify-content:space-between;font-size:14px"><span>Шанс успеха:</span><span id="upgrade-chance-label" style="color:#27ae60;font-weight:bold">0%</span></div>
+      <h2>🔄 Апгрейдер</h2>
+      <div class="circle-roulette-box"><canvas id="upgrade-circle-canvas" width="500" height="500"></canvas></div>
+      <div id="upgrade-result" class="up-result"></div>
+      <div class="slots">
+        <div class="slot" id="slot-src" onclick="openPicker('src')"></div>
+        <div class="up-arrow">➜</div>
+        <div class="slot" id="slot-tgt" onclick="openPicker('tgt')"></div>
+      </div>
+      <div class="card" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;justify-content:space-between;font-size:14px"><span>Шанс успеха:</span><span id="upgrade-chance-label" style="color:#27ae60;font-weight:700">0%</span></div>
         <div id="upgrade-formula" style="font-size:11px;color:#8b93b0"></div>
-        <button class="btn" style="width:100%;background:#8e44ad" id="upgrade-start-btn" onclick="startUpgrade()" disabled>🚀 Сделать апгрейд</button>
+        <button class="btn" style="background:#8e44ad" id="upgrade-start-btn" onclick="startUpgrade()" disabled>🚀 Сделать апгрейд</button>
       </div>
     </div>
 
@@ -244,6 +361,7 @@ b{font-weight:600}
         <span id="mines-bet" style="color:#8b93b0;font-size:12px">Ставка: —</span></div>
       <div class="mines-grid" id="mines-grid"></div>
       <button class="btn" style="width:100%;margin-top:10px;background:#e74c3c" id="mines-cash-btn" onclick="cashoutMinesGame()" disabled>💰 Забрать приз</button>
+      <div class="hint">Победа: вернём брейнрота + бонус BC = цена × (множитель − 1)</div>
       <div class="card" style="flex-direction:column;align-items:flex-start;gap:8px;margin-top:10px">
         <div style="width:100%;display:flex;justify-content:space-between;align-items:center"><span>Мины (3-24):</span>
           <input type="number" id="mines-count" class="input-field" value="3" min="3" max="24" style="width:100px;margin-bottom:0"></div>
@@ -251,6 +369,28 @@ b{font-weight:600}
       </div>
       <div style="font-size:12px;color:#8b93b0;margin-bottom:6px;width:100%">Ставка из инвентаря (одинаковые складываются):</div>
       <div class="mines-inventory-selector" id="mines-inventory-selector"></div>
+    </div>
+
+    <!-- РАКЕТА -->
+    <div id="view-rocket" class="view">
+      <h2>🚀 Ракета</h2>
+      <div class="rk-wrap"><canvas id="rk-canvas" width="720" height="440"></canvas>
+        <div class="rk-hud"><div id="rk-mult">1.00x</div><div id="rk-sub">Готова к запуску</div></div>
+        <div class="rk-prize" id="rk-prize"></div></div>
+      <div class="rk-hist" id="rk-hist"></div>
+      <div class="card" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div id="rk-mode" class="hint" style="margin:0;text-align:left">💰 Ставка: монеты</div>
+        <div id="rk-bc-box" style="display:flex;gap:5px;width:100%">
+          <input type="number" id="rk-bet" class="input-field" value="10" min="1" inputmode="decimal" style="margin:0;flex:1;min-width:0">
+          <button class="btn rk-q" onclick="rkBetAdj('min')">Мин</button>
+          <button class="btn rk-q" onclick="rkBetAdj(2)">×2</button>
+          <button class="btn rk-q" onclick="rkBetAdj(5)">×5</button>
+          <button class="btn rk-q" onclick="rkBetAdj(10)">×10</button>
+          <button class="btn rk-q" onclick="rkBetAdj('max')">Макс</button></div>
+        <button class="btn" id="rk-btn" style="background:#27ae60;font-size:15px;padding:12px" onclick="rkAction()">🚀 Запуск</button>
+        <div class="hint" style="text-align:left;margin:2px 0 0">Или поставь брейнрота (нажми на него, ещё раз — снять). Множитель растёт — и ты получаешь самого дорогого брейнрота, до которого дорос, плюс остаток монетами. Лопнет — всё сгорит.</div>
+        <div class="mines-inventory-selector" id="rk-inventory-selector"></div>
+      </div>
     </div>
 
     <!-- ПРОФИЛЬ -->
@@ -312,10 +452,14 @@ b{font-weight:600}
         <div class="energy-info"><span>Энергия</span><span><span id="energy-text">100</span>/100</span></div>
         <div class="energy-bar-bg"><div class="energy-bar-fill" id="energy-bar"></div></div>
       </div>
+      <div class="energy-box" style="margin-bottom:12px">
+        <div class="energy-info"><span id="lvl-name">Уровень 1</span><span><span id="lvl-clicks">0</span>/<span id="lvl-need">100</span> кликов</span></div>
+        <div class="energy-bar-bg"><div class="energy-bar-fill" id="lvl-bar" style="background:linear-gradient(90deg,#8f6bff,#c084fc);width:0"></div></div>
+      </div>
       <div class="character-container" id="click-target">
-        <img src="https://static.wikia.nocookie.net/steal-a-brainrot/images/c/c5/Noobini_Pizzanini.png" class="character-img" alt="Noobini" data-fb="🍕" onerror="imgFail(this)">
-        <div class="char-name">Noobini Pizzanini</div>
-        <div style="color:#8b93b0;font-size:14px;margin-top:5px">Тапай, чтобы фармить!</div>
+        <div id="farm-char" class="farm-char">🍕</div>
+        <div class="char-name" id="farm-name">Noobini Pizzanini</div>
+        <div style="color:#8b93b0;font-size:13px;margin-top:4px" id="farm-hint">Тапай, чтобы фармить!</div>
       </div>
     </div>
 
@@ -340,7 +484,7 @@ const NPOINT_URL = "https://api.npoint.io/2816c8000051e7c162ec";
 const el = id => document.getElementById(id);
 const rnd2 = n => Math.round(n * 100) / 100;
 
-let player = { id: 123456789, username: "Player", score: 0, energy: 100, level: 11, inventory: [] };
+let player = { id: 123456789, username: "Player", score: 0, energy: 100, level: 1, clicks: 0, inventory: [] };
 let promoCodes = { "Uuu": { reward: 100, usedBy: [] }, "ADMIN1000": { reward: 1000, usedBy: [] } };
 let maxEnergy = 100, activeCaseKey = 'linear', currentCasePrice = 59, currentWonPrizes = [], rouletteTimeout = null;
 let minesGame = { active: false, betItem: null, minesCount: 3, multiplier: 1, grid: [] };
@@ -378,9 +522,16 @@ Object.assign(casesDatabase, {
     { name: "Frigo Camelo", icon: "🐪", chance: 15, sellPrice: 210 },
     { name: "La Vaca Saturno Saturnita", icon: "🐄", chance: 8, sellPrice: 360 },
     { name: "Graipuss Medussi", icon: "🐙", chance: 1.9, sellPrice: 900 },
-    { name: "Los Tralaleritos", icon: "🎸", chance: 0.1, sellPrice: 7000 }] }
+    { name: "Los Tralaleritos", icon: "🎸", chance: 0.1, sellPrice: 7000 }] },
+  taco: { name: 'Тако трак', price: 199, icon: '🌮', items: [
+    { name: "Tacorillo Crocodillo", icon: "🐊", chance: 60, sellPrice: 35 },
+    { name: "Nachorilla", icon: "🦍", chance: 20, sellPrice: 110 },
+    { name: "Nacho Spyder", icon: "🕷️", chance: 11, sellPrice: 250 },
+    { name: "Burguro And Fryuro", icon: "🍔", chance: 5, sellPrice: 550 },
+    { name: "Los Amigos", icon: "🌵", chance: 3, sellPrice: 1100 },
+    { name: "Sammiggi Trakini", icon: "🚚", chance: 1, sellPrice: 4500 }] }
 });
-const CASE_ACCENT = { bomzh: '#95a5a6', linear: '#f39c12', school: '#3498db', all_or_nothing: '#e74c3c', rich: '#f1c40f' };
+const CASE_ACCENT = { bomzh: '#95a5a6', linear: '#f39c12', school: '#3498db', all_or_nothing: '#e74c3c', rich: '#f1c40f', taco: '#e67e22' };
 function renderCasesList() {
   el('cases-list').innerHTML = Object.entries(casesDatabase).sort((a, b) => a[1].price - b[1].price).map(([k, c]) => {
     let col = CASE_ACCENT[k] || '#f39c12';
@@ -409,47 +560,64 @@ function packInv(inv) { // стопками: [{name,icon,img,sellPrice,count}]
   return [...m.values()];
 }
 const unpackInv = arr => (arr || []).flatMap(g => Array.from({ length: Math.max(0, g.count || 1) }, () => ({ name: g.name, icon: g.icon, img: g.img, sellPrice: g.sellPrice })));
-const snapshot = () => ({ score: player.score, energy: player.energy, level: player.level, inv: packInv(player.inventory), ts: player.ts || 0 });
+const snapshot = () => ({ score: player.score, energy: player.energy, level: player.level, clicks: player.clicks, inv: packInv(player.inventory), ts: player.ts || 0 });
 function applySnapshot(p) {
-  player.score = p.score ?? 0; player.energy = p.energy ?? 100; player.level = p.level ?? 11;
+  player.score = p.score ?? 0; player.energy = p.energy ?? 100;
+  if (p.clicks === undefined) { player.level = 1; player.clicks = 0; }   // старые сохранения: уровень фермы начинается с 1
+  else { player.level = Math.max(1, p.level | 0); player.clicks = p.clicks || 0; }
   player.inventory = p.inv ? unpackInv(p.inv) : (p.inventory || []); player.ts = p.ts || 0;
 }
-let cloudDirty = false, cloudTimer = null, cloudBusy = false;
+let cloudDirty = false, cloudTimer = null, cloudBusy = false, cloudReady = false, hadLocal = false;
+const DEFAULT_PROMOS = { "Uuu": { reward: 100, usedBy: [] }, "ADMIN1000": { reward: 1000, usedBy: [] } };
+function promoEntry(users) { // общий список промокодов лежит в облаке — его читают и игра, и бот
+  let e = users.find(u => u.id === '__promos__');
+  if (!e) { e = { id: '__promos__', codes: JSON.parse(JSON.stringify(DEFAULT_PROMOS)) }; users.push(e); }
+  if (!e.codes) e.codes = {};
+  return e;
+}
 function saveGame() { // мгновенно локально, в облако — не реже чем раз в 5 сек, при неудаче повтор
   player.ts = Date.now();
   try { localStorage.setItem('brainrot_save_' + player.id, JSON.stringify(snapshot())); } catch (e) {}
   cloudDirty = true;
   if (!cloudTimer) cloudTimer = setTimeout(() => { cloudTimer = null; flushCloud(); }, 5000);
 }
+function rerenderAll() { updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); rkRenderSel(); }
+function mergeFromCloud(u) { // что взять из облака при первом входе (новое устройство / другой адрес сайта)
+  if (u.inv) { if (!hadLocal || (u.ts || 0) > (player.ts || 0)) { applySnapshot(u); return true; } return false; }
+  let cs = Number(u.score) || 0;                       // запись из старой версии: был только баланс
+  if (cs > player.score) { player.score = cs; return true; }
+  return false;
+}
 async function flushCloud() {
   if (!cloudDirty || cloudBusy) return;
   cloudBusy = true; cloudDirty = false;
   try {
     let users = await fetchJson(NPOINT_URL); if (!Array.isArray(users)) users = [];
-    let u = users.find(x => x.id === player.id);
+    let u = users.find(x => x.id === player.id), changed = false;
+    if (!cloudReady) { if (u && mergeFromCloud(u)) changed = true; cloudReady = true; }   // пока не прочитали облако — ничего в него не пишем
     if (!u) { u = { id: player.id }; users.push(u); }
-    let changed = false;
-    if (u.grant) { player.score = rnd2(player.score + u.grant); u.grant = 0; changed = true; }          // выдача баланса от владельца
-    if (Array.isArray(u.gifts) && u.gifts.length) {                                                       // подарки от владельца
+    promoEntry(users);
+    if (u.grant) { player.score = rnd2(player.score + u.grant); u.grant = 0; changed = true; }          // выдача баланса / промокод из бота
+    if (Array.isArray(u.gifts) && u.gifts.length) {
       u.gifts.forEach(g => player.inventory.push({ name: g.name, icon: g.icon || '🎁', sellPrice: g.sellPrice })); u.gifts = []; changed = true;
     }
     player.ts = Date.now();
     Object.assign(u, snapshot(), { username: player.username });
     await fetchJson(NPOINT_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(users) });
-    if (changed) { try { localStorage.setItem('brainrot_save_' + player.id, JSON.stringify(snapshot())); } catch (e) {} updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); }
+    if (changed) { try { localStorage.setItem('brainrot_save_' + player.id, JSON.stringify(snapshot())); } catch (e) {} rerenderAll(); }
   } catch (e) { cloudDirty = true; }
   cloudBusy = false;
 }
-setInterval(() => { cloudDirty = true; flushCloud(); }, 60000);                 // повтор неудачных сохранений + получение выдач
-document.addEventListener('visibilitychange', () => { if (document.hidden) { saveGame(); flushCloud(); } });
-window.addEventListener('pagehide', () => { saveGame(); flushCloud(); });
+setInterval(() => { cloudDirty = true; flushCloud(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (document.hidden && cloudReady) { saveGame(); flushCloud(); } });
+window.addEventListener('pagehide', () => { if (cloudReady) { saveGame(); flushCloud(); } });
 
 async function loadGame() {
   try {
     let tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
     if (tgUser && tgUser.id) { player.id = tgUser.id; player.username = tgUser.username || tgUser.first_name || "Player"; }
     let saved = localStorage.getItem('brainrot_save_' + player.id) || localStorage.getItem('brainrot_save');
-    if (saved) applySnapshot(JSON.parse(saved));
+    if (saved) { applySnapshot(JSON.parse(saved)); hadLocal = true; }
   } catch (e) {}
   el('user-tg-name').innerHTML = `👤 <b>@${eh(player.username)}</b>`;
   el('user-tg-id').innerText = player.id;
@@ -459,12 +627,7 @@ async function loadGame() {
   el('owner-bonus-btn').style.display = owner ? 'block' : 'none';
   if (owner) { renderAdminCaseSelect(); renderAdminCaseItemsList(); }
   updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); initMinesGrid(); updateMinesUI();
-  try { // если в облаке данные свежее (новое устройство / очистка памяти) — берём их
-    let users = await fetchJson(NPOINT_URL);
-    let u = Array.isArray(users) && users.find(x => x.id === player.id);
-    if (u && u.inv && (u.ts || 0) > (player.ts || 0)) { applySnapshot(u); updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); }
-  } catch (e) {}
-  saveGame(); flushCloud();
+  cloudDirty = true; flushCloud();      // первое чтение облака: подтянет баланс/инвентарь, если локально пусто
 }
 async function openUsersModal() {
   let list = el('modal-users-list');
@@ -473,12 +636,13 @@ async function openUsersModal() {
   let users = null, cached = false;
   try { users = await fetchJson(NPOINT_URL); if (Array.isArray(users)) localStorage.setItem('brainrot_users_cache', JSON.stringify(users)); } catch (e) {}
   if (!Array.isArray(users)) { try { users = JSON.parse(localStorage.getItem('brainrot_users_cache') || '[]'); cached = true; } catch (e) { users = []; } }
+  users = users.filter(u => typeof u.id === 'number');
   if (!users.some(u => u.id === player.id)) users.unshift({ id: player.id, username: player.username, score: player.score, inv: packInv(player.inventory) });
   list.innerHTML = (cached ? '<div style="color:#e67e22;font-size:11px;text-align:center">Облако недоступно — показаны сохранённые данные</div>' : '') +
     users.map(u => {
       let inv = Array.isArray(u.inv) ? u.inv : [], total = inv.reduce((a, g) => a + (g.count || 1), 0);
       let items = inv.slice(0, 6).map(g => `${eh(g.name)}×${g.count || 1}`).join(', ') + (inv.length > 6 ? '…' : '');
-      return `<div class="admin-user-row"><div style="min-width:0"><b>@${eh(u.username)}</b><br><small style="color:#8b93b0">ID: ${Number(u.id)} • ${rnd2(Number(u.score) || 0)} BC • предметов: ${total}</small>${items ? `<br><small style="color:#6f7898">${items}</small>` : ''}</div><button class="btn" style="padding:5px 9px;font-size:11px;flex:0 0 auto;margin-left:6px" onclick="selectUserFromModal(${Number(u.id)})">Выбрать</button></div>`;
+      return `<div class="admin-user-row"><div style="min-width:0"><b>@${eh(u.username)}</b><br><small style="color:#8b93b0">ID: ${Number(u.id)} • ${rnd2((Number(u.score) || 0) + (Number(u.grant) || 0))} BC • предметов: ${total}</small>${items ? `<br><small style="color:#6f7898">${items}</small>` : ''}</div><button class="btn" style="padding:5px 9px;font-size:11px;flex:0 0 auto;margin-left:6px" onclick="selectUserFromModal(${Number(u.id)})">Выбрать</button></div>`;
     }).join('') || '<div style="color:#8b93b0;font-size:13px;text-align:center">Список игроков пуст</div>';
 }
 function closeUsersModal() { el('users-modal').classList.remove('show'); }
@@ -497,6 +661,7 @@ function switchView(name, btn) {
   if (name === 'profile') renderInventory();
   if (name === 'mines') renderMinesInventorySelector();
   if (name === 'upgrader') renderUpgraderSelectors();
+  if (name === 'rocket') rkRenderSel();
   el('drawer').classList.remove('open'); el('overlay').classList.remove('show');
 }
 function updateUI() {
@@ -504,17 +669,53 @@ function updateUI() {
   ['balance', 'coins', 'prof-balance'].forEach(i => el(i).innerText = s);
   el('energy').innerText = player.energy; el('energy-text').innerText = player.energy;
   el('energy-bar').style.width = (player.energy / maxEnergy * 100) + '%';
+  renderFarm();
 }
 function imgFail(im) { // картинка не загрузилась: пробуем запасную ссылку, иначе эмодзи
   if (im.dataset.alt && !im.dataset.tried) { im.dataset.tried = 1; im.src = im.dataset.alt; return; }
   let d = document.createElement('div'); d.textContent = im.dataset.fb || '🎁'; d.style.cssText = `font-size:${Math.max(20, (im.clientHeight || 36) * 0.7)}px;line-height:1.1`;
   im.replaceWith(d);
 }
-const media = (i, cls) => i.img ? `<img src="${i.img}" class="${cls}" onerror="imgFail(this)">` : `<div class="${cls === 'prize-img' ? 'prize-icon' : ''}">${i.icon || '🎁'}</div>`;
+const media = (i, cls) => i.img ? `<img src="${i.img}" class="${cls}" onerror="imgFail(this)">` : `<div class="${({ 'prize-img': 'prize-icon', 'slot-img': 'slot-emoji', 'pick-img': 'pick-emoji' })[cls] || ''}">${i.icon || '🎁'}</div>`;
 
 /* ---------- ферма ---------- */
-el('click-target').onclick = () => {
-  if (player.energy > 0) { player.score = rnd2(player.score + 0.01); player.energy--; updateUI(); saveGame(); }
+const FARM_LEVELS = [
+  { name: 'Noobini Pizzanini', icon: '🍕', need: 100 },
+  { name: 'Tung Tung Tung Sahur', icon: '🪵', need: 175 },
+  { name: 'Boneca Ambalabu', icon: '🐸', need: 260 },
+  { name: 'Trulimero Trulicina', icon: '🐟', need: 350 },
+  { name: 'Bobrito Bandito', icon: '🦫', need: 450 },
+  { name: 'Burbaloni Luliloli', icon: '🥥', need: 570 },
+  { name: 'Brr Brr Patapim', icon: '🌳', need: 710 },
+  { name: 'Chimpanzini Bananini', icon: '🍌', need: 870 },
+  { name: 'Ballerina Cappuccina', icon: '💃', need: 1050 },
+  { name: 'Lirili Larila', icon: '🐘', need: 1250 },
+  { name: 'Bombardiro Crocodilo', icon: '✈️', need: 1500 },
+  { name: 'Tralalero Tralala', icon: '🦈', need: 1800 }
+];
+const farmLv = () => FARM_LEVELS[Math.min(player.level, FARM_LEVELS.length) - 1];
+let farmMsgTimer = null;
+function farmMsg(t) { el('farm-hint').innerText = t; clearTimeout(farmMsgTimer); farmMsgTimer = setTimeout(() => el('farm-hint').innerText = 'Тапай, чтобы фармить!', 3000); }
+function renderFarm() {
+  let lv = farmLv(), max = player.level >= FARM_LEVELS.length;
+  el('level').innerText = player.level; el('farm-char').innerText = lv.icon; el('farm-name').innerText = lv.name;
+  el('lvl-name').innerText = `Уровень ${player.level}` + (max ? ' (макс.)' : '') + ` • +${rnd2(0.01 * player.level)} BC за клик`;
+  el('lvl-clicks').innerText = max ? lv.need : player.clicks; el('lvl-need').innerText = lv.need;
+  el('lvl-bar').style.width = (max ? 100 : Math.min(100, player.clicks / lv.need * 100)) + '%';
+}
+function floatNum(e, txt) {
+  let box = el('click-target'), r = box.getBoundingClientRect(), n = document.createElement('span');
+  n.className = 'float-num'; n.textContent = txt;
+  n.style.left = (e && e.clientX ? e.clientX - r.left : r.width / 2) + 'px'; n.style.top = (e && e.clientY ? e.clientY - r.top : r.height / 2) + 'px';
+  box.appendChild(n); setTimeout(() => n.remove(), 700);
+}
+el('click-target').onclick = (e) => {
+  if (player.energy <= 0) return farmMsg('⚡ Нет энергии — подожди немного');
+  let max = player.level >= FARM_LEVELS.length, gain = rnd2(0.01 * player.level);
+  player.energy--; player.score = rnd2(player.score + gain);
+  if (!max && ++player.clicks >= farmLv().need) { player.level++; player.clicks = 0; farmMsg(`🎉 Уровень ${player.level}: ${farmLv().name}!`); haptic('success'); }
+  let ch = el('farm-char'); ch.classList.remove('tap'); void ch.offsetWidth; ch.classList.add('tap');
+  floatNum(e, '+' + gain); updateUI(); saveGame();
 };
 setInterval(() => { if (player.energy < maxEnergy) { player.energy++; updateUI(); saveGame(); } }, 2000);
 
@@ -532,9 +733,9 @@ function getRandomItem() {
   return items[0];
 }
 function openCustomAmountCases() {
-  let a = prompt("Сколько открыть? (до 15)", "5"); if (a === null) return;
+  let a = prompt("Сколько открыть? (до 8)", "5"); if (a === null) return;
   a = parseInt(a); if (isNaN(a) || a <= 0) return alert("Неверно!");
-  openCases(Math.min(a, 15));
+  openCases(Math.min(a, 8));
 }
 function openCases(count) {
   let cost = currentCasePrice * count;
@@ -587,7 +788,7 @@ function resetCaseView() {
   el('roulette-results-view').style.display = 'none'; el('fs-roulette').classList.remove('show');
   el('case-main-box').style.display = 'flex'; el('case-prizes-info').style.display = 'block'; el('back-to-cases-btn').style.display = 'block';
 }
-function refreshAll() { saveGame(); updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); }
+function refreshAll() { saveGame(); updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); rkRenderSel(); }
 
 /* ---------- инвентарь (одинаковые брейнроты стакаются везде) ---------- */
 const invKey = it => it.name + '|' + it.sellPrice;
@@ -621,13 +822,10 @@ function getAllAvailableUpgradeItems() { // единый пул: магазин 
   Object.values(casesDatabase).forEach(c => c.items.forEach(ci => { map[ci.name] = { name: ci.name, icon: ci.icon, img: ci.img, sellPrice: ci.sellPrice }; }));
   return Object.values(map).sort((a, b) => a.sellPrice - b.sellPrice);
 }
-function fmtChance(c) { // округлённый шанс: чем меньше шанс, тем больше знаков
+function fmtChance(c) { // округлённый шанс
   if (c <= 0) return "0%";
-  let d = c >= 10 ? 1 : c >= 1 ? 2 : Math.min(8, Math.ceil(-Math.log10(c)) + 1);
-  let t = c.toFixed(d);
-  if (parseFloat(t) === 0) return "<0.00000001%";
-  if (t.includes('.')) t = t.replace(/0+$/, '').replace(/\.$/, '');
-  return t + "%";
+  if (c < 0.01) return "<0.01%";
+  return (c >= 1 ? c.toFixed(1) : c.toFixed(2)).replace(/\.?0+$/, '') + "%";
 }
 const visAngle = c => Math.max(c / 100 * Math.PI * 2, 0.035); // минимальный видимый сектор
 const srcItem = () => upgraderSourceKey ? player.inventory.find(i => invKey(i) === upgraderSourceKey) : null;
@@ -637,35 +835,48 @@ function getCalculatedChance() { // наш предмет / желаемый × 
   if (s >= t) return 0;
   return Math.min(95, s / t * 95);
 }
+function slotHtml(it, ph) {
+  if (!it) return `<div class="slot-plus">＋</div><div class="slot-name">${ph}</div>`;
+  return `${media(it, 'slot-img')}<div class="slot-name">${eh(it.name)}</div><div class="slot-price">${it.sellPrice} BC</div>`;
+}
 function renderUpgraderSelectors() {
   if (isUpgrading) return;
-  let src = el('upgrader-source-selector'), tgt = el('upgrader-target-selector'), gs = invGroups();
-  if (upgraderSourceKey && !gs.some(g => g.key === upgraderSourceKey)) upgraderSourceKey = null;
-  if (!gs.length) {
-    src.innerHTML = '<div style="color:#8b93b0;font-size:12px">Инвентарь пуст</div>';
-    tgt.innerHTML = '<div style="color:#8b93b0;font-size:12px">Сначала выберите свой предмет</div>';
-    upgraderTargetItem = null; updateUpgraderChance(); return;
-  }
-  src.innerHTML = gs.map(g => selCard(g, g.key === upgraderSourceKey)).join('');
-  src.querySelectorAll('[data-k]').forEach(d => d.onclick = () => selectUpgraderSource(d.dataset.k));
-  let cur = srcItem(), sp = cur ? cur.sellPrice : 0;
-  if (upgraderTargetItem && cur && upgraderTargetItem.sellPrice <= sp) upgraderTargetItem = null;
-  tgt.innerHTML = '';
-  getAllAvailableUpgradeItems().forEach(it => {
-    let low = cur && it.sellPrice <= sp, sel = upgraderTargetItem && upgraderTargetItem.name === it.name;
-    let d = document.createElement('div');
-    d.className = 'mines-sel-item' + (sel ? ' selected' : '') + (low ? ' disabled' : '');
-    d.innerHTML = `${media(it, 'mines-sel-img')}<span class="sel-name">${it.name}</span>${low ? '<span style="color:#e74c3c;font-size:8px">Дешевле</span>' : `<span class="sel-price">${it.sellPrice} BC</span>`}`;
-    if (!low) d.onclick = () => selectUpgraderTarget(it.name);
-    tgt.appendChild(d);
-  });
+  if (upgraderSourceKey && !invGroups().some(g => g.key === upgraderSourceKey)) upgraderSourceKey = null;
+  let cur = srcItem();
+  if (upgraderTargetItem && (!cur || upgraderTargetItem.sellPrice <= cur.sellPrice)) upgraderTargetItem = null;
+  el('slot-src').innerHTML = slotHtml(cur, 'Ваш брейнрот'); el('slot-src').classList.toggle('filled', !!cur);
+  el('slot-tgt').innerHTML = slotHtml(upgraderTargetItem, 'Желаемый'); el('slot-tgt').classList.toggle('filled', !!upgraderTargetItem);
   updateUpgraderChance();
 }
-function selectUpgraderSource(key) { if (isUpgrading) return; upgraderSourceKey = key; renderUpgraderSelectors(); }
-function selectUpgraderTarget(name) {
+let pickerKind = null;
+function openPicker(kind) {
   if (isUpgrading) return;
-  let t = getAllAvailableUpgradeItems().find(i => i.name === name), src = srcItem();
-  if (t && src && t.sellPrice > src.sellPrice) { upgraderTargetItem = t; renderUpgraderSelectors(); }
+  if (kind === 'tgt' && !srcItem()) kind = 'src';
+  pickerKind = kind;
+  el('picker-title').innerText = kind === 'src' ? '🎒 Ваш брейнрот' : '🎯 Желаемый брейнрот';
+  el('picker-search').value = ''; renderPicker(); el('picker-modal').classList.add('show');
+}
+function closePicker() { el('picker-modal').classList.remove('show'); }
+function renderPicker() {
+  let q = el('picker-search').value.trim().toLowerCase(), grid = el('picker-grid');
+  let cur = srcItem(), sp = cur ? cur.sellPrice : 0;
+  let list = (pickerKind === 'src' ? invGroups() : getAllAvailableUpgradeItems()).filter(i => i.name.toLowerCase().includes(q));
+  if (!list.length) { grid.innerHTML = `<div style="grid-column:1/-1;color:#8b93b0;text-align:center;padding:14px;font-size:13px">${pickerKind === 'src' ? 'Инвентарь пуст' : 'Ничего не найдено'}</div>`; return; }
+  grid.innerHTML = '';
+  list.forEach(it => {
+    let low = pickerKind === 'tgt' && it.sellPrice <= sp;
+    let sel = pickerKind === 'src' ? it.key === upgraderSourceKey : upgraderTargetItem && upgraderTargetItem.name === it.name;
+    let d = document.createElement('div');
+    d.className = 'pick-item' + (sel ? ' sel' : '') + (low ? ' low' : '');
+    d.innerHTML = `${it.count > 1 ? `<span class="prize-count-badge">×${it.count}</span>` : ''}${media(it, 'pick-img')}<div class="pick-name">${eh(it.name)}</div><div style="color:#f39c12">${it.sellPrice} BC</div>${pickerKind === 'tgt' ? (low ? '<div style="color:#e74c3c;font-size:10px">дешевле</div>' : `<div class="pick-chance">шанс ${fmtChance(Math.min(95, sp / it.sellPrice * 95))}</div>`) : ''}`;
+    if (!low) d.onclick = () => pickItem(it);
+    grid.appendChild(d);
+  });
+}
+function pickItem(it) {
+  if (pickerKind === 'src') { upgraderSourceKey = it.key; if (upgraderTargetItem && upgraderTargetItem.sellPrice <= it.sellPrice) upgraderTargetItem = null; }
+  else upgraderTargetItem = it;
+  closePicker(); renderUpgraderSelectors();
 }
 function updateUpgraderChance() {
   let btn = el('upgrade-start-btn'), lab = el('upgrade-chance-label'), fm = el('upgrade-formula');
@@ -675,48 +886,108 @@ function updateUpgraderChance() {
   fm.innerText = `${srcItem().sellPrice} / ${upgraderTargetItem.sellPrice} × 95% = ${fmtChance(c)}`;
   btn.disabled = isUpgrading; drawCircleRoulette(c);
 }
-function drawCircleRoulette(chance, theta = arrowAngle) {
-  let cv = el('upgrade-circle-canvas'), ctx = cv.getContext('2d');
-  let cx = cv.width / 2, cy = cv.height / 2, r = cx - 10, top = -Math.PI / 2;
-  ctx.clearRect(0, 0, cv.width, cv.height);
-  let a = chance > 0 ? visAngle(chance) : 0;
-  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = chance > 0 ? '#c0392b' : '#2a2e43'; ctx.fill();
-  if (a) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, top, top + a); ctx.closePath(); ctx.fillStyle = '#27ae60'; ctx.fill(); }
-  ctx.beginPath(); ctx.arc(cx, cy, r * 0.62, 0, Math.PI * 2); ctx.fillStyle = '#141722'; ctx.fill();
-  ctx.lineWidth = 4; ctx.strokeStyle = '#2a2e43'; ctx.stroke();
-  let txt = chance > 0 ? fmtChance(chance) : '—';
-  ctx.fillStyle = '#fff'; ctx.font = `bold ${txt.length > 7 ? 20 : 28}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(txt, cx, cy);
-  // жёлтая стрелка (0 = вверх, по часовой)
-  ctx.save(); ctx.translate(cx, cy); ctx.rotate(theta);
-  ctx.beginPath(); ctx.moveTo(0, -r * 0.8); ctx.lineTo(-14, -r * 0.55); ctx.lineTo(14, -r * 0.55); ctx.closePath();
-  ctx.fillStyle = '#f5c518'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#0d0f18'; ctx.stroke();
-  ctx.restore();
+/* ---------- анимация апгрейдера ---------- */
+let up = { want: 0, frozen: 0, parts: [], flash: 0, flashCol: '255,255,255', shake: 0, banner: '', bannerCol: '#fff', bannerT: 0, spinning: false, trail: [], last: 0 };
+const hapticTick = () => { try { window.Telegram?.WebApp?.HapticFeedback?.selectionChanged(); } catch (e) {} };
+function drawCircleRoulette(chance) { up.want = chance; upDraw(); }
+function upBurst(win) {
+  let cols = win ? ['70,240,140', '255,214,102', '255,255,255', '143,107,255'] : ['255,90,70', '255,150,60', '255,60,60'];
+  for (let i = 0; i < (win ? 90 : 55); i++) {
+    let an = Math.random() * 6.283, sp = 110 + Math.random() * 400;
+    up.parts.push({ x: 250, y: 250, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp - (win ? 140 : 0), life: 0, max: .9 + Math.random() * .9, r: 3 + Math.random() * 5, c: cols[i % cols.length], g: win ? 430 : 150, sq: win, rot: Math.random() * 6 });
+  }
+}
+function upUpdate(dt) {
+  up.flash = Math.max(0, up.flash - dt * 1.3); up.shake *= Math.pow(.03, dt); up.bannerT = Math.max(0, up.bannerT - dt);
+  up.parts = up.parts.filter(p => (p.life += dt) < p.max); up.parts.forEach(p => { p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += dt * 8; });
+}
+function upDraw() {
+  let cv = el('upgrade-circle-canvas'), g = cv.getContext('2d'), W = cv.width, cx = W / 2, R = W / 2 - 52, TAU = Math.PI * 2, top = -Math.PI / 2;
+  let t = performance.now() / 1000, chance = up.bannerT > 0 ? up.frozen : up.want, a = chance > 0 ? visAngle(chance) : 0, spin = up.spinning;
+  g.clearRect(0, 0, W, W); g.save();
+  if (up.shake > .02) g.translate((Math.random() - .5) * up.shake * 18, (Math.random() - .5) * up.shake * 18);
+  let ac = up.flash > 0 ? up.flashCol : '143,107,255', aa = .16 + .08 * Math.sin(t * 2.2) + up.flash * .55 + (spin ? .14 : 0);   // аура
+  let au = g.createRadialGradient(cx, cx, R * .8, cx, cx, R * 1.28); au.addColorStop(0, `rgba(${ac},${aa})`); au.addColorStop(1, `rgba(${ac},0)`);
+  g.fillStyle = au; g.beginPath(); g.arc(cx, cx, R * 1.28, 0, TAU); g.fill();
+  g.save(); g.shadowColor = '#000d'; g.shadowBlur = 26; g.shadowOffsetY = 12;                                                      // корпус
+  let rim = g.createLinearGradient(0, 0, W, W); rim.addColorStop(0, '#6a73a6'); rim.addColorStop(.5, '#272c4d'); rim.addColorStop(1, '#0b0d1b');
+  g.fillStyle = rim; g.beginPath(); g.arc(cx, cx, R + 18, 0, TAU); g.fill(); g.restore();
+  let phase = Math.floor(t * (spin ? 22 : 5));                                                                                   // бегущие огоньки
+  for (let i = 0; i < 48; i++) {
+    let an = top + i * TAU / 48, lit = (i + phase) % 6 === 0;
+    g.fillStyle = lit ? '#ffd166' : '#3a4170'; g.shadowColor = '#ffd166'; g.shadowBlur = lit ? 12 : 0;
+    g.beginPath(); g.arc(cx + Math.cos(an) * (R + 9), cx + Math.sin(an) * (R + 9), lit ? 3.6 : 2.4, 0, TAU); g.fill();
+  }
+  g.shadowBlur = 0;
+  let red = g.createRadialGradient(cx, cx, R * .55, cx, cx, R); red.addColorStop(0, '#7c1f1a'); red.addColorStop(1, '#ff5d4e');
+  let grn = g.createRadialGradient(cx, cx, R * .55, cx, cx, R); grn.addColorStop(0, '#126b3a'); grn.addColorStop(1, '#48f28f');
+  g.beginPath(); g.arc(cx, cx, R, 0, TAU); g.fillStyle = chance > 0 ? red : '#2a2e43'; g.fill();
+  if (a) { g.beginPath(); g.moveTo(cx, cx); g.arc(cx, cx, R, top, top + a); g.closePath(); g.fillStyle = grn; g.fill(); }
+  for (let i = 0; i < 40; i++) {                                                                                                 // деления, подсветка у стрелки
+    let an = top + i * TAU / 40, d = ((arrowAngle - i * TAU / 40) % TAU + TAU) % TAU, near = d < .11 || d > TAU - .11;
+    g.strokeStyle = near ? '#fff' : '#0006'; g.lineWidth = near ? 3.5 : 2;
+    g.beginPath(); g.moveTo(cx + Math.cos(an) * R * (near ? .84 : .88), cx + Math.sin(an) * R * (near ? .84 : .88)); g.lineTo(cx + Math.cos(an) * R, cx + Math.sin(an) * R); g.stroke();
+  }
+  if (a) { g.strokeStyle = '#fff'; g.lineWidth = 3; [top, top + a].forEach(an => { g.beginPath(); g.moveTo(cx + Math.cos(an) * R * .6, cx + Math.sin(an) * R * .6); g.lineTo(cx + Math.cos(an) * R, cx + Math.sin(an) * R); g.stroke(); }); }
+  let hole = g.createRadialGradient(cx - R * .15, cx - R * .2, R * .05, cx, cx, R * .6); hole.addColorStop(0, '#2a3156'); hole.addColorStop(1, '#0a0c1a');   // центр
+  g.beginPath(); g.arc(cx, cx, R * .6, 0, TAU); g.fillStyle = hole; g.fill();
+  g.lineWidth = 7; g.strokeStyle = '#05060d'; g.stroke(); g.lineWidth = 2; g.strokeStyle = '#ffffff2a'; g.beginPath(); g.arc(cx, cx, R * .6 + 4, 0, TAU); g.stroke();
+  g.save(); g.beginPath(); g.arc(cx, cx, R, 0, TAU); g.clip(); g.globalAlpha = .13; g.fillStyle = '#fff';                       // блик
+  g.beginPath(); g.ellipse(cx - R * .25, cx - R * .6, R * .6, R * .22, -.5, 0, TAU); g.fill(); g.restore();
+  let showB = up.bannerT > 0, txt = showB ? up.banner : (chance > 0 ? fmtChance(chance) : '—');
+  g.save(); g.shadowColor = showB ? up.bannerCol : '#000'; g.shadowBlur = showB ? 20 : 8; g.fillStyle = showB ? up.bannerCol : '#fff';
+  g.font = `bold ${showB ? 36 : (txt.length > 6 ? 40 : 56)}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, cx, cx + 2); g.restore();
+  const arrow = (th, al) => {
+    g.save(); g.globalAlpha = al; g.translate(cx, cx); g.rotate(th); g.shadowColor = '#ffd54a'; g.shadowBlur = 22;
+    let ag = g.createLinearGradient(0, -R * .86, 0, -R * .5); ag.addColorStop(0, '#fff6b0'); ag.addColorStop(1, '#f0a500');
+    g.fillStyle = ag; g.beginPath(); g.moveTo(0, -R * .86); g.lineTo(-20, -R * .5); g.lineTo(20, -R * .5); g.closePath(); g.fill();
+    g.shadowBlur = 0; g.lineWidth = 2.5; g.strokeStyle = '#5a3b00'; g.stroke(); g.restore();
+  };
+  up.trail.forEach((th, i) => arrow(th, (i + 1) / up.trail.length * .3));                                                         // шлейф
+  arrow(arrowAngle, 1);
+  if (up.flash > 0) { g.strokeStyle = `rgba(${up.flashCol},${up.flash})`; g.lineWidth = 12; g.beginPath(); g.arc(cx, cx, R + 18, 0, TAU); g.stroke(); }
+  up.parts.forEach(p => { let k = 1 - p.life / p.max; g.fillStyle = `rgba(${p.c},${k})`; if (p.sq) { g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.fillRect(-p.r, -p.r / 2, p.r * 2, p.r); g.restore(); } else { g.beginPath(); g.arc(p.x, p.y, p.r * k + 1, 0, TAU); g.fill(); } });
+  g.restore();
+}
+function upFrame(now) {
+  requestAnimationFrame(upFrame);
+  let dt = Math.min(.05, (now - (up.last || now)) / 1000); up.last = now;
+  if (!el('view-upgrader').classList.contains('active')) return;
+  upUpdate(dt); upDraw();
 }
 function startUpgrade() {
   let src = srcItem(); if (isUpgrading || !src || !upgraderTargetItem) return;
   let chance = getCalculatedChance(); if (chance <= 0) return alert("❌ Неверные условия апгрейда!");
-  isUpgrading = true; el('upgrade-start-btn').disabled = true;
+  isUpgrading = true; el('upgrade-start-btn').disabled = true; el('upgrade-start-btn').innerText = '🌀 Крутится...';
+  el('upgrade-result').className = 'up-result'; el('upgrade-result').innerText = ''; up.bannerT = 0;
   let target = upgraderTargetItem;
   player.inventory.splice(player.inventory.findIndex(i => invKey(i) === upgraderSourceKey), 1);
   upgraderSourceKey = null; saveGame(); renderInventory(); renderMinesInventorySelector();
   let isWin = Math.random() * 100 < chance;            // точный шанс, без округления
   let full = Math.PI * 2, a = visAngle(chance);
   let pos = isWin ? a * (0.1 + Math.random() * 0.8) : a + (full - a) * (0.02 + Math.random() * 0.96);
-  let from = arrowAngle % full, turns = 5 + Math.floor(Math.random() * 2);
+  let from = arrowAngle % full, turns = 6 + Math.floor(Math.random() * 2);
   let to = from + full * turns + (((pos - from) % full) + full) % full;
-  let t0 = null, dur = 5000;
+  let t0 = null, wind = 0.45, dur = 5200, lastTick = -1, lastAt = 0;
+  up.spinning = true; up.trail = [];
   (function frame(ts) {
     if (!t0) t0 = ts;
-    let p = Math.min(1, (ts - t0) / dur), ease = 1 - Math.pow(1 - p, 4);
-    arrowAngle = from + (to - from) * ease; drawCircleRoulette(chance, arrowAngle);
-    if (p < 1) return requestAnimationFrame(frame);
-    arrowAngle = to % full; isUpgrading = false;
+    let sec = (ts - t0) / 1000, ang;
+    if (sec < wind) ang = from - 0.35 * Math.sin(Math.PI * sec / wind);                       // замах назад
+    else { let p = Math.min(1, (sec - wind) * 1000 / dur), ease = 1 - Math.pow(1 - p, 5); ang = from + (to - from) * ease; }
+    let idx = Math.floor(ang / (full / 40)); if (idx !== lastTick && ts - lastAt > 70) { hapticTick(); lastAt = ts; } lastTick = idx;
+    arrowAngle = ang; up.trail.push(ang); if (up.trail.length > 9) up.trail.shift();
+    if (sec * 1000 < wind * 1000 + dur) return requestAnimationFrame(frame);
+    arrowAngle = to % full; up.spinning = false; up.trail = []; isUpgrading = false;
+    el('upgrade-start-btn').innerText = '🚀 Сделать апгрейд';
+    let res = el('upgrade-result'); up.frozen = chance; up.bannerT = 2.6; up.flash = 1;
     if (isWin) {
       player.inventory.push({ name: target.name, icon: target.icon || '🎁', img: target.img, sellPrice: target.sellPrice });
-      alert(`🎉 Успех! Вы получили "${target.name}"!`);
-    } else alert(`💥 Неудача! Предмет сгорел.`);
-    upgraderTargetItem = null; refreshAll();
+      up.flashCol = '70,240,140'; up.banner = 'УСПЕХ!'; up.bannerCol = '#46f08c'; res.className = 'up-result win'; res.innerText = `🎉 Получен ${target.name}!`; haptic('success');
+    } else {
+      up.flashCol = '255,80,70'; up.banner = 'НЕУДАЧА'; up.bannerCol = '#ff6b6b'; up.shake = 1; res.className = 'up-result lose'; res.innerText = `💥 ${src.name} сгорел`; haptic('error');
+    }
+    upBurst(isWin); upgraderTargetItem = null; refreshAll();
   })(performance.now());
 }
 
@@ -773,9 +1044,11 @@ function updateMinesUI() {
 }
 function cashoutMinesGame() {
   if (!minesGame.active) return;
-  let r = rnd2(minesGame.betItem.sellPrice * minesGame.multiplier);
-  player.score = rnd2(player.score + r); updateUI(); saveGame();
-  alert(`🎉 Победа! Вы забрали награду: +${r} BC!`); endMinesGame(true);
+  let it = minesGame.betItem, m = minesGame.multiplier, bonus = rnd2(it.sellPrice * (m - 1));
+  player.inventory.push({ name: it.name, icon: it.icon, img: it.img, sellPrice: it.sellPrice });
+  player.score = rnd2(player.score + bonus);
+  alert(`🎉 Победа ${m.toFixed(2)}x! "${it.name}" возвращён + бонус ${bonus} BC`);
+  endMinesGame(true); refreshAll();
 }
 function endMinesGame(won) {
   minesGame.active = false;
@@ -788,17 +1061,161 @@ function endMinesGame(won) {
   updateMinesUI(); renderMinesInventorySelector(); renderUpgraderSelectors();
 }
 
+/* ---------- РАКЕТА ---------- */
+let rkSelKey = null;
+let rk = { phase: 'idle', t0: 0, last: 0, crashAt: 2, mult: 1, stake: null, parts: [], stars: [], ring: 0, shake: 0, flash: 0, esc: 0, tc: 0, ground: 0, v: 10, ex: 360, ey: 300, hist: [], msg: '', pool: [], held: '', toast: '', toastT: 0 };
+for (let i = 0; i < 70; i++) rk.stars.push({ x: Math.random() * 720, y: Math.random() * 440, s: Math.random() * 1.8 + .4, k: Math.random() * .8 + .4 });
+const haptic = t => { try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(t); } catch (e) {} };
+function rkRenderSel() {
+  let c = el('rk-inventory-selector'); if (!c) return;
+  let gs = invGroups(); if (rkSelKey && !gs.some(g => g.key === rkSelKey)) rkSelKey = null;
+  c.innerHTML = gs.length ? gs.map(g => selCard(g, g.key === rkSelKey)).join('') : '<div style="color:#8b93b0;font-size:12px">Инвентарь пуст — выбей брейнротов в кейсах</div>';
+  c.querySelectorAll('[data-k]').forEach(d => d.onclick = () => { if (rk.phase === 'flying') return; rkSelKey = rkSelKey === d.dataset.k ? null : d.dataset.k; rkRenderSel(); });
+  el('rk-mode').innerText = rkSelKey ? '🧠 Ставка: брейнрот (нажми на него ещё раз, чтобы снять)' : '💰 Ставка: монеты';
+  el('rk-bc-box').style.opacity = rkSelKey ? .4 : 1;
+}
+function rkBetAdj(k) {
+  let v = parseFloat(el('rk-bet').value) || 1;
+  v = k === 'min' ? 1 : k === 'max' ? Math.floor(player.score) : v * k;
+  el('rk-bet').value = Math.max(1, rnd2(v));
+}
+function rkHist() {
+  el('rk-hist').innerHTML = rk.hist.length ? rk.hist.map(h => `<span class="rk-chip ${h.ok ? 'ok' : 'bad'}">${h.m.toFixed(2)}x</span>`).join('') : '<span class="rk-chip none">История полётов</span>';
+  el('rk-hist').scrollLeft = 9999;
+}
+function rkAction() { rk.phase === 'flying' ? rkCashout() : rkStart(); }
+function rkStart() {
+  if (rk.phase === 'flying') return;
+  let stake;
+  if (!rkSelKey) {
+    let bet = rnd2(parseFloat(el('rk-bet').value));
+    if (!(bet >= 1)) return alert('Минимальная ставка — 1 BC');
+    if (bet > player.score) return alert('Не хватает BC!');
+    player.score = rnd2(player.score - bet); stake = { type: 'bc', amt: bet };
+  } else {
+    let idx = player.inventory.findIndex(i => invKey(i) === rkSelKey);
+    if (idx < 0) return alert('Выберите брейнрота для ставки!');
+    stake = { type: 'item', item: player.inventory.splice(idx, 1)[0] }; rkSelKey = null;
+  }
+  rk.stake = stake; rk.crashAt = Math.min(200, Math.max(1, Math.floor(95 / (1 - Math.random())) / 100));
+  rk.pool = getAllAvailableUpgradeItems(); rk.held = stake.type === 'item' ? stake.item.name : ''; rk.toast = ''; rk.toastT = 0;
+  Object.assign(rk, { phase: 'flying', t0: performance.now(), mult: 1, esc: 0, tc: 0, msg: '', flash: 0, ring: 0, ground: 0 }); rk.parts.length = 0;
+  refreshAll();
+}
+function rkPrize(item, m, pool) { // самый дорогой брейнрот, до которого дорос множитель + остаток монетами
+  let v = item.sellPrice * m, best = item;
+  for (let it of pool) if (it.sellPrice <= v && it.sellPrice > best.sellPrice) best = it;
+  return { item: best, coins: rnd2(Math.max(0, v - best.sellPrice)) };
+}
+function rkCheckPrize() {
+  let st = rk.stake; if (!st || st.type !== 'item') return;
+  let pr = rkPrize(st.item, rk.mult, rk.pool);
+  if (pr.item.name === rk.held) return;
+  rk.held = pr.item.name; rk.toast = `🎉 Получен ${pr.item.name}! Игра продолжается`; rk.toastT = 2.4; haptic('success');
+  let [x, y] = rkPos(performance.now() / 1000);
+  for (let i = 0; i < 40; i++) { let an = Math.random() * 6.283, sp = 60 + Math.random() * 220; rk.parts.push({ x, y, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp, life: 0, max: .5 + Math.random() * .6, r: 3 + Math.random() * 5, c: i % 2 ? '255,215,90' : '120,255,170' }); }
+}
+function rkCashout() {
+  if (rk.phase !== 'flying') return;
+  let m = rk.mult, st = rk.stake;
+  if (st.type === 'bc') { let w = rnd2(st.amt * m); player.score = rnd2(player.score + w); rk.msg = `✅ Забрали +${w} BC (${m.toFixed(2)}x)`; }
+  else {
+    let pr = rkPrize(st.item, m, rk.pool);
+    player.inventory.push({ name: pr.item.name, icon: pr.item.icon, img: pr.item.img, sellPrice: pr.item.sellPrice }); player.score = rnd2(player.score + pr.coins);
+    rk.msg = `✅ ${pr.item.name}${pr.coins > 0 ? ' + ' + pr.coins + ' BC' : ''} (${m.toFixed(2)}x)`;
+  }
+  rk.stake = null; rk.phase = 'escaped'; rk.esc = 0; rk.hist = rk.hist.concat({ m, ok: 1 }).slice(-14);
+  refreshAll(); rkHist(); haptic('success');
+}
+function rkPos(t) {
+  let p = Math.min(1, (rk.mult - 1) / 4), x = 360, y = 440 * (0.8 - 0.38 * p) - rk.esc * rk.esc * 900;
+  if (rk.phase === 'flying') { x += Math.sin(t * 2.2) * 6 * (0.3 + p) + (Math.random() - .5) * Math.min(4, rk.mult - 1); }
+  return [x, y];
+}
+function rkCrash() {
+  let [x, y] = rkPos(performance.now() / 1000);
+  Object.assign(rk, { phase: 'crashed', tc: 0, shake: 1, flash: 1, ring: .01, ex: x, ey: y });
+  for (let i = 0; i < 90; i++) { let an = Math.random() * 6.283, sp = 80 + Math.random() * 460; rk.parts.push({ x, y, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp, life: 0, max: .5 + Math.random() * .9, r: 3 + Math.random() * 9, c: ['255,120,40', '255,200,70', '255,70,50', '255,255,255'][i % 4] }); }
+  rk.msg = `💥 Ракета лопнула на ${rk.crashAt.toFixed(2)}x — ставка сгорела`;
+  rk.stake = null; rk.hist = rk.hist.concat({ m: rk.crashAt, ok: 0 }).slice(-14); rkHist(); rkRenderSel(); haptic('error');
+}
+function rkHud() {
+  let crashed = rk.phase === 'crashed', m = crashed ? rk.crashAt : rk.mult, mm = el('rk-mult');
+  mm.innerText = (crashed ? '💥 ' : '') + m.toFixed(2) + 'x';
+  mm.style.color = crashed ? '#ff5a4d' : m < 2 ? '#fff' : m < 5 ? '#ffe066' : m < 10 ? '#ffa94d' : '#ff6b6b';
+  el('rk-sub').innerText = rk.phase === 'flying' ? (rk.toastT > 0 ? rk.toast : 'Забирай, пока не лопнула!') : (rk.msg || 'Готова к запуску');
+  let b = el('rk-btn'), st = rk.stake, pz = el('rk-prize');
+  if (rk.phase === 'flying' && st) {
+    let label;
+    if (st.type === 'bc') label = `${rnd2(st.amt * rk.mult)} BC`;
+    else { let pr = rkPrize(st.item, rk.mult, rk.pool); label = `${pr.item.name}${pr.coins > 0 ? ' + ' + pr.coins + ' BC' : ''}`; pz.innerHTML = `${pr.item.icon || '🎁'} ${eh(label)}`; }
+    if (st.type === 'bc') pz.innerHTML = `💰 ${label}`;
+    pz.style.display = 'block'; b.innerText = `💰 Забрать ${label}`; b.style.background = '#e74c3c';
+  } else { pz.style.display = 'none'; b.innerText = '🚀 Запуск'; b.style.background = '#27ae60'; }
+}
+function drawRocket(g, x, y, s, flame) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  if (flame > 0) { let f = g.createLinearGradient(0, 22, 0, 22 + flame); f.addColorStop(0, '#fffbd0'); f.addColorStop(.35, '#ffb02e'); f.addColorStop(1, 'rgba(255,60,0,0)'); g.fillStyle = f; g.beginPath(); g.moveTo(-8, 22); g.quadraticCurveTo(0, 22 + flame * 1.3, 8, 22); g.closePath(); g.fill(); }
+  g.fillStyle = '#c0392b'; [-1, 1].forEach(d => { g.beginPath(); g.moveTo(d * 11, 2); g.lineTo(d * 27, 28); g.lineTo(d * 11, 22); g.closePath(); g.fill(); });
+  let b = g.createLinearGradient(-15, 0, 15, 0); b.addColorStop(0, '#b8c2db'); b.addColorStop(.45, '#fff'); b.addColorStop(1, '#9aa6c4');
+  g.fillStyle = b; g.beginPath(); g.moveTo(0, -48); g.bezierCurveTo(20, -32, 17, 12, 14, 22); g.lineTo(-14, 22); g.bezierCurveTo(-17, 12, -20, -32, 0, -48); g.fill();
+  g.fillStyle = '#e74c3c'; g.beginPath(); g.moveTo(0, -48); g.bezierCurveTo(11, -40, 15, -31, 16, -24); g.lineTo(-16, -24); g.bezierCurveTo(-15, -31, -11, -40, 0, -48); g.fill();
+  g.fillStyle = '#26315a'; g.beginPath(); g.arc(0, -8, 8, 0, 7); g.fill(); g.fillStyle = '#74b9ff'; g.beginPath(); g.arc(-1.5, -9.5, 5, 0, 7); g.fill();
+  g.fillStyle = '#4b5470'; g.fillRect(-9, 22, 18, 5); g.restore();
+}
+function rkUpdate(dt, t) {
+  let fly = rk.phase === 'flying' || rk.phase === 'escaped';
+  rk.v = rk.phase === 'flying' ? 60 + Math.min(rk.mult, 12) * 45 : rk.phase === 'escaped' ? 700 : 10;
+  rk.stars.forEach(s => { s.y += rk.v * s.k * dt; if (s.y > 440) { s.y = -10; s.x = Math.random() * 720; } });
+  rk.ground = rk.phase === 'idle' ? 0 : rk.ground + rk.v * dt;
+  if (fly) { let [x, y] = rkPos(t); for (let i = 0; i < 4; i++) rk.parts.push({ x: x + (Math.random() - .5) * 10, y: y + 24, vx: (Math.random() - .5) * 50, vy: 140 + Math.random() * 180, life: 0, max: .35 + Math.random() * .4, r: 4 + Math.random() * 6, c: Math.random() < .5 ? '255,176,46' : '255,230,120' }); }
+  rk.parts = rk.parts.filter(p => (p.life += dt) < p.max); rk.parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; });
+  rk.toastT = Math.max(0, rk.toastT - dt); rk.shake *= Math.pow(.02, dt); rk.flash = Math.max(0, rk.flash - dt * 2.2);
+  if (rk.ring) { rk.ring += dt * 1.6; if (rk.ring > 1) rk.ring = 0; }
+}
+function rkDraw(t) {
+  let g = el('rk-canvas').getContext('2d'), W = 720, H = 440, m = Math.min(rk.mult, 12), fast = rk.phase === 'flying' || rk.phase === 'escaped';
+  let bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, `hsl(${245 - m * 3},65%,7%)`); bg.addColorStop(1, `hsl(${275 - m * 4},55%,24%)`);
+  g.save(); if (rk.shake > .02) g.translate((Math.random() - .5) * rk.shake * 16, (Math.random() - .5) * rk.shake * 16);
+  g.fillStyle = bg; g.fillRect(-20, -20, W + 40, H + 40);
+  g.strokeStyle = '#fff'; g.fillStyle = '#fff';
+  rk.stars.forEach(s => { g.globalAlpha = .3 + s.k * .5; if (fast) { g.lineWidth = s.s; g.beginPath(); g.moveTo(s.x, s.y); g.lineTo(s.x, s.y - Math.min(46, rk.v * .045 * s.k)); g.stroke(); } else { g.beginPath(); g.arc(s.x, s.y, s.s, 0, 7); g.fill(); } });
+  g.globalAlpha = 1;
+  if (rk.ground < 160) { let gy = 518 + rk.ground, pg = g.createLinearGradient(0, gy - 140, 0, gy); pg.addColorStop(0, '#4b3a8c'); pg.addColorStop(1, '#1c1440'); g.fillStyle = pg; g.beginPath(); g.ellipse(360, gy, 540, 140, 0, 0, 7); g.fill(); g.strokeStyle = '#8f7bff55'; g.lineWidth = 3; g.stroke(); }
+  g.globalCompositeOperation = 'lighter';
+  rk.parts.forEach(p => { let k = 1 - p.life / p.max; g.fillStyle = `rgba(${p.c},${k * .75})`; g.beginPath(); g.arc(p.x, p.y, p.r * (0.4 + k * .8), 0, 7); g.fill(); });
+  g.globalCompositeOperation = 'source-over';
+  if (rk.phase !== 'crashed') { let [x, y] = rkPos(t), flame = rk.phase === 'flying' ? 28 + Math.random() * 12 + m * 3 : rk.phase === 'escaped' ? 70 : 0; drawRocket(g, x, y, 1.1, flame); }
+  if (rk.ring) { g.strokeStyle = `rgba(255,205,130,${1 - rk.ring})`; g.lineWidth = 8 * (1 - rk.ring) + 1; g.beginPath(); g.arc(rk.ex, rk.ey, rk.ring * 280, 0, 7); g.stroke(); }
+  if (rk.flash > 0) { g.fillStyle = `rgba(255,255,255,${rk.flash * .7})`; g.fillRect(-20, -20, W + 40, H + 40); }
+  g.restore();
+}
+function rkFrame(now) {
+  requestAnimationFrame(rkFrame);
+  let dt = Math.min(.05, (now - (rk.last || now)) / 1000); rk.last = now;
+  if (rk.phase === 'flying') { rk.mult = Math.exp(0.11 * (now - rk.t0) / 1000); if (rk.mult >= rk.crashAt) { rk.mult = rk.crashAt; rkCrash(); } else rkCheckPrize(); }
+  if (rk.phase === 'escaped') { rk.esc += dt; if (rk.esc > .95) { rk.phase = 'idle'; rk.mult = 1; } }
+  if (rk.phase === 'crashed') { rk.tc += dt; if (rk.tc > 2.2) { rk.phase = 'idle'; rk.mult = 1; } }
+  if (el('view-rocket').classList.contains('active')) { rkUpdate(dt, now / 1000); rkDraw(now / 1000); rkHud(); } else rk.parts.length = 0;
+}
+
 /* ---------- профиль / промо / админка ---------- */
 function claimDevBonus() {
   if (player.id !== OWNER_TELEGRAM_ID) return alert("❌ У вас нет прав!");
   player.score += 1000; updateUI(); saveGame(); alert("+1000 BC получено!");
 }
-function activatePromo() {
-  let code = el('promo-input').value.trim();
-  if (promoCodes[code] && !promoCodes[code].usedBy.includes(player.id)) {
-    player.score += promoCodes[code].reward; promoCodes[code].usedBy.push(player.id);
-    updateUI(); saveGame(); alert(`Активировано! +${promoCodes[code].reward} BC`);
-  } else alert("Неверно или уже использовано!");
+async function activatePromo() {
+  let code = el('promo-input').value.trim(); if (!code) return alert("Введите промокод!");
+  try {
+    let users = await fetchJson(NPOINT_URL); if (!Array.isArray(users)) users = [];
+    let info = promoEntry(users).codes[code];
+    if (!info) return alert("Неверный промокод!");
+    if ((info.usedBy || []).includes(player.id)) return alert("Вы уже использовали этот промокод!");
+    info.usedBy = (info.usedBy || []).concat(player.id);
+    await fetchJson(NPOINT_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(users) });
+    player.score = rnd2(player.score + info.reward); el('promo-input').value = ''; updateUI(); saveGame();
+    alert(`Активировано! +${info.reward} BC`);
+  } catch (e) { alert("Нет связи с облаком, попробуйте позже"); }
 }
 async function grantBalanceToUser() {
   if (player.id !== OWNER_TELEGRAM_ID) return;
@@ -809,7 +1226,7 @@ async function grantBalanceToUser() {
     let users = await fetchJson(NPOINT_URL); if (!Array.isArray(users)) users = [];
     let t = users.find(u => u.id === id);
     if (!t) return alert("Игрок не найден в облачной базе!");
-    t.grant = rnd2((t.grant || 0) + amt); t.score = rnd2((t.score || 0) + amt);
+    t.grant = rnd2((t.grant || 0) + amt);
     await fetchJson(NPOINT_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(users) });
     alert("Готово! Игрок получит изменение в течение минуты (или при входе).");
   } catch (e) { alert("Ошибка подключения к облаку"); }
@@ -830,11 +1247,16 @@ async function adminGiveItemToUser() {
     alert(`Предмет "${name}" отправлен игроку ${id}. Он получит его в течение минуты (или при входе).`);
   } catch (e) { alert("Ошибка подключения к облаку"); }
 }
-function adminCreatePromo() {
+async function adminCreatePromo() {
   if (player.id !== OWNER_TELEGRAM_ID) return;
   let code = el('admin-promo-code').value.trim(), reward = parseFloat(el('admin-promo-reward').value);
   if (!code || isNaN(reward) || reward <= 0) return alert("Заполните промокод и награду!");
-  promoCodes[code] = { reward, usedBy: [] }; alert(`🎫 Промокод "${code}" на ${reward} BC создан!`);
+  try {
+    let users = await fetchJson(NPOINT_URL); if (!Array.isArray(users)) users = [];
+    promoEntry(users).codes[code] = { reward, usedBy: [] };
+    await fetchJson(NPOINT_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(users) });
+    alert(`🎫 Промокод "${code}" на ${reward} BC создан — его можно вводить и в игре, и в боте!`);
+  } catch (e) { alert("Ошибка подключения к облаку"); }
 }
 function renderAdminCaseItemsList() {
   let k = el('admin-case-select').value;
@@ -862,7 +1284,7 @@ function buyShopItem(name, img, price, sellPrice) {
 }
 
 try { window.Telegram?.WebApp?.ready(); window.Telegram?.WebApp?.expand(); } catch (e) {}
-renderCasesList();
+renderCasesList(); rkHist(); requestAnimationFrame(rkFrame); requestAnimationFrame(upFrame);
 loadGame();
 </script>
 </body>
