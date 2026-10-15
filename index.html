@@ -264,6 +264,7 @@ button{touch-action:manipulation}
 .up-result.win{color:#46f08c;text-shadow:0 0 12px #46f08c88}
 .up-result.lose{color:#ff6b6b;text-shadow:0 0 12px #ff6b6b88}
 @media (min-width:760px){.circle-roulette-box{width:360px}}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#000c;color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;z-index:3000;border:1px solid #f39c1266}
 </style>
 </head>
 <body>
@@ -279,6 +280,20 @@ button{touch-action:manipulation}
   <div class="modal-overlay" id="users-modal"><div class="modal-card">
     <div class="modal-header"><span>👥 Выберите игрока</span><button class="modal-close" onclick="closeUsersModal()">✕</button></div>
     <div class="modal-users-list" id="modal-users-list"></div></div></div>
+
+  <div class="modal-overlay" id="ref-modal" onclick="if(event.target===this)closeRef()">
+    <div class="modal-card wide">
+      <div class="modal-header"><span>👥 Рефералы</span><button class="modal-close" onclick="closeRef()">✕</button></div>
+      <div style="overflow-y:auto;display:flex;flex-direction:column;gap:10px;min-height:0">
+        <div class="hint" style="text-align:left;margin:0">Зови друзей по своей ссылке: за каждого нового игрока ты получаешь 🎟️ билет на «Реферальный кейс».</div>
+        <input id="ref-link" class="input-field" readonly style="margin:0">
+        <div style="display:flex;gap:6px"><button class="btn" style="flex:1" onclick="copyText(el('ref-link').value)">📋 Скопировать</button><button class="btn" style="flex:1;background:#2980b9" onclick="shareRef()">📤 Поделиться</button></div>
+        <div class="card" style="margin:0"><div>Друзей: <b id="ref-count">0</b><br>Билетов: <b id="ref-tickets">0</b></div><button class="btn" style="background:#fd79a8;color:#0d0f18" onclick="closeRef();openCaseDetails('ref')">Открыть кейс</button></div>
+        <div style="font-weight:600;font-size:13px;color:#8b93b0">🎫 Свой промокод</div>
+        <div class="hint" style="text-align:left;margin:0">Придумай код (3–16 символов). Друг введёт его в игре или в боте и получит +50 BC, а ты — +25 BC и 🎟️ билет.</div>
+        <div id="ref-promo-box"></div>
+      </div>
+    </div></div>
 
   <div class="modal-overlay" id="picker-modal" onclick="if(event.target===this)closePicker()">
     <div class="modal-card wide">
@@ -335,11 +350,15 @@ button{touch-action:manipulation}
         <div style="font-size:60px;margin:10px 0" id="case-box-icon">📦</div>
         <div class="autosell-toggle-box"><span>⚡ Авто-продажа выпавшего</span>
           <label class="switch"><input type="checkbox" id="autosell-checkbox"><span class="slider"></span></label></div>
-        <div class="case-buttons-group">
+        <div class="case-buttons-group" id="case-buttons">
           <button class="btn" onclick="openCases(1)">х1<br><span style="font-size:10px" id="price-x1"></span></button>
           <button class="btn" onclick="openCases(3)" style="background:#9b59b6">х3<br><span style="font-size:10px" id="price-x3"></span></button>
           <button class="btn" onclick="openCases(5)" style="background:#e67e22">х5<br><span style="font-size:10px" id="price-x5"></span></button>
           <button class="btn plus-btn" onclick="openCustomAmountCases()">+</button>
+        </div>
+        <div id="case-special" style="display:none;width:100%;margin-bottom:12px">
+          <div class="card" style="flex-direction:column;align-items:stretch;gap:8px"><div id="case-special-info" style="font-size:13px;text-align:center;color:#cfd3e6"></div>
+          <button class="btn" id="case-special-btn" style="background:#27ae60;font-size:15px;padding:12px" onclick="openCases(1)">🎁 Открыть</button></div>
         </div>
       </div>
       <div id="roulette-results-view" style="display:none;width:100%;flex-direction:column;align-items:center">
@@ -374,7 +393,7 @@ button{touch-action:manipulation}
     <!-- РАКЕТА -->
     <div id="view-rocket" class="view">
       <h2>🚀 Ракета</h2>
-      <div class="rk-wrap"><canvas id="rk-canvas" width="720" height="440"></canvas>
+      <div class="rk-wrap"><canvas id="rk-canvas" width="720" height="640"></canvas>
         <div class="rk-hud"><div id="rk-mult">1.00x</div><div id="rk-sub">Готова к запуску</div></div>
         <div class="rk-prize" id="rk-prize"></div></div>
       <div class="rk-hist" id="rk-hist"></div>
@@ -399,6 +418,7 @@ button{touch-action:manipulation}
       <div class="card" style="flex-direction:column;align-items:flex-start;gap:12px;margin-bottom:15px">
         <div id="user-tg-name">👤 <b>@Player</b></div>
         <div>🆔 ID: <span id="user-tg-id">123456789</span></div>
+        <button class="btn" style="width:100%;background:#8e44ad" onclick="openRefModal()">👥 Рефералы</button>
         <div>💰 Баланс: <span id="prof-balance">0.00</span> BC</div>
         <button class="btn" id="owner-bonus-btn" style="width:100%;display:none" onclick="claimDevBonus()">👑 Награда владельца (+1000 BC)</button>
       </div>
@@ -484,7 +504,7 @@ const NPOINT_URL = "https://api.npoint.io/2816c8000051e7c162ec";
 const el = id => document.getElementById(id);
 const rnd2 = n => Math.round(n * 100) / 100;
 
-let player = { id: 123456789, username: "Player", score: 0, energy: 100, level: 1, clicks: 0, inventory: [] };
+let player = { id: 123456789, username: "Player", score: 0, energy: 100, level: 1, clicks: 0, freeAt: 0, nickAt: 0, refTickets: 0, inventory: [] };
 let promoCodes = { "Uuu": { reward: 100, usedBy: [] }, "ADMIN1000": { reward: 1000, usedBy: [] } };
 let maxEnergy = 100, activeCaseKey = 'linear', currentCasePrice = 59, currentWonPrizes = [], rouletteTimeout = null;
 let minesGame = { active: false, betItem: null, minesCount: 3, multiplier: 1, grid: [] };
@@ -529,15 +549,81 @@ Object.assign(casesDatabase, {
     { name: "Nacho Spyder", icon: "🕷️", chance: 11, sellPrice: 250 },
     { name: "Burguro And Fryuro", icon: "🍔", chance: 5, sellPrice: 550 },
     { name: "Los Amigos", icon: "🌵", chance: 3, sellPrice: 1100 },
-    { name: "Sammiggi Trakini", icon: "🚚", chance: 1, sellPrice: 4500 }] }
+    { name: "Sammiggi Trakini", icon: "🚚", chance: 1, sellPrice: 4500 }] },
+  bomba: { name: 'Бомба', price: 149, icon: '💣', items: [
+    { name: "Svinina Bombardino", icon: "🐖", chance: 50, sellPrice: 25 },
+    { name: "Bombombini Gusini", icon: "🪿", chance: 30, sellPrice: 70 },
+    { name: "Bombardiro Crocodilo", icon: "✈️", chance: 15, sellPrice: 380 },
+    { name: "Kaboom Bombini", icon: "💥", chance: 4.5, sellPrice: 600 },
+    { name: "Atomic Bomba", icon: "☢️", chance: 0.49, sellPrice: 2500 },
+    { name: "Mega Bomba", icon: "🌋", chance: 0.01, sellPrice: 10000 }] },
+  og: { name: 'Все на ОГ', price: 99, icon: '👑', items: [
+    { name: "Tung Tung Tung Sahur", icon: "🪵", chance: 20, sellPrice: 12 },
+    { name: "Bobrito Bandito", icon: "🦫", chance: 18, sellPrice: 25 },
+    { name: "Lirili Larila", icon: "🐘", chance: 15, sellPrice: 60 },
+    { name: "Brr Brr Patapim", icon: "🌳", chance: 14, sellPrice: 85 },
+    { name: "Cappuccino Assassino", icon: "☕", chance: 12, sellPrice: 100 },
+    { name: "Ballerina Cappuccina", icon: "💃", chance: 9, sellPrice: 110 },
+    { name: "Chimpanzini Bananini", icon: "🍌", chance: 7, sellPrice: 140 },
+    { name: "Bombardiro Crocodilo", icon: "✈️", chance: 4, sellPrice: 380 },
+    { name: "Tralalero Tralala", icon: "🦈", chance: 1, sellPrice: 1400 }] },
+  free: { name: 'Бесплатный (раз в 12 ч)', price: 0, icon: '🎁', kind: 'free', items: [
+    { name: "Boneca Ambalabu", icon: "🐸", chance: 50, sellPrice: 4 },
+    { name: "Trulimero Trulicina", icon: "🐟", chance: 28, sellPrice: 8 },
+    { name: "Tung Tung Tung Sahur", icon: "🪵", chance: 15, sellPrice: 12 },
+    { name: "Svinina Bombardino", icon: "🐖", chance: 6, sellPrice: 25 },
+    { name: "Cappuccino Assassino", icon: "☕", chance: 1, sellPrice: 100 }] },
+  nick: { name: 'Кейс за ник (раз в 12 ч)', price: 0, icon: '🏷️', kind: 'nick', items: [
+    { name: "Tung Tung Tung Sahur", icon: "🪵", chance: 40, sellPrice: 12 },
+    { name: "Bobrito Bandito", icon: "🦫", chance: 30, sellPrice: 25 },
+    { name: "Burbaloni Luliloli", icon: "🥥", chance: 18, sellPrice: 45 },
+    { name: "Lirili Larila", icon: "🐘", chance: 8, sellPrice: 60 },
+    { name: "Brr Brr Patapim", icon: "🌳", chance: 3.5, sellPrice: 85 },
+    { name: "Chimpanzini Bananini", icon: "🍌", chance: 0.5, sellPrice: 140 }] },
+  ref: { name: 'Реферальный (за билет)', price: 0, icon: '👥', kind: 'ref', items: [
+    { name: "Tung Tung Tung Sahur", icon: "🪵", chance: 35, sellPrice: 12 },
+    { name: "Bobrito Bandito", icon: "🦫", chance: 28, sellPrice: 25 },
+    { name: "Burbaloni Luliloli", icon: "🥥", chance: 20, sellPrice: 45 },
+    { name: "Lirili Larila", icon: "🐘", chance: 10, sellPrice: 60 },
+    { name: "Brr Brr Patapim", icon: "🌳", chance: 5, sellPrice: 85 },
+    { name: "Chimpanzini Bananini", icon: "🍌", chance: 1.9, sellPrice: 140 },
+    { name: "Tralalero Tralala", icon: "🦈", chance: 0.1, sellPrice: 1400 }] }
 });
-const CASE_ACCENT = { bomzh: '#95a5a6', linear: '#f39c12', school: '#3498db', all_or_nothing: '#e74c3c', rich: '#f1c40f', taco: '#e67e22' };
+const CASE_ACCENT = { bomzh: '#95a5a6', linear: '#f39c12', school: '#3498db', all_or_nothing: '#e74c3c', rich: '#f1c40f', taco: '#e67e22', bomba: '#e84118', og: '#9b59b6', free: '#2ecc71', nick: '#00cec9', ref: '#fd79a8' };
+const H12 = 12 * 3600 * 1000, BOT_USERNAME = 'Brainrotscase_bot', PROMO_USER_REWARD = 50, PROMO_OWNER_REWARD = 25;
+const tgName = () => { let u = window.Telegram?.WebApp?.initDataUnsafe?.user; return u ? ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase() : ''; };
+const nickOk = () => tgName().includes(BOT_USERNAME.toLowerCase());          // в имени есть @Brainrotscase_bot
+function fmtHMS(ms) { let t = Math.max(0, Math.ceil(ms / 1000)), p = n => String(n).padStart(2, '0'); return `${p(Math.floor(t / 3600))}:${p(Math.floor(t % 3600 / 60))}:${p(t % 60)}`; }
+function caseState(c) { // null = можно открыть, иначе {wait} или {text}
+  let now = Date.now();
+  if (c.kind === 'free') return player.freeAt > now ? { wait: player.freeAt - now } : null;
+  if (c.kind === 'nick') return !nickOk() ? { text: `Добавь @${BOT_USERNAME} в своё имя в Telegram — и открывай каждые 12 часов` } : player.nickAt > now ? { wait: player.nickAt - now } : null;
+  if (c.kind === 'ref') return player.refTickets > 0 ? null : { text: 'Нужен билет: приглашай друзей (Профиль → Рефералы)' };
+  return null;
+}
+function caseStatusText(c) {
+  if (!c.kind) return `${c.items.length} предм. • ${c.price} BC`;
+  let st = caseState(c);
+  if (c.kind === 'ref') return `🎟️ Билетов: ${player.refTickets}`;
+  return !st ? '✅ Доступен сейчас' : st.wait ? '⏳ Через ' + fmtHMS(st.wait) : '🔒 ' + (c.kind === 'nick' ? 'нужен @' + BOT_USERNAME + ' в имени' : st.text);
+}
+function updateSpecialUI() {
+  let c = casesDatabase[activeCaseKey]; if (!c || !c.kind) return;
+  let st = caseState(c), info = el('case-special-info');
+  info.innerText = c.kind === 'ref' ? `🎟️ Билетов: ${player.refTickets}` + (st ? ` — ${st.text}` : '') : !st ? '✅ Кейс доступен — забирай!' : st.wait ? '⏳ Следующий через ' + fmtHMS(st.wait) : st.text;
+  el('case-special-btn').disabled = !!st;
+}
+function specialSetup(c) {
+  let sp = !!c.kind; el('case-buttons').style.display = sp ? 'none' : 'flex'; el('case-special').style.display = sp ? 'block' : 'none'; if (sp) updateSpecialUI();
+}
+function consumeSpecial(c) { if (c.kind === 'free') player.freeAt = Date.now() + H12; else if (c.kind === 'nick') player.nickAt = Date.now() + H12; else if (c.kind === 'ref') player.refTickets--; saveGame(); updateSpecialUI(); }
 function renderCasesList() {
   el('cases-list').innerHTML = Object.entries(casesDatabase).sort((a, b) => a[1].price - b[1].price).map(([k, c]) => {
     let col = CASE_ACCENT[k] || '#f39c12';
-    return `<div class="card" onclick="openCaseDetails('${k}')" style="cursor:pointer;border-color:${col}66"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:26px">${c.icon}</span><div><b>${c.name}</b><br><small style="color:#8b93b0">${c.items.length} предм. • ${c.price} BC</small></div></div><button class="btn" style="background:${col};color:#0d0f18" onclick="event.stopPropagation();openCaseDetails('${k}')">Смотреть</button></div>`;
+    return `<div class="card" onclick="openCaseDetails('${k}')" style="cursor:pointer;border-color:${col}66"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:26px">${c.icon}</span><div><b>${c.name}</b><br><small class="case-sub" data-k="${k}" style="color:#8b93b0">${caseStatusText(c)}</small></div></div><button class="btn" style="background:${col};color:#0d0f18" onclick="event.stopPropagation();openCaseDetails('${k}')">Смотреть</button></div>`;
   }).join('');
 }
+setInterval(() => { document.querySelectorAll('.case-sub').forEach(e => { let c = casesDatabase[e.dataset.k]; if (c) e.innerText = caseStatusText(c); }); if (el('view-case-detail').classList.contains('active')) updateSpecialUI(); }, 1000);
 function renderAdminCaseSelect() {
   let sel = el('admin-case-select'), cur = sel.value;
   sel.innerHTML = Object.entries(casesDatabase).map(([k, c]) => `<option value="${k}">${c.name}</option>`).join('');
@@ -560,12 +646,13 @@ function packInv(inv) { // стопками: [{name,icon,img,sellPrice,count}]
   return [...m.values()];
 }
 const unpackInv = arr => (arr || []).flatMap(g => Array.from({ length: Math.max(0, g.count || 1) }, () => ({ name: g.name, icon: g.icon, img: g.img, sellPrice: g.sellPrice })));
-const snapshot = () => ({ score: player.score, energy: player.energy, level: player.level, clicks: player.clicks, inv: packInv(player.inventory), ts: player.ts || 0 });
+const snapshot = () => ({ score: player.score, energy: player.energy, level: player.level, clicks: player.clicks, freeAt: player.freeAt, nickAt: player.nickAt, refTickets: player.refTickets, inv: packInv(player.inventory), ts: player.ts || 0 });
 function applySnapshot(p) {
   player.score = p.score ?? 0; player.energy = p.energy ?? 100;
   if (p.clicks === undefined) { player.level = 1; player.clicks = 0; }   // старые сохранения: уровень фермы начинается с 1
   else { player.level = Math.max(1, p.level | 0); player.clicks = p.clicks || 0; }
   player.inventory = p.inv ? unpackInv(p.inv) : (p.inventory || []); player.ts = p.ts || 0;
+  player.freeAt = p.freeAt || 0; player.nickAt = p.nickAt || 0; player.refTickets = p.refTickets || 0;
 }
 let cloudDirty = false, cloudTimer = null, cloudBusy = false, cloudReady = false, hadLocal = false;
 const DEFAULT_PROMOS = { "Uuu": { reward: 100, usedBy: [] }, "ADMIN1000": { reward: 1000, usedBy: [] } };
@@ -597,7 +684,8 @@ async function flushCloud() {
     if (!cloudReady) { if (u && mergeFromCloud(u)) changed = true; cloudReady = true; }   // пока не прочитали облако — ничего в него не пишем
     if (!u) { u = { id: player.id }; users.push(u); }
     promoEntry(users);
-    if (u.grant) { player.score = rnd2(player.score + u.grant); u.grant = 0; changed = true; }          // выдача баланса / промокод из бота
+    if (u.grant) { player.score = rnd2(player.score + u.grant); u.grant = 0; changed = true; }
+    if (u.tkAdd) { player.refTickets += u.tkAdd; u.tkAdd = 0; changed = true; }                       // билеты за рефералов          // выдача баланса / промокод из бота
     if (Array.isArray(u.gifts) && u.gifts.length) {
       u.gifts.forEach(g => player.inventory.push({ name: g.name, icon: g.icon || '🎁', sellPrice: g.sellPrice })); u.gifts = []; changed = true;
     }
@@ -725,7 +813,7 @@ function openCaseDetails(key) {
   el('detail-case-title').innerText = `Кейс: ${c.name}`; el('case-box-icon').innerText = c.icon;
   el('price-x1').innerText = c.price + ' BC'; el('price-x3').innerText = c.price * 3 + ' BC'; el('price-x5').innerText = c.price * 5 + ' BC';
   el('prizes-grid').innerHTML = c.items.map(i => `<div class="prize-card">${media(i, 'prize-img')}<div class="prize-title">${i.name}</div><div class="prize-chance">${i.chance}%</div><div style="font-size:10px;color:#f39c12">+${i.sellPrice} BC</div></div>`).join('');
-  resetCaseView(); switchView('case-detail', null);
+  specialSetup(c); resetCaseView(); switchView('case-detail', null);
 }
 function getRandomItem() {
   let items = casesDatabase[activeCaseKey].items, r = Math.random() * 100, cur = 0;
@@ -738,6 +826,8 @@ function openCustomAmountCases() {
   openCases(Math.min(a, 8));
 }
 function openCases(count) {
+  let cs = casesDatabase[activeCaseKey];
+  if (cs.kind) { if (caseState(cs)) return updateSpecialUI(); count = 1; consumeSpecial(cs); }   // бесплатные/особые кейсы: 1 шт.
   let cost = currentCasePrice * count;
   if (player.score < cost) return alert('Не хватает BC!');
   player.score = rnd2(player.score - cost); updateUI(); saveGame();
@@ -1064,7 +1154,7 @@ function endMinesGame(won) {
 /* ---------- РАКЕТА ---------- */
 let rkSelKey = null;
 let rk = { phase: 'idle', t0: 0, last: 0, crashAt: 2, mult: 1, stake: null, parts: [], stars: [], ring: 0, shake: 0, flash: 0, esc: 0, tc: 0, ground: 0, v: 10, ex: 360, ey: 300, hist: [], msg: '', pool: [], held: '', toast: '', toastT: 0 };
-for (let i = 0; i < 70; i++) rk.stars.push({ x: Math.random() * 720, y: Math.random() * 440, s: Math.random() * 1.8 + .4, k: Math.random() * .8 + .4 });
+for (let i = 0; i < 70; i++) rk.stars.push({ x: Math.random() * 720, y: Math.random() * 640, s: Math.random() * 1.8 + .4, k: Math.random() * .8 + .4 });
 const haptic = t => { try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(t); } catch (e) {} };
 function rkRenderSel() {
   let c = el('rk-inventory-selector'); if (!c) return;
@@ -1127,8 +1217,9 @@ function rkCashout() {
   rk.stake = null; rk.phase = 'escaped'; rk.esc = 0; rk.hist = rk.hist.concat({ m, ok: 1 }).slice(-14);
   refreshAll(); rkHist(); haptic('success');
 }
+const RK_W = 720, RK_H = 640;
 function rkPos(t) {
-  let p = Math.min(1, (rk.mult - 1) / 4), x = 360, y = 440 * (0.8 - 0.38 * p) - rk.esc * rk.esc * 900;
+  let p = Math.min(1, (rk.mult - 1) / 4), x = RK_W / 2, y = RK_H * (0.765 - 0.36 * p) - rk.esc * rk.esc * 1100;
   if (rk.phase === 'flying') { x += Math.sin(t * 2.2) * 6 * (0.3 + p) + (Math.random() - .5) * Math.min(4, rk.mult - 1); }
   return [x, y];
 }
@@ -1153,40 +1244,86 @@ function rkHud() {
     pz.style.display = 'block'; b.innerText = `💰 Забрать ${label}`; b.style.background = '#e74c3c';
   } else { pz.style.display = 'none'; b.innerText = '🚀 Запуск'; b.style.background = '#27ae60'; }
 }
-function drawRocket(g, x, y, s, flame) {
-  g.save(); g.translate(x, y); g.scale(s, s);
-  if (flame > 0) { let f = g.createLinearGradient(0, 22, 0, 22 + flame); f.addColorStop(0, '#fffbd0'); f.addColorStop(.35, '#ffb02e'); f.addColorStop(1, 'rgba(255,60,0,0)'); g.fillStyle = f; g.beginPath(); g.moveTo(-8, 22); g.quadraticCurveTo(0, 22 + flame * 1.3, 8, 22); g.closePath(); g.fill(); }
-  g.fillStyle = '#c0392b'; [-1, 1].forEach(d => { g.beginPath(); g.moveTo(d * 11, 2); g.lineTo(d * 27, 28); g.lineTo(d * 11, 22); g.closePath(); g.fill(); });
-  let b = g.createLinearGradient(-15, 0, 15, 0); b.addColorStop(0, '#b8c2db'); b.addColorStop(.45, '#fff'); b.addColorStop(1, '#9aa6c4');
-  g.fillStyle = b; g.beginPath(); g.moveTo(0, -48); g.bezierCurveTo(20, -32, 17, 12, 14, 22); g.lineTo(-14, 22); g.bezierCurveTo(-17, 12, -20, -32, 0, -48); g.fill();
-  g.fillStyle = '#e74c3c'; g.beginPath(); g.moveTo(0, -48); g.bezierCurveTo(11, -40, 15, -31, 16, -24); g.lineTo(-16, -24); g.bezierCurveTo(-15, -31, -11, -40, 0, -48); g.fill();
-  g.fillStyle = '#26315a'; g.beginPath(); g.arc(0, -8, 8, 0, 7); g.fill(); g.fillStyle = '#74b9ff'; g.beginPath(); g.arc(-1.5, -9.5, 5, 0, 7); g.fill();
-  g.fillStyle = '#4b5470'; g.fillRect(-9, 22, 18, 5); g.restore();
+function drawRocket(g, x, y, s, flame, t, tilt) {
+  g.save(); g.translate(x, y); g.rotate(tilt || 0); g.scale(s, s);
+  if (flame > 0) {
+    let fl = flame * (0.92 + 0.12 * Math.sin(t * 47));
+    let o = g.createLinearGradient(0, 58, 0, 58 + fl); o.addColorStop(0, 'rgba(255,255,235,.95)'); o.addColorStop(.2, 'rgba(255,205,90,.92)'); o.addColorStop(.55, 'rgba(255,110,20,.55)'); o.addColorStop(1, 'rgba(255,60,0,0)');
+    g.fillStyle = o; g.beginPath(); g.moveTo(-11, 58); g.quadraticCurveTo(-17, 58 + fl * .5, 0, 58 + fl); g.quadraticCurveTo(17, 58 + fl * .5, 11, 58); g.closePath(); g.fill();
+    let c = g.createLinearGradient(0, 58, 0, 58 + fl * .6); c.addColorStop(0, '#fff'); c.addColorStop(1, 'rgba(130,190,255,0)');
+    g.fillStyle = c; g.beginPath(); g.moveTo(-5, 58); g.quadraticCurveTo(0, 58 + fl * .75, 5, 58); g.fill();
+    g.globalCompositeOperation = 'lighter';
+    for (let k = 1; k <= 3; k++) { g.fillStyle = `rgba(255,240,200,${.35 / k})`; g.beginPath(); g.ellipse(0, 58 + fl * .17 * k, 5 / (k * .7), 7, 0, 0, 7); g.fill(); }
+    let gl = g.createRadialGradient(0, 62, 2, 0, 62, 48); gl.addColorStop(0, 'rgba(255,200,110,.6)'); gl.addColorStop(1, 'rgba(255,120,30,0)'); g.fillStyle = gl; g.beginPath(); g.arc(0, 62, 48, 0, 7); g.fill();
+    g.globalCompositeOperation = 'source-over';
+  }
+  [-1, 1].forEach(d => {                                                                                  // стабилизаторы
+    let fg = g.createLinearGradient(d * 13, 0, d * 32, 0); fg.addColorStop(0, '#5b1f1a'); fg.addColorStop(1, '#b8382c');
+    g.fillStyle = fg; g.beginPath(); g.moveTo(d * 12, 18); g.lineTo(d * 31, 52); g.lineTo(d * 12, 46); g.closePath(); g.fill();
+    g.strokeStyle = '#ffffff30'; g.lineWidth = 1; g.beginPath(); g.moveTo(d * 12, 18); g.lineTo(d * 31, 52); g.stroke();
+  });
+  [[-8, 5], [0, 7], [8, 5]].forEach(([dx, w]) => {                                                          // сопла
+    let ng = g.createLinearGradient(dx - w, 0, dx + w, 0); ng.addColorStop(0, '#2b2f3d'); ng.addColorStop(.5, '#8a91a6'); ng.addColorStop(1, '#2b2f3d');
+    g.fillStyle = ng; g.beginPath(); g.moveTo(dx - w * .6, 46); g.lineTo(dx + w * .6, 46); g.lineTo(dx + w, 58); g.lineTo(dx - w, 58); g.closePath(); g.fill();
+  });
+  let bd = g.createLinearGradient(-14, 0, 14, 0); bd.addColorStop(0, '#6f7893'); bd.addColorStop(.35, '#f7f9fd'); bd.addColorStop(.65, '#cdd3e2'); bd.addColorStop(1, '#5a627c');
+  g.fillStyle = bd; g.fillRect(-14, -44, 28, 94);                                                           // корпус
+  g.beginPath(); g.moveTo(-14, -44); g.bezierCurveTo(-14, -66, -6, -80, 0, -90); g.bezierCurveTo(6, -80, 14, -66, 14, -44); g.closePath(); g.fill();   // обтекатель
+  let bk = g.createLinearGradient(-14, 0, 14, 0); bk.addColorStop(0, '#15171f'); bk.addColorStop(.4, '#4a4f60'); bk.addColorStop(1, '#101219');
+  g.fillStyle = bk; g.fillRect(-14, 2, 28, 9); g.fillStyle = '#d63031'; g.fillRect(-14, -26, 28, 4);
+  g.fillStyle = '#3b4258'; g.beginPath(); g.arc(0, -36, 7.5, 0, 7); g.fill();                                // иллюминатор
+  let wg = g.createRadialGradient(-2, -38, 1, 0, -36, 6); wg.addColorStop(0, '#d6f1ff'); wg.addColorStop(1, '#2d6fb8'); g.fillStyle = wg; g.beginPath(); g.arc(0, -36, 5.5, 0, 7); g.fill();
+  g.strokeStyle = 'rgba(40,48,70,.35)'; g.lineWidth = 1; [-44, 20, 34].forEach(py => { g.beginPath(); g.moveTo(-14, py); g.lineTo(14, py); g.stroke(); });
+  g.fillStyle = 'rgba(40,48,70,.4)'; for (let rx = -11; rx <= 11; rx += 5.5) { g.beginPath(); g.arc(rx, -40, .9, 0, 7); g.fill(); g.beginPath(); g.arc(rx, 24, .9, 0, 7); g.fill(); }
+  let sg = g.createLinearGradient(0, 24, 0, 50); sg.addColorStop(0, 'rgba(20,20,25,0)'); sg.addColorStop(1, 'rgba(20,20,25,.55)'); g.fillStyle = sg; g.fillRect(-14, 24, 28, 26);   // копоть
+  g.fillStyle = 'rgba(255,255,255,.28)'; g.fillRect(-7, -66, 2.4, 116); g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(9, -60, 5, 110);                                            // блики
+  g.restore();
 }
 function rkUpdate(dt, t) {
   let fly = rk.phase === 'flying' || rk.phase === 'escaped';
   rk.v = rk.phase === 'flying' ? 60 + Math.min(rk.mult, 12) * 45 : rk.phase === 'escaped' ? 700 : 10;
-  rk.stars.forEach(s => { s.y += rk.v * s.k * dt; if (s.y > 440) { s.y = -10; s.x = Math.random() * 720; } });
+  rk.stars.forEach(s => { s.y += rk.v * s.k * dt; if (s.y > RK_H) { s.y = -10; s.x = Math.random() * RK_W; } });
   rk.ground = rk.phase === 'idle' ? 0 : rk.ground + rk.v * dt;
-  if (fly) { let [x, y] = rkPos(t); for (let i = 0; i < 4; i++) rk.parts.push({ x: x + (Math.random() - .5) * 10, y: y + 24, vx: (Math.random() - .5) * 50, vy: 140 + Math.random() * 180, life: 0, max: .35 + Math.random() * .4, r: 4 + Math.random() * 6, c: Math.random() < .5 ? '255,176,46' : '255,230,120' }); }
-  rk.parts = rk.parts.filter(p => (p.life += dt) < p.max); rk.parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; });
+  if (fly) {
+    let [x, y] = rkPos(t), ny = y + 68;
+    for (let i = 0; i < 4; i++) rk.parts.push({ x: x + (Math.random() - .5) * 10, y: ny, vx: (Math.random() - .5) * 50, vy: 150 + Math.random() * 190, life: 0, max: .35 + Math.random() * .4, r: 4 + Math.random() * 6, c: Math.random() < .5 ? '255,176,46' : '255,230,120' });
+    for (let i = 0; i < 2; i++) rk.parts.push({ smoke: 1, x: x + (Math.random() - .5) * 12, y: ny + 8, vx: (Math.random() - .5) * 46, vy: 60 + Math.random() * 70, life: 0, max: 1 + Math.random() * .7, r: 7 + Math.random() * 6, gr: 24, c: '205,210,225' });
+  }
+  rk.parts = rk.parts.filter(p => (p.life += dt) < p.max); rk.parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; if (p.gr) p.r += p.gr * dt; });
   rk.toastT = Math.max(0, rk.toastT - dt); rk.shake *= Math.pow(.02, dt); rk.flash = Math.max(0, rk.flash - dt * 2.2);
   if (rk.ring) { rk.ring += dt * 1.6; if (rk.ring > 1) rk.ring = 0; }
 }
 function rkDraw(t) {
-  let g = el('rk-canvas').getContext('2d'), W = 720, H = 440, m = Math.min(rk.mult, 12), fast = rk.phase === 'flying' || rk.phase === 'escaped';
-  let bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, `hsl(${245 - m * 3},65%,7%)`); bg.addColorStop(1, `hsl(${275 - m * 4},55%,24%)`);
+  let g = el('rk-canvas').getContext('2d'), W = RK_W, H = RK_H, m = Math.min(rk.mult, 12), fast = rk.phase === 'flying' || rk.phase === 'escaped', pt = H * .88;
+  let bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, `hsl(${245 - m * 3},65%,6%)`); bg.addColorStop(1, `hsl(${275 - m * 4},55%,22%)`);
   g.save(); if (rk.shake > .02) g.translate((Math.random() - .5) * rk.shake * 16, (Math.random() - .5) * rk.shake * 16);
   g.fillStyle = bg; g.fillRect(-20, -20, W + 40, H + 40);
   g.strokeStyle = '#fff'; g.fillStyle = '#fff';
   rk.stars.forEach(s => { g.globalAlpha = .3 + s.k * .5; if (fast) { g.lineWidth = s.s; g.beginPath(); g.moveTo(s.x, s.y); g.lineTo(s.x, s.y - Math.min(46, rk.v * .045 * s.k)); g.stroke(); } else { g.beginPath(); g.arc(s.x, s.y, s.s, 0, 7); g.fill(); } });
   g.globalAlpha = 1;
-  if (rk.ground < 160) { let gy = 518 + rk.ground, pg = g.createLinearGradient(0, gy - 140, 0, gy); pg.addColorStop(0, '#4b3a8c'); pg.addColorStop(1, '#1c1440'); g.fillStyle = pg; g.beginPath(); g.ellipse(360, gy, 540, 140, 0, 0, 7); g.fill(); g.strokeStyle = '#8f7bff55'; g.lineWidth = 3; g.stroke(); }
+  if (rk.ground < 300) { let ga = 1 - rk.ground / 300, hg = g.createRadialGradient(W / 2, pt + rk.ground, 10, W / 2, pt + rk.ground, 430); hg.addColorStop(0, `rgba(255,150,70,${.42 * ga})`); hg.addColorStop(1, 'rgba(255,150,70,0)'); g.fillStyle = hg; g.fillRect(0, pt + rk.ground - 430, W, 520); }
+  if (rk.ground < 420) {                                                                                      // планета, башня, площадка
+    g.save(); g.translate(0, rk.ground);
+    let pg = g.createLinearGradient(0, pt, 0, pt + 150); pg.addColorStop(0, '#4b3a8c'); pg.addColorStop(1, '#1c1440'); g.fillStyle = pg; g.beginPath(); g.ellipse(W / 2, pt + 150, 560, 150, 0, 0, 7); g.fill(); g.strokeStyle = '#8f7bff55'; g.lineWidth = 3; g.stroke();
+    g.fillStyle = '#2a2f52'; g.fillRect(250, pt - 330, 8, 330); g.fillRect(286, pt - 330, 8, 330);
+    g.strokeStyle = '#4a5280'; g.lineWidth = 2; for (let k = 0; k < 11; k++) { let y0 = pt - 330 + k * 30; g.beginPath(); g.moveTo(254, y0); g.lineTo(290, y0 + 30); g.moveTo(290, y0); g.lineTo(254, y0 + 30); g.stroke(); }
+    g.fillStyle = '#39406b'; g.fillRect(294, pt - 215, 50, 7); g.fillStyle = '#1b1f3a'; g.fillRect(232, pt - 7, 256, 10);
+    g.restore();
+  }
+  rk.parts.forEach(p => { if (!p.smoke) return; let k = 1 - p.life / p.max; g.fillStyle = `rgba(${p.c},${k * .22})`; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); });
   g.globalCompositeOperation = 'lighter';
-  rk.parts.forEach(p => { let k = 1 - p.life / p.max; g.fillStyle = `rgba(${p.c},${k * .75})`; g.beginPath(); g.arc(p.x, p.y, p.r * (0.4 + k * .8), 0, 7); g.fill(); });
+  rk.parts.forEach(p => { if (p.smoke) return; let k = 1 - p.life / p.max; g.fillStyle = `rgba(${p.c},${k * .75})`; g.beginPath(); g.arc(p.x, p.y, p.r * (0.4 + k * .8), 0, 7); g.fill(); });
   g.globalCompositeOperation = 'source-over';
-  if (rk.phase !== 'crashed') { let [x, y] = rkPos(t), flame = rk.phase === 'flying' ? 28 + Math.random() * 12 + m * 3 : rk.phase === 'escaped' ? 70 : 0; drawRocket(g, x, y, 1.1, flame); }
-  if (rk.ring) { g.strokeStyle = `rgba(255,205,130,${1 - rk.ring})`; g.lineWidth = 8 * (1 - rk.ring) + 1; g.beginPath(); g.arc(rk.ex, rk.ey, rk.ring * 280, 0, 7); g.stroke(); }
+  if (rk.phase !== 'crashed') {
+    let [x, y] = rkPos(t), flame = rk.phase === 'flying' ? 62 + Math.random() * 22 + m * 4 : rk.phase === 'escaped' ? 140 : 0;
+    drawRocket(g, x, y, 1.15, flame, t, rk.phase === 'flying' ? Math.sin(t * 1.7) * .02 * Math.min(1, (rk.mult - 1) / 3) : 0);
+  }
+  if (rk.ring) {
+    let k = rk.ring, rad = 30 + k * 150, fb = g.createRadialGradient(rk.ex, rk.ey, 4, rk.ex, rk.ey, rad);
+    fb.addColorStop(0, `rgba(255,245,210,${(1 - k) * .95})`); fb.addColorStop(.5, `rgba(255,130,40,${(1 - k) * .6})`); fb.addColorStop(1, 'rgba(255,60,20,0)');
+    g.fillStyle = fb; g.beginPath(); g.arc(rk.ex, rk.ey, rad, 0, 7); g.fill();
+    g.strokeStyle = `rgba(255,205,130,${1 - k})`; g.lineWidth = 8 * (1 - k) + 1; g.beginPath(); g.arc(rk.ex, rk.ey, k * 300, 0, 7); g.stroke();
+  }
   if (rk.flash > 0) { g.fillStyle = `rgba(255,255,255,${rk.flash * .7})`; g.fillRect(-20, -20, W + 40, H + 40); }
   g.restore();
 }
@@ -1199,6 +1336,46 @@ function rkFrame(now) {
   if (el('view-rocket').classList.contains('active')) { rkUpdate(dt, now / 1000); rkDraw(now / 1000); rkHud(); } else rk.parts.length = 0;
 }
 
+/* ---------- рефералы ---------- */
+const refLink = () => `https://t.me/${BOT_USERNAME}?start=ref_${player.id}`;
+function toast(t) { let d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 1800); }
+function copyText(t) {
+  try { navigator.clipboard.writeText(t).then(() => toast('Скопировано ✅'), () => { throw 0; }); }
+  catch (e) { let a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); toast('Скопировано ✅'); } catch (er) {} a.remove(); }
+}
+function shareRef() {
+  let url = 'https://t.me/share/url?url=' + encodeURIComponent(refLink()) + '&text=' + encodeURIComponent('Заходи в Brainrot Case — бесплатные кейсы и брейнроты! 🎁');
+  let w = window.Telegram?.WebApp; w?.openTelegramLink ? w.openTelegramLink(url) : window.open(url, '_blank');
+}
+function closeRef() { el('ref-modal').classList.remove('show'); }
+function renderRefPromo(mine, offline) {
+  el('ref-promo-box').innerHTML = mine ? `<div class="card" style="margin:0"><div>Твой код: <b style="color:#f39c12">${eh(mine.code)}</b><br><small style="color:#8b93b0">Активаций: ${mine.uses}</small></div><button class="btn" onclick="copyText('${eh(mine.code)}')">📋</button></div>`
+    : offline ? '<div class="hint">Нет связи с облаком</div>'
+    : '<div style="display:flex;gap:6px"><input id="ref-promo-input" class="input-field" placeholder="Например MYCODE" maxlength="16" style="margin:0;flex:1"><button class="btn" style="background:#27ae60" onclick="createMyPromo()">Создать</button></div>';
+}
+async function openRefModal() {
+  el('ref-link').value = refLink(); el('ref-tickets').innerText = player.refTickets; el('ref-count').innerText = '…';
+  renderRefPromo(null, false); el('ref-modal').classList.add('show');
+  try {
+    let users = await fetchJson(NPOINT_URL); if (!Array.isArray(users)) users = [];
+    let me = users.find(u => u.id === player.id) || {}; el('ref-count').innerText = me.refCount || 0;
+    let e = users.find(u => u.id === '__promos__'), mine = e && Object.entries(e.codes || {}).find(([k, v]) => v.owner === player.id);
+    renderRefPromo(mine ? { code: mine[0], uses: (mine[1].usedBy || []).length } : null);
+  } catch (err) { renderRefPromo(null, true); }
+}
+async function createMyPromo() {
+  let code = el('ref-promo-input').value.trim().toUpperCase();
+  if (!/^[A-Z0-9_]{3,16}$/.test(code)) return alert('Код: 3–16 символов, латиница, цифры или _');
+  try {
+    let users = await fetchJson(NPOINT_URL); if (!Array.isArray(users)) users = [];
+    let e = promoEntry(users);
+    if (Object.values(e.codes).some(v => v.owner === player.id)) return alert('У вас уже есть свой промокод');
+    if (e.codes[code]) return alert('Такой код уже занят');
+    e.codes[code] = { reward: PROMO_USER_REWARD, owner: player.id, ownerReward: PROMO_OWNER_REWARD, usedBy: [] };
+    await fetchJson(NPOINT_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(users) });
+    renderRefPromo({ code, uses: 0 }); toast('Промокод создан ✅');
+  } catch (err) { alert('Нет связи с облаком'); }
+}
 /* ---------- профиль / промо / админка ---------- */
 function claimDevBonus() {
   if (player.id !== OWNER_TELEGRAM_ID) return alert("❌ У вас нет прав!");
@@ -1208,10 +1385,13 @@ async function activatePromo() {
   let code = el('promo-input').value.trim(); if (!code) return alert("Введите промокод!");
   try {
     let users = await fetchJson(NPOINT_URL); if (!Array.isArray(users)) users = [];
-    let info = promoEntry(users).codes[code];
+    let codes = promoEntry(users).codes, key = codes[code] ? code : codes[code.toUpperCase()] ? code.toUpperCase() : null, info = key && codes[key];
     if (!info) return alert("Неверный промокод!");
+    if (info.owner === player.id) return alert("Нельзя использовать собственный код!");
     if ((info.usedBy || []).includes(player.id)) return alert("Вы уже использовали этот промокод!");
     info.usedBy = (info.usedBy || []).concat(player.id);
+    let ow = info.owner && users.find(u => u.id === info.owner);                                  // владелец личного промокода
+    if (ow) { ow.grant = rnd2((ow.grant || 0) + (info.ownerReward || 0)); ow.tkAdd = (ow.tkAdd || 0) + 1; ow.refCount = (ow.refCount || 0) + 1; }
     await fetchJson(NPOINT_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(users) });
     player.score = rnd2(player.score + info.reward); el('promo-input').value = ''; updateUI(); saveGame();
     alert(`Активировано! +${info.reward} BC`);
