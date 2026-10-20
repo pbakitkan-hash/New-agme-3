@@ -1700,7 +1700,6 @@ function buyShopItem(name, img, price, sellPrice) {
   player.inventory.push({ name, img, sellPrice }); refreshAll();
   alert(`🎉 ${name} успешно куплен и добавлен в инвентарь!`);
 }
-
 try { let w = window.Telegram?.WebApp; w?.ready(); w?.expand(); w?.setHeaderColor?.('#200e3e'); w?.setBackgroundColor?.('#0c0516'); } catch (e) {}
 renderCasesList(); renderBonusCards(); rkHist(); requestAnimationFrame(rkFrame); requestAnimationFrame(upFrame);
 loadGame();
