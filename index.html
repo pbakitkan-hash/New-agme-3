@@ -373,6 +373,8 @@ h2{font-size:14px;letter-spacing:.5px;text-transform:uppercase;font-weight:800;m
 .req.ok i{background:#7dffb0;border-color:#7dffb0}
 .btn-share{background:linear-gradient(180deg,#8dffbc,#3ddc84)!important;color:#06240f!important;font-weight:800;letter-spacing:.5px;text-transform:uppercase;font-size:15px!important;padding:15px!important;border-radius:16px;box-shadow:0 0 22px #3ddc8466,0 5px 0 #1d7a47!important}
 .btn-share:disabled{background:#2a2248!important;color:#8b87a8!important;box-shadow:none!important}
+*,*:focus,*:active{-webkit-tap-highlight-color:transparent;outline:none}
+button,[onclick],a{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 </style>
 </head>
 <body>
@@ -393,7 +395,7 @@ h2{font-size:14px;letter-spacing:.5px;text-transform:uppercase;font-weight:800;m
     <div class="modal-card wide">
       <div class="modal-header"><span>⭐ Пополнение звёздами</span><button class="modal-close" onclick="closeTopup()">✕</button></div>
       <div style="overflow-y:auto;display:flex;flex-direction:column;gap:10px;min-height:0">
-        <div class="hint" style="margin:0">1 ⭐ = 1.5 BC. Оплата через Telegram Stars[span_0](start_span)[span_0](end_span).</div>
+        <div class="hint" style="margin:0">1 ⭐ = 1.5 BC. Оплата через Telegram Stars.</div>
         <div class="pick-grid" id="topup-grid"></div>
         <div style="display:flex;gap:6px"><input id="topup-custom" type="number" class="input-field" placeholder="Своё количество ⭐" inputmode="numeric" style="margin:0;flex:1;min-width:0" oninput="el('topup-calc').innerText=this.value>0?'= '+rnd2(this.value*STAR_RATE)+' BC':''"><button class="btn" onclick="buyStars(parseInt(el('topup-custom').value))">Оплатить</button></div>
         <div class="hint" id="topup-calc" style="margin:0"></div>
@@ -439,7 +441,7 @@ h2{font-size:14px;letter-spacing:.5px;text-transform:uppercase;font-weight:800;m
       <div class="profile-avatar-btn" id="header-avatar">P</div></div></div>
 
   <div class="content">
-    <div class="guest-banner" id="guest-banner">⚠️ Игра открыта не через Telegram: прогресс хранится только на этом устройстве, ник и подписка не проверяются. Открой её через бота <b>@Brainrotscase_bot</b> (кнопка «Играть»)[span_1](start_span)[span_1](end_span).</div>
+    <div class="guest-banner" id="guest-banner">⚠️ Игра открыта не через Telegram: прогресс хранится только на этом устройстве, ник и подписка не проверяются. Открой её через бота <b>@Brainrotscase_bot</b> (кнопка «Играть»).</div>
     <!-- КЕЙСЫ -->
     <div id="view-cases" class="view active">
       <h2>Доступные кейсы</h2>
@@ -668,7 +670,7 @@ Object.assign(casesDatabase, {
     { name: "Chimpanzini Bananini", icon: "🍌", chance: 10, sellPrice: 140 },
     { name: "Bombardiro Crocodilo", icon: "✈️", chance: 3.5, sellPrice: 380 },
     { name: "Tralalero Tralala", icon: "🦈", chance: 0.5, sellPrice: 1400 }] },
-  rich: { name: 'Богач', price: 159, icon: '💰', items: [
+  rich: { name: 'Богач', price: 159, icon: '💰', img: 'https://i.ibb.co/dsbc4JTY/IMG-20261022-143714-933.jpg', img2: 'https://i.ibb.co.com/dsbc4JTY/IMG-20261022-143714-933.jpg', items: [
     { name: "Lirili Larila", icon: "🐘", chance: 45, sellPrice: 60 },
     { name: "Ballerina Cappuccina", icon: "💃", chance: 30, sellPrice: 110 },
     { name: "Frigo Camelo", icon: "🐪", chance: 15, sellPrice: 210 },
@@ -777,7 +779,7 @@ async function claimFree() { // «Поделиться и открыть»: по
       if (!sent) return toast('Отправка отменена — кейс не выдан');
       try {
         let g = await post('/api/shared');
-        if (g.granted) { player.shareCredits = 1; saveGame(); toast('Отправлено! Открываю кейс 🎁'); openCaseDetails('free'); setTimeout(() => openCases(1), 400); }
+        if (g.granted) { player.shareCredits = 1; if (g.shareT !== undefined) player.shareSeen = Math.max(player.shareSeen, g.shareT); saveGame(); toast('Отправлено! Открываю кейс 🎁'); openCaseDetails('free'); setTimeout(() => openCases(1), 400); }
         else say('Кейс за отправку можно получить раз в 12 часов');
       } catch (e) { say('Не удалось подтвердить отправку — нажми ещё раз'); }
     });
@@ -826,7 +828,7 @@ function specialSetup(c) {
 function consumeSpecial(c) { let n = Date.now() + H12; if (c.kind === 'free') { player.freeAt = n; player.shareCredits = 0; } else if (c.kind === 'nick') player.nickAt = n; else if (c.kind === 'sub') player.subAt = n; else if (c.kind === 'ref') player.refTickets--; saveGame(); updateSpecialUI(); }
 function renderCasesList() { // сетка кейсов как в BRAINROTFARM: название, картинка (пока эмодзи), число предметов и цена
   el('cases-list').innerHTML = '<div class="case-grid">' + Object.entries(casesDatabase).filter(([k, c]) => !c.kind).sort((a, b) => a[1].price - b[1].price).map(([k, c]) =>
-    `<div class="case-card" style="--ac:${CASE_ACCENT[k] || '#8f6bff'}" onclick="openCaseDetails('${k}')"><div class="case-name">${c.name}</div><div class="case-pic">${c.img ? `<img src="${c.img}" data-fb="${c.icon}" onerror="imgFail(this)">` : `<span>${c.icon}</span>`}</div><div class="case-foot"><span>${c.items.length} предм.</span><span class="case-price"><i class="bc-icon">BC</i>${c.price}</span></div></div>`).join('') + '</div>';
+    `<div class="case-card" style="--ac:${CASE_ACCENT[k] || '#8f6bff'}" onclick="openCaseDetails('${k}')"><div class="case-name">${c.name}</div><div class="case-pic">${c.img ? `<img src="${c.img}" data-alt="${c.img2 || ''}" data-fb="${c.icon}" onerror="imgFail(this)">` : `<span>${c.icon}</span>`}</div><div class="case-foot"><span>${c.items.length} предм.</span><span class="case-price"><i class="bc-icon">BC</i>${c.price}</span></div></div>`).join('') + '</div>';
 }
 function renderBonusCards() { // бонусные кейсы теперь в профиле
   let g = el('bonus-grid'); if (!g) return;
@@ -906,51 +908,28 @@ function applySnapshot(p) {
   player.freeAt = p.freeAt || 0; player.nickAt = p.nickAt || 0; player.subAt = p.subAt || 0; player.shareCredits = p.shareCredits || 0;
   player.grantSeen = p.grantSeen || 0; player.tkSeen = p.tkSeen || 0; player.shareSeen = p.shareSeen || 0; player.giftSeen = p.giftSeen || 0; player.refTickets = p.refTickets || 0;
 }
-let cloudDirty = false, cloudTimer = null, cloudBusy = false, cloudReady = false, hadLocal = false, lastSig = '', cloudLen = 0;
+let cloudDirty = false, cloudTimer = null, cloudReady = false, hadLocal = false, lastSig = '', syncBusy = false, syncAgain = false, syncFirst = true;
+let refInfo = { refCount: 0, myPromo: null };
 const DEFAULT_PROMOS = { "Uuu": { reward: 100, usedBy: [] }, "ADMIN1000": { reward: 1000, usedBy: [] } };
-function promoEntry(users) { // общий список промокодов лежит в облаке — его читают и игра, и бот
-  let e = users.find(u => u.id === '__promos__');
-  if (!e) { e = { id: '__promos__', codes: JSON.parse(JSON.stringify(DEFAULT_PROMOS)) }; users.push(e); }
-  if (!e.codes) e.codes = {};
-  return e;
-}
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 const sj = o => JSON.stringify(o);
 const sig = () => sj([player.score, player.level, player.clicks, player.freeAt, player.nickAt, player.subAt, player.shareCredits, player.refTickets, packInv(player.inventory)]);
 function saveLocal() { try { localStorage.setItem('brainrot_save_' + player.id, sj(snapshot())); } catch (e) {} }
-function saveGame() { // мгновенно локально; в облако — только если что-то изменилось, не чаще раза в 5 сек
-  player.ts = Date.now(); saveLocal();
-  if (sig() !== lastSig) { cloudDirty = true; if (!cloudTimer) cloudTimer = setTimeout(() => { cloudTimer = null; flushCloud(); }, 5000); }
-}
 function rerenderAll() { updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); rkRenderSel(); }
-function mergeFromCloud(u) { // что взять из облака при первом входе (новое устройство / другой адрес сайта)
-  if (u.inv) { if (!hadLocal || (u.ts || 0) > (player.ts || 0)) { applySnapshot(u); return true; } return false; }
-  let cs = Number(u.score) || 0;                       // запись из старой версии: был только баланс
-  if (cs > player.score) { player.score = cs; return true; }
-  return false;
+async function api(path, body, keep) { // запрос к боту: всё хранится в памяти бота, ответ за миллисекунды
+  if (!BOT_API || !isTg) throw new Error('нет связи с ботом');
+  let ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 12000);
+  try {
+    let r = await fetch(BOT_API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: sj({ initData: TGW.initData, ...body }), signal: ctl.signal, keepalive: !!keep });
+    let d = await r.json(); if (!r.ok || d.error) throw new Error(d.error || 'HTTP ' + r.status);
+    return d;
+  } finally { clearTimeout(t); }
 }
-async function cloudRead() { // защита: неполное чтение никогда не превращается в запись
-  let users = await fetchJson(NPOINT_URL);
-  if (!Array.isArray(users) || users.length < cloudLen) throw new Error('облако вернуло неполные данные');
-  cloudLen = Math.max(cloudLen, users.length); return users;
+const seenNow = () => ({ grantSeen: player.grantSeen, tkSeen: player.tkSeen, shareSeen: player.shareSeen, giftSeen: player.giftSeen });
+function saveGame() { // мгновенно локально; в бота — через 1.5 сек после изменения (не чаще)
+  player.ts = Date.now(); saveLocal();
+  if (sig() !== lastSig) { cloudDirty = true; if (!cloudTimer) cloudTimer = setTimeout(() => { cloudTimer = null; syncNow(); }, 1500); }
 }
-async function cloudUpdate(mutator, tries = 4) { // mutator(users) меняет список и возвращает {ids:[…]} или {skip:true}
-  let lastErr;
-  for (let i = 0; i < tries; i++) {
-    try {
-      let users = await cloudRead(), out = mutator(users);
-      if (!out || out.skip) return out;
-      await cloudPut(sj(users));
-      let back = await cloudRead();
-      if ((out.ids || []).every(id => sj(back.find(u => u.id === id)) === sj(users.find(u => u.id === id)))) return out;   // наши записи на месте
-    } catch (e) { lastErr = e; }
-    await sleep(250 + Math.random() * 700);          // кто-то писал одновременно — повторяем на свежих данных
-  }
-  throw lastErr || new Error('конфликт записи');
-}
-const OPID = () => 'op' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-function opNew(rec, id) { rec.ops = rec.ops || []; if (rec.ops.includes(id)) return false; rec.ops = rec.ops.concat(id).slice(-20); return true; }   // одна и та же операция не применится дважды
-function applyIncoming(inc) {
+function applyIncoming(inc) { // награды, пришедшие от бота (промокод из чата, звёзды, выдача, билет): счётчики растут только вверх
   if (!inc) return;
   let any = inc.grant !== 0 || inc.tk > 0 || inc.share || inc.gifts.length > 0;
   if (inc.grant) player.score = rnd2(player.score + inc.grant);
@@ -960,44 +939,30 @@ function applyIncoming(inc) {
   player.grantSeen = inc.grantT; player.tkSeen = inc.tkT; player.shareSeen = inc.shareT; player.giftSeen = inc.giftN;
   if (any) { saveLocal(); rerenderAll(); }
 }
-const hasPending = u => !!u && ((u.grantT || 0) > player.grantSeen || (u.tkT || 0) > player.tkSeen || (u.shareT || 0) > player.shareSeen || (u.giftN || 0) > player.giftSeen || u.grant || u.tkAdd || u.shareAdd || (Array.isArray(u.gifts) && u.gifts.some(g => !g.n)));
-async function flushCloud() {
-  if (!isTg || cloudBusy || !cloudDirty) return;
-  cloudBusy = true; cloudDirty = false; cloudStatus.state = 'sync';
+async function syncNow(keep) {
+  if (!isTg || !BOT_API) return;
+  if (syncBusy) { syncAgain = true; return; }
+  syncBusy = true; cloudStatus.state = 'sync';
   try {
-    if (!cloudReady) {                               // первый вход: берём из облака, если у нас пусто или там свежее
-      let u0 = (await cloudRead()).find(x => x.id === player.id);
-      if (u0 && mergeFromCloud(u0)) { saveLocal(); rerenderAll(); }
-      cloudReady = true;
-    }
-    let inc = null;
-    await cloudUpdate(users => {
-      let u = users.find(x => x.id === player.id);
-      if (!u) { u = { id: player.id }; users.push(u); }
-      promoEntry(users);
-      if (u.grant) { u.grantT = rnd2((u.grantT || 0) + u.grant); u.grant = 0; }                      // поля старой версии сворачиваем в счётчики
-      if (u.tkAdd) { u.tkT = (u.tkT || 0) + u.tkAdd; u.tkAdd = 0; }
-      if (u.shareAdd) { u.shareT = (u.shareT || 0) + 1; u.shareAdd = 0; }
-      if (Array.isArray(u.gifts)) u.gifts.forEach(g => { if (!g.n) g.n = u.giftN = (u.giftN || 0) + 1; });
-      inc = { grantT: u.grantT || 0, tkT: u.tkT || 0, shareT: u.shareT || 0, giftN: u.giftN || 0,
-              grant: rnd2((u.grantT || 0) - player.grantSeen), tk: (u.tkT || 0) - player.tkSeen,
-              share: (u.shareT || 0) > player.shareSeen, gifts: (u.gifts || []).filter(g => g.n > player.giftSeen) };
-      player.ts = Date.now(); u.first = u.first || Date.now(); u.seen = Date.now();
-      Object.assign(u, snapshot(inc), { username: player.username });
-      return { ids: [player.id] };
-    });
-    applyIncoming(inc);                              // награды применяем только после успешной записи
-    lastSig = sig(); cloudStatus.state = 'ok'; cloudStatus.at = Date.now(); renderCloudStatus();
-  } catch (e) { cloudDirty = true; cloudStatus.state = 'err'; cloudStatus.err = String((e && e.message) || e); renderCloudStatus(); }
-  cloudBusy = false;
+    player.ts = Date.now(); let sent = sig();
+    let d = await api('/api/sync', { snap: snapshot(), hadLocal, first: syncFirst }, keep);
+    if (d.adopt) { applySnapshot(d.snap); saveLocal(); rerenderAll(); }                 // новое устройство: берём сохранённое
+    if (d.adoptScore !== undefined) { player.score = d.adoptScore; saveLocal(); updateUI(); }
+    if (syncFirst) { syncFirst = false; cloudReady = true; }
+    applyIncoming(d.inc); refInfo = { refCount: d.refCount || 0, myPromo: d.myPromo || null };
+    lastSig = d.adopt || d.adoptScore !== undefined ? '' : sent; cloudDirty = sig() !== lastSig; cloudStatus.state = 'ok'; cloudStatus.at = Date.now();
+    if (cloudDirty) saveGame();
+  } catch (e) { cloudDirty = true; cloudStatus.state = 'err'; cloudStatus.err = String((e && e.message) || e); setTimeout(syncNow, 4000); }
+  syncBusy = false; if (syncAgain) { syncAgain = false; setTimeout(syncNow, 200); }
 }
-async function cloudPoll() { // раз в минуту только ЧИТАЕМ: пишем, если есть новые награды или несохранённые изменения
-  if (!isTg || !cloudReady || cloudBusy) return;
-  try { let users = await cloudRead(); if (hasPending(users.find(x => x.id === player.id))) { cloudDirty = true; flushCloud(); } else if (cloudDirty) flushCloud(); } catch (e) {}
+async function pollNow() { // каждые 4 сек спрашиваем бота, нет ли новых наград (промокод из чата, подарок, звёзды): мгновенно и дёшево
+  if (!isTg || !BOT_API || !cloudReady || syncBusy || document.hidden) return;
+  try { let d = await api('/api/poll', { seen: seenNow() }); applyIncoming(d.inc); refInfo = { refCount: d.refCount || 0, myPromo: d.myPromo || null }; } catch (e) {}
 }
-setInterval(cloudPoll, 60000);
-document.addEventListener('visibilitychange', () => { if (!cloudReady) return; if (document.hidden) { saveGame(); flushCloud(); } else setTimeout(cloudPoll, 1500); });
-window.addEventListener('pagehide', () => { if (cloudReady) { saveGame(); flushCloud(); } });
+setInterval(pollNow, 4000);
+setInterval(() => { if (cloudDirty && !syncBusy) syncNow(); }, 15000);            // повтор, если отправка не удалась
+document.addEventListener('visibilitychange', () => { if (!cloudReady) return; if (document.hidden) { saveGame(); if (cloudDirty) syncNow(true); } else pollNow(); });
+window.addEventListener('pagehide', () => { if (cloudReady && cloudDirty) syncNow(true); });
 
 async function loadGame() {
   try {
@@ -1016,23 +981,18 @@ async function loadGame() {
   updateUI(); renderInventory(); renderMinesInventorySelector(); renderUpgraderSelectors(); initMinesGrid(); updateMinesUI();
   el('guest-banner').style.display = isTg ? 'none' : 'block'; renderCloudStatus(); loadDrops(); renderDrops();
   renderBonusCards(); refreshBonus().then(renderBonusCards);
-  if (isTg) { cloudDirty = true; flushCloud(); }      // первое чтение облака: подтянет баланс/инвентарь, если локально пусто
+  if (isTg) syncNow();      // первая синхронизация: подтянет баланс/инвентарь с другого устройства
 }
 async function openUsersModal() {
   let list = el('modal-users-list');
-  list.innerHTML = '<div style="color:#8b93b0;font-size:13px;text-align:center">Загрузка списка из облака...</div>';
-  el('users-modal').classList.add('show');
-  let users = null, cached = false;
-  try { users = await fetchJson(NPOINT_URL); if (Array.isArray(users)) localStorage.setItem('brainrot_users_cache', JSON.stringify(users)); } catch (e) {}
-  if (!Array.isArray(users)) { try { users = JSON.parse(localStorage.getItem('brainrot_users_cache') || '[]'); cached = true; } catch (e) { users = []; } }
-  users = users.filter(u => typeof u.id === 'number');
-  if (!users.some(u => u.id === player.id)) users.unshift({ id: player.id, username: player.username, score: player.score, inv: packInv(player.inventory) });
-  list.innerHTML = (cached ? '<div style="color:#e67e22;font-size:11px;text-align:center">Облако недоступно — показаны сохранённые данные</div>' : '') + `<div class="hint" style="margin:0 0 4px">Всего игроков: ${users.length}</div>` +
-    users.map(u => {
-      let inv = Array.isArray(u.inv) ? u.inv : [], total = inv.reduce((a, g) => a + (g.count || 1), 0);
-      let items = inv.slice(0, 6).map(g => `${eh(g.name)}×${g.count || 1}`).join(', ') + (inv.length > 6 ? '…' : '');
-      return `<div class="admin-user-row"><div style="min-width:0"><b>@${eh(u.username)}</b><br><small style="color:#8b93b0">ID: ${Number(u.id)} • ${rnd2((Number(u.score) || 0) + (Number(u.grant) || 0) + ((Number(u.grantT) || 0) - (Number(u.grantSeen) || 0)))} BC • предметов: ${total}</small>${items ? `<br><small style="color:#6f7898">${items}</small>` : ''}</div><button class="btn" style="padding:5px 9px;font-size:11px;flex:0 0 auto;margin-left:6px" onclick="selectUserFromModal(${Number(u.id)})">Выбрать</button></div>`;
-    }).join('') || '<div style="color:#8b93b0;font-size:13px;text-align:center">Список игроков пуст</div>';
+  list.innerHTML = '<div style="color:#8b93b0;font-size:13px;text-align:center">Загрузка списка...</div>'; el('users-modal').classList.add('show');
+  try {
+    let d = await api('/api/admin/users', {});
+    list.innerHTML = `<div class="hint" style="margin:0 0 4px">Всего игроков: ${d.total}</div>` + (d.users.map(u => {
+      let items = (u.inv || []).map(g => `${eh(g.name)}×${g.count || 1}`).join(', ') + (u.items > (u.inv || []).reduce((a, g) => a + (g.count || 1), 0) ? '…' : '');
+      return `<div class="admin-user-row"><div style="min-width:0"><b>@${eh(u.username)}</b><br><small style="color:#8b93b0">ID: ${Number(u.id)} • ${u.balance} BC • предметов: ${u.items}</small>${items ? `<br><small style="color:#6f7898">${items}</small>` : ''}</div><button class="btn" style="padding:5px 9px;font-size:11px;flex:0 0 auto;margin-left:6px" onclick="selectUserFromModal(${Number(u.id)})">Выбрать</button></div>`;
+    }).join('') || '<div style="color:#8b93b0;font-size:13px;text-align:center">Список игроков пуст</div>');
+  } catch (e) { list.innerHTML = '<div style="color:#e74c3c;font-size:13px;text-align:center">Бот не отвечает — попробуйте через минуту</div>'; }
 }
 function closeUsersModal() { el('users-modal').classList.remove('show'); }
 function selectUserFromModal(id) {
@@ -1116,7 +1076,7 @@ setInterval(() => { if (player.energy < maxEnergy) { player.energy++; updateUI()
 /* ---------- кейсы ---------- */
 function openCaseDetails(key) {
   activeCaseKey = key; let c = casesDatabase[key]; currentCasePrice = c.price;
-  el('detail-case-title').innerText = `Кейс: ${c.name}`; el('case-box-icon').innerHTML = c.img ? `<img src="${c.img}" data-fb="${c.icon}" onerror="imgFail(this)" style="height:150px;max-width:100%;object-fit:cover;border-radius:18px;box-shadow:0 10px 22px #0009">` : c.icon;
+  el('detail-case-title').innerText = `Кейс: ${c.name}`; el('case-box-icon').innerHTML = c.img ? `<img src="${c.img}" data-alt="${c.img2 || ''}" data-fb="${c.icon}" onerror="imgFail(this)" style="height:150px;max-width:100%;object-fit:cover;border-radius:18px;box-shadow:0 10px 22px #0009">` : c.icon;
   el('price-x1').innerText = c.price + ' BC'; el('price-x3').innerText = c.price * 3 + ' BC'; el('price-x5').innerText = c.price * 5 + ' BC'; updateCountUI();
   el('prizes-grid').innerHTML = c.items.map(i => `<div class="prize-card">${media(i, 'prize-img')}<div class="prize-title">${i.name}</div><div class="prize-chance">${i.chance}%</div><div style="font-size:10px;color:#f39c12">+${i.sellPrice} BC</div></div>`).join('');
   specialSetup(c); resetCaseView(); switchView('case-detail', null);
@@ -1658,30 +1618,17 @@ function renderRefPromo(mine, offline) {
     : '<div style="display:flex;gap:6px"><input id="ref-promo-input" class="input-field" placeholder="Например MYCODE" maxlength="16" style="margin:0;flex:1"><button class="btn" style="background:#27ae60" onclick="createMyPromo()">Создать</button></div>';
 }
 async function openRefModal() {
-  el('ref-link').value = refLink(); el('ref-tickets').innerText = player.refTickets; el('ref-count').innerText = '…';
-  renderRefPromo(null, false); el('ref-modal').classList.add('show');
-  try {
-    let users = await fetchJson(NPOINT_URL); if (!Array.isArray(users)) users = [];
-    let me = users.find(u => u.id === player.id) || {}; el('ref-count').innerText = me.refCount || 0;
-    let e = users.find(u => u.id === '__promos__'), mine = e && Object.entries(e.codes || {}).find(([k, v]) => v.owner === player.id);
-    renderRefPromo(mine ? { code: mine[0], uses: (mine[1].usedBy || []).length } : null);
-  } catch (err) { renderRefPromo(null, true); }
+  el('ref-link').value = refLink(); el('ref-tickets').innerText = player.refTickets; el('ref-count').innerText = refInfo.refCount || 0;
+  renderRefPromo(refInfo.myPromo, !BOT_API && !refInfo.myPromo); el('ref-modal').classList.add('show');
+  pollNow().then(() => { el('ref-count').innerText = refInfo.refCount || 0; el('ref-tickets').innerText = player.refTickets; renderRefPromo(refInfo.myPromo, false); });
 }
 async function createMyPromo() {
   let code = el('ref-promo-input').value.trim().toUpperCase();
   if (!/^[A-Z0-9_]{3,16}$/.test(code)) return toast('Код: 3–16 символов, латиница, цифры или _');
-  let applied = false, err = null;
   try {
-    await cloudUpdate(users => {
-      let e = promoEntry(users), mine = Object.entries(e.codes).find(([k, v]) => v.owner === player.id);
-      if (mine) { if (applied && mine[0] === code) return { skip: true }; err = 'У вас уже есть свой промокод'; return { skip: true }; }
-      if (e.codes[code]) { err = 'Такой код уже занят'; return { skip: true }; }
-      e.codes[code] = { reward: PROMO_USER_REWARD, owner: player.id, ownerReward: PROMO_OWNER_REWARD, usedBy: [] }; applied = true; err = null;
-      return { ids: ['__promos__'] };
-    });
-    if (err) return toast(err);
-    renderRefPromo({ code, uses: 0 }); toast('Промокод создан ✅');
-  } catch (e) { toast('Нет связи, попробуйте ещё раз'); }
+    let d = await api('/api/promo/create', { code }); if (d.err) return toast(d.err);
+    refInfo.myPromo = { code: d.code, uses: 0 }; renderRefPromo(refInfo.myPromo); toast('Промокод создан ✅');
+  } catch (e) { toast('Бот не отвечает, попробуйте ещё раз'); }
 }
 /* ---------- пополнение звёздами (1 ⭐ = 1.5 BC) ---------- */
 const STAR_PACKS = [10, 50, 100, 250, 500, 1000];
@@ -1699,7 +1646,7 @@ async function buyStars(stars) {
     let r = await fetch(BOT_API + '/api/invoice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars, initData: TGW.initData }) });
     let d = await r.json(); if (!d.link) throw new Error(d.error || 'no link');
     TGW.openInvoice(d.link, st => {
-      if (st === 'paid') { closeTopup(); toast('Оплата прошла ✅ Монеты придут через пару секунд'); [2000, 5000, 10000, 20000].forEach(ms => setTimeout(() => { cloudDirty = true; flushCloud(); }, ms)); }
+      if (st === 'paid') { closeTopup(); toast('Оплата прошла ✅ Монеты придут через пару секунд'); [1000, 3000, 6000, 12000].forEach(ms => setTimeout(pollNow, ms)); }
       else if (st === 'failed') alert('Оплата не прошла');
     });
   } catch (e) { alert('Не удалось создать счёт. Попробуйте позже.'); }
@@ -1723,23 +1670,12 @@ function claimDevBonus() {
 }
 async function activatePromo() {
   let code = el('promo-input').value.trim(); if (!code) return toast('Введите промокод');
-  let applied = false, res = null;
   try {
-    await cloudUpdate(users => {
-      let codes = promoEntry(users).codes, key = codes[code] ? code : codes[code.toUpperCase()] ? code.toUpperCase() : null, info = key && codes[key];
-      if (!info) { if (!applied) res = { err: 'Промокод не найден' }; return { skip: true }; }
-      if (info.owner === player.id) { res = { err: 'Нельзя использовать собственный код' }; return { skip: true }; }
-      if ((info.usedBy || []).includes(player.id)) { if (!applied) res = { err: 'Вы уже использовали этот промокод' }; return { skip: true }; }
-      info.usedBy = (info.usedBy || []).concat(player.id); applied = true; res = { reward: info.reward };
-      let ids = ['__promos__'], ow = info.owner && users.find(u => u.id === info.owner);                  // владелец личного промокода
-      if (ow) { ow.grantT = rnd2((ow.grantT || 0) + (info.ownerReward || 0)); ow.tkT = (ow.tkT || 0) + 1; ow.refCount = (ow.refCount || 0) + 1; ids.push(ow.id); }
-      return { ids };
-    });
-    if (res.err) return toast(res.err);
-    player.score = rnd2(player.score + res.reward); el('promo-input').value = ''; updateUI(); saveGame(); toast(`Активировано! +${res.reward} BC`);
-  } catch (e) {
-    if (applied) return toast('Не удалось подтвердить — нажмите ещё раз');
-    let key = DEFAULT_PROMOS[code] ? code : DEFAULT_PROMOS[code.toUpperCase()] ? code.toUpperCase() : null, used = [];   // нет связи: встроенные коды проверяем на устройстве
+    let d = await api('/api/promo', { code, seen: seenNow() });
+    if (d.err) return toast(d.err);
+    applyIncoming(d.inc); el('promo-input').value = ''; saveGame(); toast(`Активировано! +${d.reward} BC`);          // баланс растёт сразу
+  } catch (e) {   // бот недоступен: встроенные коды проверяем на устройстве
+    let key = DEFAULT_PROMOS[code] ? code : DEFAULT_PROMOS[code.toUpperCase()] ? code.toUpperCase() : null, used = [];
     try { used = JSON.parse(localStorage.getItem('promo_used') || '[]'); } catch (er) {}
     if (!key) return toast('Не удалось проверить промокод — попробуйте через минуту');
     if (used.includes(key)) return toast('Вы уже использовали этот промокод');
@@ -1752,15 +1688,8 @@ async function grantBalanceToUser() {
   let id = parseInt(el('grant-user-id').value), amt = parseFloat(el('grant-amount').value);
   if (isNaN(id) || isNaN(amt)) return toast('Заполните ID и сумму');
   if (id === player.id) { player.score = rnd2(player.score + amt); updateUI(); saveGame(); return toast('Баланс изменён'); }
-  let op = OPID(), found = true;
-  try {
-    await cloudUpdate(users => {
-      let t = users.find(u => u.id === id); if (!t) { found = false; return { skip: true }; }
-      found = true; if (!opNew(t, op)) return { skip: true };
-      t.grantT = rnd2((t.grantT || 0) + amt); return { ids: [id] };
-    });
-    toast(found ? 'Готово! Игрок получит изменение в течение минуты' : 'Игрок не найден в базе');
-  } catch (e) { toast('Не получилось, попробуйте ещё раз'); }
+  try { let d = await api('/api/admin/grant', { id, amount: amt }); toast(d.err || 'Готово! Игрок получит изменение в течение нескольких секунд'); }
+  catch (e) { toast('Бот не отвечает, попробуйте ещё раз'); }
 }
 async function adminGiveItemToUser() {
   if (player.id !== OWNER_TELEGRAM_ID) return;
@@ -1768,38 +1697,31 @@ async function adminGiveItemToUser() {
   let icon = el('give-item-icon').value.trim() || "🎁", price = parseFloat(el('give-item-price').value);
   if (isNaN(id) || !name || isNaN(price)) return toast('Заполните все поля предмета');
   if (id === player.id) { player.inventory.push({ name, icon, sellPrice: price }); refreshAll(); return toast(`Предмет "${name}" выдан вам`); }
-  let op = OPID(), found = true;
-  try {
-    await cloudUpdate(users => {
-      let t = users.find(u => u.id === id); if (!t) { found = false; return { skip: true }; }
-      found = true; if (!opNew(t, op)) return { skip: true };
-      t.giftN = (t.giftN || 0) + 1; t.gifts = (t.gifts || []).concat({ n: t.giftN, name, icon, sellPrice: price }).slice(-50); return { ids: [id] };
-    });
-    toast(found ? `Предмет "${name}" отправлен игроку ${id}` : 'Игрок не найден в базе');
-  } catch (e) { toast('Не получилось, попробуйте ещё раз'); }
+  try { let d = await api('/api/admin/gift', { id, name, icon, price }); toast(d.err || `Предмет "${name}" отправлен игроку ${id}`); }
+  catch (e) { toast('Бот не отвечает, попробуйте ещё раз'); }
 }
 async function adminCreatePromo() {
   if (player.id !== OWNER_TELEGRAM_ID) return;
   let code = el('admin-promo-code').value.trim(), reward = parseFloat(el('admin-promo-reward').value);
   if (!code || isNaN(reward) || reward <= 0) return toast('Заполните промокод и награду');
-  let applied = false;
   try {
-    await cloudUpdate(users => { let e = promoEntry(users); if (applied && e.codes[code]) return { skip: true }; e.codes[code] = { reward, usedBy: [] }; applied = true; return { ids: ['__promos__'] }; });
-    el('admin-promo-code').value = ''; el('admin-promo-reward').value = ''; toast(`🎫 Промокод "${code}" на ${reward} BC создан`); renderAdminPromos();
-  } catch (e) { toast('Не получилось сохранить, попробуйте ещё раз'); }
+    let d = await api('/api/admin/promo', { op: 'create', code, reward }); if (d.err) return toast(d.err);
+    el('admin-promo-code').value = ''; el('admin-promo-reward').value = ''; toast(`🎫 Промокод "${code}" на ${reward} BC создан`); drawAdminPromos(d.codes);
+  } catch (e) { toast('Бот не отвечает, попробуйте ещё раз'); }
 }
 async function adminDeletePromo(code) {
   if (player.id !== OWNER_TELEGRAM_ID) return;
-  try { await cloudUpdate(users => { let e = promoEntry(users); if (!e.codes[code]) return { skip: true }; delete e.codes[code]; return { ids: ['__promos__'] }; }); toast('Промокод удалён'); renderAdminPromos(); }
-  catch (e) { toast('Не получилось, попробуйте ещё раз'); }
+  try { let d = await api('/api/admin/promo', { op: 'delete', code }); toast('Промокод удалён'); drawAdminPromos(d.codes); }
+  catch (e) { toast('Бот не отвечает, попробуйте ещё раз'); }
+}
+function drawAdminPromos(codesObj) {
+  let box = el('admin-promo-list'); if (!box) return; let codes = Object.entries(codesObj || {});
+  box.innerHTML = `<div style="font-size:13px;font-weight:600;margin:8px 0 6px;color:#9a93c4">📋 Список промокодов (${codes.length})</div>` + (codes.map(([k, v]) =>
+    `<div class="admin-user-row"><div><b>${eh(k)}</b> · ${v.reward} BC<br><small style="color:#8b93b0">Активаций: ${(v.usedBy || []).length}${v.owner ? ' · игрок ' + Number(v.owner) : ''}</small></div><button class="btn" style="padding:5px 9px;font-size:11px;background:#c0392b" data-c="${eh(k)}" onclick="adminDeletePromo(this.dataset.c)">✕</button></div>`).join('') || '<div class="hint">Пока нет промокодов</div>');
 }
 async function renderAdminPromos() {
   let box = el('admin-promo-list'); if (!box) return;
-  try {
-    let users = await cloudRead(), e = users.find(u => u.id === '__promos__'), codes = Object.entries((e && e.codes) || {});
-    box.innerHTML = `<div style="font-size:13px;font-weight:600;margin:8px 0 6px;color:#9a93c4">📋 Список промокодов (${codes.length})</div>` + (codes.map(([k, v]) =>
-      `<div class="admin-user-row"><div><b>${eh(k)}</b> · ${v.reward} BC<br><small style="color:#8b93b0">Активаций: ${(v.usedBy || []).length}${v.owner ? ' · игрок ' + Number(v.owner) : ''}</small></div><button class="btn" style="padding:5px 9px;font-size:11px;background:#c0392b" data-c="${eh(k)}" onclick="adminDeletePromo(this.dataset.c)">✕</button></div>`).join('') || '<div class="hint">Пока нет промокодов</div>');
-  } catch (err) { box.innerHTML = '<div class="hint">Не удалось загрузить список — попробуйте позже</div>'; }
+  try { let d = await api('/api/admin/promo', { op: 'list' }); drawAdminPromos(d.codes); } catch (e) { box.innerHTML = '<div class="hint">Список загрузится, когда бот ответит</div>'; }
 }
 function renderAdminCaseItemsList() {
   let k = el('admin-case-select').value;
