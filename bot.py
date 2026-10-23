@@ -25,34 +25,32 @@ OWNER_ID = int(os.environ.get('OWNER_ID', '6638127989'))
 NEWS_URL = 'https://t.me/Brainrotscase'
 SUPPORT_URL = 'https://t.me/parasras'
 PROMO_PROMPT = "Отправьте бонус-код ответом на это сообщение"
-STAR_RATE = 1.5  # 1 звезда = 1.5 монеты
+STAR_RATE = 1.5
 NEWS_CHAT = '@Brainrotscase'  # канал для проверки подписки (бот должен быть админом канала)
-
+# 1 звезда = 1.5 монеты
 BOT_USERNAME = os.environ.get('BOT_USERNAME', 'Brainrotscase_bot')
 SHARE_IMAGE = os.environ.get('SHARE_IMAGE', WEB_APP_URL.rstrip('/') + '/banner.jpg')  # картинка в сообщении для друзей
 SHARE_THUMB = os.environ.get('SHARE_THUMB', WEB_APP_URL.rstrip('/') + '/banner_s.jpg')
-SHARE_TEXT = "Получай бесплатный кейс в нашем боте\n\n» Апгрейди брейнрота\n>>> Забирай бонус\n\nЗаходи в Brainrot Case"
+SHARE_TEXT = "Получай бесплатный кейс в нашем боте\n\n» Апгрейди брейнрота\n>>> Забирай бонус\n\n Заходи в Brainrot Case"
 SHARE_COOLDOWN_MS = 12 * 3600 * 1000
 BOT_NICK = 'brainrotscase_bot'  # что должно быть в имени игрока для «кейса за ник»
-WELCOME_TEXT = "Привет!\n\nДобро пожаловать в BRAINROT CASE!\nНажми кнопку ниже, чтобы открыть приложение, крутить кейсы и фармить BC!"
+WELCOME_TEXT = "Привет!\n\nДобро пожаловать в BRAINROT CASE! \nНажми кнопку ниже, чтобы открыть приложение, крутить кейсы и фармить ВС!"
 DEFAULT_PROMOS = {"Uuu": {"reward": 100, "usedBy": []}, "ADMIN1000": {"reward": 1000, "usedBy": []}}
 PROMO_USER_REWARD = 50  # личный промокод игрока: друг получает
 PROMO_OWNER_REWARD = 25  # ..а владелец кода получает
-
-SNAP_KEYS = ("score", "energy", "level", "clicks", "freeAt", "nickAt", "subAt",
-             "shareCredits", "refTickets", "inv", "ts", "grantSeen", "tkSeen", "shareSeen", "giftSeen")
+SNAP_KEYS = ("score", "energy", "level", "clicks", "freeAt", "nickAt", "subAt", "shareCredits", "refTickets", "inv", "ts", "grantSeen", "tkSeen", "shareSeen", "giftSeen")
 
 app = Flask(__name__)
 CORS(app)
-http = requests.Session()  # одно соединение на все запросы быстрее
+http = requests.Session()
+# одно соединение на все запросы (быстрее)
+http.mount('https://', requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=30))
 
 known_ids = set()
-users_db = {}
-
-# ВСЕ данные игроков живут в памяти бота (мгновенно); npoint только копия на диск
+users_db = {}  # ВСЕ данные игроков живут в памяти бота (мгновенно); npoint только копия на диск
 state_lock = threading.RLock()
-USERS = {}   # id -> запись игрока
-PROMOS = {}  # код -> {reward, usedBy, [owner, ownerReward]}
+USERS = {}     # id -> запись игрока
+PROMOS = {}    # код -> {reward, usedBy, [owner, ownerReward]}
 S = {"loaded": False, "dirty": False, "last_save": 0.0, "empty_seen": False}
 
 def now_ms():
@@ -62,7 +60,7 @@ def mark():
     S["dirty"] = True
 
 def migrate(rec):
-    """Старые поля (grant/tkAdd/shareAdd/gifts без номера) → накопительные счётчики."""
+    """Старые поля (grant/tkAdd/shareAdd/gifts без номера) накопительные счётчики."""
     g = rec.pop("grant", 0)
     if g:
         rec["grantT"] = round(rec.get("grantT", 0) + g, 2)
@@ -86,7 +84,7 @@ def read_npoint():
     return data
 
 def save_npoint(arr):
-    # npoint обновляет документ методом POST; если не принял —пробуем PUT
+    # npoint обновляет документ методом POST; если не принял пробуем PUT
     last = None
     for send in (http.post, http.put):
         try:
@@ -106,12 +104,9 @@ def load_state():
             promos = e.get("codes") or {}
         elif isinstance(e, dict) and isinstance(e.get("id"), int):
             users[e["id"]] = migrate(e)
-
     if not users and not S["empty_seen"]:
-        # пустой ответ может быть сбоем — перепроверим один раз
         S["empty_seen"] = True
-        raise RuntimeError("пустая база — перепроверяю")
-
+        raise RuntimeError("пустая база — перепроверяю один раз")  # пустой ответ может быть сбоем
     with state_lock:
         USERS.clear()
         USERS.update(users)
@@ -124,13 +119,13 @@ def load_state():
 def flush_now():
     with state_lock:
         arr = [{"id": "_promos_", "codes": copy.deepcopy(PROMOS)}] + [copy.deepcopy(u) for u in USERS.values()]
-    try:
-        S["dirty"] = False
-        save_npoint(arr)
-        S["last_save"] = time.time()
-    except Exception as e:
-        S["dirty"] = True
-        print("сохранение не удалось, повторю:", e)
+        try:
+            S["dirty"] = False
+            save_npoint(arr)
+            S["last_save"] = time.time()
+        except Exception as e:
+            S["dirty"] = True
+            print("сохранение не удалось, повторю:", e)
 
 def persist_loop():
     while True:
@@ -138,13 +133,13 @@ def persist_loop():
         try:
             if not S["loaded"]:
                 load_state()
-            elif (S["dirty"] and (time.time() - S["last_save"] >= 2.5)) or (time.time() - S["last_save"] > 60):
-                # изменения уходят на диск за 3 секунды, а раз в минуту — для надёжности
+            elif (S["dirty"] and time.time() - S["last_save"] >= 2.5) or time.time() - S["last_save"] > 60:
                 flush_now()
         except Exception as e:
             print("база:", e)
             time.sleep(1.5)
 
+# изменения уходят на диск за 3 секунды, а раз в минуту для надёжности
 def wait_loaded(timeout=8.0):
     t = time.time()
     while not S["loaded"] and time.time() - t < timeout:
@@ -152,7 +147,7 @@ def wait_loaded(timeout=8.0):
     return S["loaded"]
 
 def game_url():
-    """Ссылка на игру: бот сам передаёт игре свой адрес (?api=...), v= сбрасывает старый кэш."""
+    """Ссылка на игру: бот сам передаёт игре свой адрес (?api...), v= сбрасывает старый кэш."""
     api = os.environ.get('RENDER_EXTERNAL_URL', '')
     if not api:
         return WEB_APP_URL
@@ -204,17 +199,15 @@ def get_rec(user):
     return rec
 
 def compute_inc(rec, seen):
-    """Что игрок ещё не забрал: счётчики растут только вверх, игра хранит «забрал до», повтор запроса безопасен."""
+    """Что игрок ещё не забрал: счётчики растут только вверх, игра хранит «забрал до ...», повтор запроса безопасен."""
     seen = seen if isinstance(seen, dict) else {}
     g, t, s, n = rec.get("grantT", 0), rec.get("tkT", 0), rec.get("shareT", 0), rec.get("giftN", 0)
     gs = float(seen.get("grantSeen") or 0)
-    return {
-        "grantT": g, "tkT": t, "shareT": s, "giftN": n,
-        "grant": round(g - gs, 2),
-        "tk": t - int(seen.get("tkSeen") or 0),
-        "share": s > int(seen.get("shareSeen") or 0),
-        "gifts": [x for x in (rec.get("gifts") or []) if x.get("n", 0) > int(seen.get("giftSeen") or 0)]
-    }
+    return {"grantT": g, "tkT": t,
+            "shareT": s, "giftN": n,
+            "grant": round(g - gs, 2), "tk": t - int(seen.get("tkSeen") or 0),
+            "share": s > int(seen.get("shareSeen") or 0),
+            "gifts": [x for x in (rec.get("gifts") or []) if x.get("n", 0) > int(seen.get("giftSeen") or 0)]}
 
 def my_promo(uid):
     for k, v in PROMOS.items():
@@ -235,8 +228,8 @@ def clean_snap(s):
 
 def redeem_code(user, code):
     """Промокод (из игры и из чата): мгновенно, в памяти. Возвращает {"reward": n} или {"err": текст}."""
-    uid = user["id"]
     with state_lock:
+        uid = user["id"]
         key = code if code in PROMOS else (code.upper() if code.upper() in PROMOS else None)
         if key is None:
             return {"err": "Промокод не найден"}
@@ -245,11 +238,9 @@ def redeem_code(user, code):
             return {"err": "Нельзя использовать собственный код"}
         if uid in info.get("usedBy", []):
             return {"err": "Вы уже использовали этот промокод"}
-
         rec = get_rec(user)
         rec["grantT"] = round(rec.get("grantT", 0) + info["reward"], 2)
         info.setdefault("usedBy", []).append(uid)
-
         owner = USERS.get(info["owner"]) if info.get("owner") else None
         if owner:
             # личный промокод игрока: ему тоже награда + билет
@@ -284,22 +275,20 @@ def register_referral(user, payload):
         inviter["refCount"] = inviter.get("refCount", 0) + 1
         mark()
         known_ids.add(uid)
-        tg("sendMessage", chat_id=inviter_id,
-           text=f"По вашей ссылке пришёл @{name_of(user)}! Вам начислен реферальный билет на кейс.")
+    tg("sendMessage", chat_id=inviter_id, text=f"По вашей ссылке пришёл @{name_of(user)}! Вам начислен билет на реферальный кейс.")
 
 def grant_share(user, via_inline):
-    """Отправка сообщения друзьям подтверждена: одно разблокирование в 12 часов."""
+    """Отправка сообщения друзьям подтверждена: засчитываем, если бесплатный кейс сейчас не на перезарядке."""
     with state_lock:
         rec = get_rec(user)
-        t, last = now_ms(), rec.get("lastShare", 0)
-        if t - last >= SHARE_COOLDOWN_MS:
+        t = now_ms()
+        if t >= rec.get("freeAt", 0):
             rec["lastShare"] = t
             if via_inline:
-                # через игру кредит выдаёт сама игра (в ответе), через inline копим счётчик
-                rec["shareT"] = rec.get("shareT", 0) + 1
+                rec["shareT"] = rec.get("shareT", 0) + 1  # через игру кредит выдаёт сама игра (в ответе), через inline копим счётчик
             mark()
             return True
-        return t - last < 120000  # то же самое отправление, что уже учли
+    return False
 
 # проверка подписи Telegram
 def verify_init_data(init_data):
@@ -326,7 +315,7 @@ def auth():
         return data, user, (jsonify({"error": "loading"}), 503)
     return data, user, None
 
-# API для игры (всё в памяти — отвечает за миллисекунды)
+# API для игры (всё в памяти, отвечает за миллисекунды)
 @app.route('/api/sync', methods=['POST'])
 def api_sync():
     data, user, err = auth()
@@ -345,8 +334,8 @@ def api_sync():
                 out["adopt"] = True
                 out["snap"] = {k: rec[k] for k in SNAP_KEYS if k in rec}
             elif rec.get("inv") is None and rec.get("score", 0) > snap.get("score", 0):
-                out["adoptScore"] = rec["score"]  # запись из очень старой версии: был только баланс
-                snap.pop("score", None)
+                out["adoptScore"] = rec["score"]
+                snap.pop("score", None)  # запись из очень старой версии: был только баланс
         if not adopt and snap and any(rec.get(k) != v for k, v in snap.items()):
             rec.update(snap)
             mark()
@@ -363,11 +352,7 @@ def api_poll():
     with state_lock:
         rec = get_rec(user)
         rec["seen"] = now_ms()
-        return jsonify({
-            "inc": compute_inc(rec, data.get("seen")),
-            "refCount": rec.get("refCount", 0),
-            "myPromo": my_promo(user["id"])
-        })
+        return jsonify({"inc": compute_inc(rec, data.get("seen")), "refCount": rec.get("refCount", 0), "myPromo": my_promo(user["id"])})
 
 @app.route('/api/promo', methods=['POST'])
 def api_promo():
@@ -379,7 +364,7 @@ def api_promo():
         return jsonify(res)
     with state_lock:
         res["inc"] = compute_inc(USERS[user["id"]], data.get("seen"))
-        return jsonify(res)
+    return jsonify(res)
 
 @app.route('/api/promo/create', methods=['POST'])
 def api_promo_create():
@@ -394,12 +379,7 @@ def api_promo_create():
             return jsonify({"err": "У вас уже есть свой промокод"})
         if code in PROMOS:
             return jsonify({"err": "Такой код уже занят"})
-        PROMOS[code] = {
-            "reward": PROMO_USER_REWARD,
-            "owner": user["id"],
-            "ownerReward": PROMO_OWNER_REWARD,
-            "usedBy": []
-        }
+        PROMOS[code] = {"reward": PROMO_USER_REWARD, "owner": user["id"], "ownerReward": PROMO_OWNER_REWARD, "usedBy": []}
         mark()
         return jsonify({"code": code})
 
@@ -425,8 +405,8 @@ def api_admin_users():
                 "id": u["id"],
                 "username": u.get("username"),
                 "balance": round(u.get("score", 0) + pend, 2),
-                "inv": len(inv),
-                "items": inv[:6],
+                "items": sum(g.get("count", 1) for g in inv),
+                "inv": inv[:6],
                 "seen": u.get("seen", 0)
             })
         rows.sort(key=lambda r: r["seen"], reverse=True)
@@ -507,9 +487,9 @@ def api_invoice():
     coins = round(stars * STAR_RATE, 2)
     r = http.post(f"{TELEGRAM_API_URL}/createInvoiceLink", json={
         "title": "Пополнение баланса",
-        "description": f"{stars} ⭐ = {coins} BC",
+        "description": f"{stars} = {coins} BC",
         "payload": f"topup_{stars}",
-        "currency": "XTR",  # Telegram Stars
+        "currency": "XTR",
         "prices": [{"label": "BC", "amount": stars}],
     }, timeout=10).json()
     if not r.get("ok"):
@@ -524,10 +504,7 @@ def api_check():
     name = f"{user.get('first_name', '')} {user.get('last_name', '')}".lower()
     sub = None  # None = проверить не удалось (бот не админ канала)
     try:
-        m = http.get(f"{TELEGRAM_API_URL}/getChatMember", params={
-            "chat_id": NEWS_CHAT,
-            "user_id": user["id"]
-        }, timeout=6).json()
+        m = http.get(f"{TELEGRAM_API_URL}/getChatMember", params={"chat_id": NEWS_CHAT, "user_id": user["id"]}, timeout=6).json()
         if m.get("ok"):
             sub = m["result"]["status"] in ("creator", "administrator", "member", "restricted")
     except Exception as e:
@@ -539,30 +516,17 @@ def share_result(uid):
     """Сообщение для друзей: картинка сверху, текст, кнопка входа с реф-ссылкой отправителя."""
     link = f"https://t.me/{BOT_USERNAME}?start=ref_{uid}"
     return {
-        "type": "photo",
-        "id": "share",
-        "photo_url": SHARE_IMAGE,
-        "thumbnail_url": SHARE_THUMB,
-        "photo_width": 1280,
-        "photo_height": 714,
-        "title": "Бесплатный кейс",
-        "description": "Отправь друзьям и забери кейс",
+        "type": "photo", "id": "share",
+        "photo_url": SHARE_IMAGE, "thumbnail_url": SHARE_THUMB, "photo_width": 1280, "photo_height": 714,
+        "title": "Бесплатный кейс", "description": "Отправь друзьям и забери кейс",
         "caption": SHARE_TEXT,
-        "reply_markup": {
-            "inline_keyboard": [[{
-                "text": "Забрать бесплатный кейс",
-                "url": link,
-                "style": "success"
-            }]]
-        },
+        "reply_markup": {"inline_keyboard": [[{"text": "Забрать бесплатный кейс", "url": link, "style": "success"}]]},
     }
 
 def share_article(uid):
     """Запасной вариант без картинки (если картинка недоступна Telegram)."""
     return {
-        "type": "article",
-        "id": "share",
-        "title": "Бесплатный кейс",
+        "type": "article", "id": "share", "title": "Бесплатный кейс",
         "description": "Отправь друзьям и забери кейс",
         "input_message_content": {"message_text": SHARE_TEXT},
         "reply_markup": share_result(uid)["reply_markup"]
@@ -570,24 +534,19 @@ def share_article(uid):
 
 def prepare_message(uid, result):
     return http.post(f"{TELEGRAM_API_URL}/savePreparedInlineMessage", json={
-        "user_id": uid,
-        "result": result,
-        "allow_user_chats": True,
-        "allow_group_chats": True,
-        "allow_bot_chats": False,
-        "allow_channel_chats": False,
+        "user_id": uid, "result": result,
+        "allow_user_chats": True, "allow_group_chats": True, "allow_bot_chats": False, "allow_channel_chats": False,
     }, timeout=10).json()
 
 @app.route('/api/share', methods=['POST'])
 def api_share():
-    """Игра просит подготовить сообщение, потом Telegram показывает «Отправить сообщение» с выбором чата."""
+    """Игра просит подготовить сообщение потом Telegram показывает «Отправить сообщение» с выбором чата."""
     data, user, err = auth()
     if err:
         return err
     photo = True
     r = prepare_message(user["id"], share_result(user["id"]))
     if not r.get("ok"):
-        # чаще всего недоступна картинка: пробуем без неё
         print("savePreparedInlineMessage (photo) failed:", r)
         photo = False
         r = prepare_message(user["id"], share_article(user["id"]))
@@ -598,7 +557,7 @@ def api_share():
 
 @app.route('/api/shared', methods=['POST'])
 def api_shared():
-    """Telegram сообщил игре, что сообщение отправлено: разрешаем бесплатный кейс (не чаще раза в 12 часов)."""
+    """Telegram сообщил игре, что сообщение отправлено — разрешаем бесплатный кейс (не чаще раза в 12 часов)."""
     data, user, err = auth()
     if err:
         return err
@@ -606,16 +565,23 @@ def api_shared():
     with state_lock:
         return jsonify({"granted": granted, "shareT": get_rec(user).get("shareT", 0)})
 
-# Telegram Webhook handlers
+# Telegram
 def welcome_payload(chat_id):
     keyboard = {
         "inline_keyboard": [
-            [{"text": "Играть в BRAINROT CASE", "web_app": {"url": game_url()}}],
+            [
+                {
+                    "text": "Играть в BRAINROT CASE",
+                    "web_app": {"url": game_url()}
+                }
+            ],
             [
                 {"text": "Новости", "url": NEWS_URL},
                 {"text": "Поддержка", "url": SUPPORT_URL}
             ],
-            [{"text": "Ввести бонус-код", "callback_data": "promo"}]
+            [
+                {"text": "Ввести бонус-код", "callback_data": "promo"}
+            ]
         ]
     }
     return {"method": "sendMessage", "chat_id": chat_id, "text": WELCOME_TEXT, "reply_markup": keyboard}
@@ -623,19 +589,13 @@ def welcome_payload(chat_id):
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
     update = request.get_json(silent=True) or {}
-    if "pre_checkout_query" in update:  # оплата звёздами: подтверждаем счёт прямо в ответе
-        return jsonify({
-            "method": "answerPreCheckoutQuery",
-            "pre_checkout_query_id": update["pre_checkout_query"]["id"],
-            "ok": True
-        })
-    
+    if "pre_checkout_query" in update:  # оплата звездами: подтверждаем счёт прямо в ответе
+        return jsonify({"method": "answerPreCheckoutQuery", "pre_checkout_query_id": update["pre_checkout_query"]["id"], "ok": True})
     msg = update.get("message") or {}
     text = (msg.get("text") or "").strip()
     if text and text.split(" ", 1)[0].split("@")[0] == "/start":
         threading.Thread(target=process_update, args=(update, True), daemon=True).start()
-        return jsonify(welcome_payload(msg["chat"]["id"]))  # приветствие прямо в ответе вебхука: самый быстрый путь
-
+        return jsonify(welcome_payload(msg["chat"]["id"]))  # приветствие в ответе вебхука: самый быстрый путь
     threading.Thread(target=process_update, args=(update, False), daemon=True).start()
     return "OK", 200
 
@@ -661,18 +621,14 @@ def tg(method, **payload):
         print("telegram error:", e)
 
 def ask_promo(chat_id):
-    # force_reply: ответ пользователя приходит как reply на это сообщение, работает и после перезапуска сервера
-    tg("sendMessage", chat_id=chat_id, text=PROMO_PROMPT,
-       reply_markup={"force_reply": True, "input_field_placeholder": "Бонус-код"})
+    # force_reply: ответ пользователя приходит как reply на это сообщение — работает и после перезапуска сервера
+    tg("sendMessage", chat_id=chat_id, text=PROMO_PROMPT, reply_markup={"force_reply": True, "input_field_placeholder": "Бонус-код"})
 
 def try_redeem(chat_id, user, code):
     if not wait_loaded():
-        return tg("sendMessage", chat_id=chat_id,
-                  text="Бот только проснулся, повторите код через несколько секунд.")
+        return tg("sendMessage", chat_id=chat_id, text="Бот только проснулся, повторите код через несколько секунд.")
     res = redeem_code(user, code.strip())
-    tg("sendMessage", chat_id=chat_id,
-       text=f"Бонус-код принят! +{res['reward']} BC. Монеты уже начисляются в игре."
-       if "reward" in res else f"❌ {res['err']}.")
+    tg("sendMessage", chat_id=chat_id, text=f"Бонус-код принят! +{res['reward']} ВС. Монеты уже начисляются в игре." if "reward" in res else f"❌ {res['err']}.")
 
 def promo_exists(text):
     with state_lock:
@@ -692,7 +648,7 @@ def on_payment(msg):
         rec["grantT"] = round(rec.get("grantT", 0) + coins, 2)
         rec["paid"] = (paid + [charge])[-50:]
         mark()
-    tg("sendMessage", chat_id=msg["chat"]["id"], text=f"Пополнение: {stars} ⭐ = +{coins} BC. Монеты уже в игре!")
+    tg("sendMessage", chat_id=msg["chat"]["id"], text=f"Пополнение: {stars} ⭐ = +{coins} ВС. Монеты уже в игре!")
 
 def on_message(msg, welcomed=False):
     if msg.get("successful_payment"):
@@ -707,7 +663,6 @@ def on_message(msg, welcomed=False):
     cmd, _, rest = text.partition(" ")
     cmd = cmd.split("@")[0]
     rest = rest.strip()
-
     if cmd == "/start":
         if not welcomed:
             payload = welcome_payload(chat_id)
@@ -727,17 +682,14 @@ def on_message(msg, welcomed=False):
 
 def on_inline_query(q):
     """Запасной путь: сообщение для друзей через выбор чата в самом Telegram."""
-    tg("answerInlineQuery", inline_query_id=q["id"], results=[share_result(q["from"]["id"])],
-       cache_time=0, is_personal=True)
+    tg("answerInlineQuery", inline_query_id=q["id"], results=[share_result(q["from"]["id"])], cache_time=0, is_personal=True)
 
 def on_chosen(c):
     if c.get("result_id") != "share" or not wait_loaded():
         return
     user = c["from"]
     ok = grant_share(user, via_inline=True)
-    tg("sendMessage", chat_id=user["id"],
-       text="Сообщение отправлено! Бесплатный кейс ждёт тебя в игре." if ok
-       else "Ты уже получал кейс за отправку — следующий через 12 часов.")
+    tg("sendMessage", chat_id=user["id"], text="Сообщение отправлено! Бесплатный кейс ждёт тебя в игре." if ok else "Ты уже получал кейс за отправку — следующий через 12 часов.")
 
 def on_callback(q):
     tg("answerCallbackQuery", callback_query_id=q["id"])
@@ -777,12 +729,13 @@ if __name__ == '__main__':
             "url": f"{render_url}/{TOKEN}",
             "allowed_updates": ["message", "callback_query", "pre_checkout_query", "inline_query", "chosen_inline_result"],
         }, timeout=10)
-        try:
-            # кнопка меню чата с ботом тоже открывает игру с адресом бота (?api=...)
-            http.post(f"{TELEGRAM_API_URL}/setChatMenuButton", json={
-                "menu_button": {"type": "web_app", "text": "Играть", "web_app": {"url": game_url()}}
-            }, timeout=10)
-        except Exception as e:
-            print("menu button error:", e)
+    try:  # кнопка меню чата с ботом тоже открывает игру с адресом бота (?api=...)
+        http.post(f"{TELEGRAM_API_URL}/setChatMenuButton", json={"menu_button": {"type": "web_app", "text": "Играть", "web_app": {"url": game_url()}}}, timeout=10)
+    except Exception as e:
+        print("menu button error:", e)
     port = int(os.environ.get('PORT', 8000))
-    app.run(host='0.0.0.0', port=port, threaded=True)
+    try:
+        from waitress import serve  # быстрее встроенного сервера Flask (если установлен)
+        serve(app, host='0.0.0.0', port=port, threads=16)
+    except ImportError:
+        app.run(host='0.0.0.0', port=port, threaded=True)
