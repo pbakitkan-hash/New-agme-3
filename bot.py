@@ -19,48 +19,54 @@ if not TOKEN:
 WEB_APP_URL = os.environ.get('WEB_APP_URL', 'https://pbakitkan-hash.github.io/New-agme-3/')
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TOKEN}"
 
-# ссылки, база игроков (npoint только для сохранения), промокоды, звёзды
+# --- ссылки, база игроков (npoint — только для сохранения), промокоды, звёзды ---
 NPOINT_URL = os.environ.get('NPOINT_URL', 'https://api.npoint.io/2816c8000051e7c162ec')
 OWNER_ID = int(os.environ.get('OWNER_ID', '6638127989'))
 NEWS_URL = 'https://t.me/Brainrotscase'
 SUPPORT_URL = 'https://t.me/parasras'
-PROMO_PROMPT = "Отправьте бонус-код ответом на это сообщение"
-STAR_RATE = 1.5
-NEWS_CHAT = '@Brainrotscase'  # канал для проверки подписки (бот должен быть админом канала)
-# 1 звезда = 1.5 монеты
+PROMO_PROMPT = '🎁 Отправьте бонус-код ответом на это сообщение 👇'
+STAR_RATE = 1.5                  # 1 звезда = 1.5 монеты
+NEWS_CHAT = '@Brainrotscase'     # канал для проверки подписки (бот должен быть админом канала)
 BOT_USERNAME = os.environ.get('BOT_USERNAME', 'Brainrotscase_bot')
-SHARE_IMAGE = os.environ.get('SHARE_IMAGE', WEB_APP_URL.rstrip('/') + '/banner.jpg')  # картинка в сообщении для друзей
+SHARE_IMAGE = os.environ.get('SHARE_IMAGE', WEB_APP_URL.rstrip('/') + '/banner.jpg')       # картинка в сообщении для друзей
 SHARE_THUMB = os.environ.get('SHARE_THUMB', WEB_APP_URL.rstrip('/') + '/banner_s.jpg')
-SHARE_TEXT = "Получай бесплатный кейс в нашем боте\n\n» Апгрейди брейнрота\n>>> Забирай бонус\n\n Заходи в Brainrot Case"
+SHARE_TEXT = "🎁 Получай бесплатный кейс в нашем боте\n\n» Апгрейди брейнрота\n» Забирай бонус\n\n🏆 Заходи в Brainrot Case"
 SHARE_COOLDOWN_MS = 12 * 3600 * 1000
-BOT_NICK = 'brainrotscase_bot'  # что должно быть в имени игрока для «кейса за ник»
-WELCOME_TEXT = "Привет!\n\nДобро пожаловать в BRAINROT CASE! \nНажми кнопку ниже, чтобы открыть приложение, крутить кейсы и фармить ВС!"
+BOT_NICK = 'brainrotscase_bot'   # что должно быть в имени игрока для «кейса за ник»
+WELCOME_TEXT = "Привет! 🔥\n\nДобро пожаловать в BRAINROT CASE!\nНажми кнопку ниже, чтобы открыть приложение, крутить кейсы и фармить BC!"
 DEFAULT_PROMOS = {"Uuu": {"reward": 100, "usedBy": []}, "ADMIN1000": {"reward": 1000, "usedBy": []}}
-PROMO_USER_REWARD = 50  # личный промокод игрока: друг получает
-PROMO_OWNER_REWARD = 25  # ..а владелец кода получает
-SNAP_KEYS = ("score", "energy", "level", "clicks", "freeAt", "nickAt", "subAt", "shareCredits", "refTickets", "inv", "ts", "grantSeen", "tkSeen", "shareSeen", "giftSeen")
+PROMO_USER_REWARD = 50           # личный промокод игрока: друг получает
+PROMO_OWNER_REWARD = 25          # ...а владелец кода получает
+SNAP_KEYS = ("score", "energy", "level", "clicks", "freeAt", "nickAt", "subAt", "shareCredits", "refTickets",
+             "inv", "ts", "grantSeen", "tkSeen", "shareSeen", "giftSeen", "resetSeen", "clearSeen")
 
 app = Flask(__name__)
 CORS(app)
-http = requests.Session()
-# одно соединение на все запросы (быстрее)
-http.mount('https://', requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=30))
 
+http = requests.Session()        # одно соединение на все запросы — быстрее
+http.mount('https://', requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=30))
 known_ids = set()
-users_db = {}  # ВСЕ данные игроков живут в памяти бота (мгновенно); npoint только копия на диск
+users_db = {}
+
+# ---------- ВСЕ данные игроков живут в памяти бота (мгновенно); npoint — только копия на диск ----------
 state_lock = threading.RLock()
-USERS = {}     # id -> запись игрока
-PROMOS = {}    # код -> {reward, usedBy, [owner, ownerReward]}
-S = {"loaded": False, "dirty": False, "last_save": 0.0, "empty_seen": False}
+USERS = {}                       # id -> запись игрока
+PROMOS = {}                      # код -> {reward, usedBy, [owner, ownerReward]}
+FEED = []                        # общая лента дропов (LIVE)
+META = {"closed": False}         # сервер закрыт для всех (кроме владельца)
+S = {"loaded": False, "dirty": False, "last_save": 0.0, "empty_seen": False, "feedV": 0}
+
 
 def now_ms():
     return int(time.time() * 1000)
 
+
 def mark():
     S["dirty"] = True
 
+
 def migrate(rec):
-    """Старые поля (grant/tkAdd/shareAdd/gifts без номера) накопительные счётчики."""
+    """Старые поля (grant/tkAdd/shareAdd/gifts без номера) → накопительные счётчики."""
     g = rec.pop("grant", 0)
     if g:
         rec["grantT"] = round(rec.get("grantT", 0) + g, 2)
@@ -75,6 +81,7 @@ def migrate(rec):
             gift["n"] = rec["giftN"]
     return rec
 
+
 def read_npoint():
     r = http.get(NPOINT_URL, timeout=12)
     r.raise_for_status()
@@ -83,8 +90,9 @@ def read_npoint():
         raise RuntimeError("npoint вернул не список")
     return data
 
+
 def save_npoint(arr):
-    # npoint обновляет документ методом POST; если не принял пробуем PUT
+    # npoint обновляет документ методом POST; если не принял — пробуем PUT
     last = None
     for send in (http.post, http.put):
         try:
@@ -96,36 +104,46 @@ def save_npoint(arr):
             last = e
     raise RuntimeError(f"npoint: запись не удалась ({last})")
 
+
 def load_state():
     data = read_npoint()
-    users, promos = {}, None
+    users, promos, feed, meta = {}, None, [], {}
     for e in data:
-        if isinstance(e, dict) and e.get("id") == "_promos_":
+        if isinstance(e, dict) and e.get("id") == "__promos__":
             promos = e.get("codes") or {}
+        elif isinstance(e, dict) and e.get("id") == "__feed__":
+            feed = e.get("items") or []
+        elif isinstance(e, dict) and e.get("id") == "__meta__":
+            meta = e
         elif isinstance(e, dict) and isinstance(e.get("id"), int):
             users[e["id"]] = migrate(e)
-    if not users and not S["empty_seen"]:
+    if not users and not S["empty_seen"]:       # пустой ответ может быть сбоем — перепроверим один раз
         S["empty_seen"] = True
-        raise RuntimeError("пустая база — перепроверяю один раз")  # пустой ответ может быть сбоем
+        raise RuntimeError("пустая база — перепроверяю")
     with state_lock:
         USERS.clear()
         USERS.update(users)
         PROMOS.clear()
         PROMOS.update(promos if promos is not None else copy.deepcopy(DEFAULT_PROMOS))
+        FEED[:] = feed
+        META["closed"] = bool(meta.get("closed"))
         S["loaded"] = True
         S["dirty"] = promos is None
     print(f"база загружена: {len(USERS)} игроков, {len(PROMOS)} промокодов")
 
+
 def flush_now():
     with state_lock:
-        arr = [{"id": "_promos_", "codes": copy.deepcopy(PROMOS)}] + [copy.deepcopy(u) for u in USERS.values()]
-        try:
-            S["dirty"] = False
-            save_npoint(arr)
-            S["last_save"] = time.time()
-        except Exception as e:
-            S["dirty"] = True
-            print("сохранение не удалось, повторю:", e)
+        arr = [{"id": "__promos__", "codes": copy.deepcopy(PROMOS)}, {"id": "__feed__", "items": list(FEED)}, {"id": "__meta__", "closed": META["closed"]}] \
+              + [copy.deepcopy(u) for u in USERS.values()]
+        S["dirty"] = False
+    try:
+        save_npoint(arr)
+        S["last_save"] = time.time()
+    except Exception as e:
+        S["dirty"] = True
+        print("сохранение не удалось, повторю:", e)
+
 
 def persist_loop():
     while True:
@@ -134,44 +152,49 @@ def persist_loop():
             if not S["loaded"]:
                 load_state()
             elif (S["dirty"] and time.time() - S["last_save"] >= 2.5) or time.time() - S["last_save"] > 60:
-                flush_now()
+                flush_now()          # изменения уходят на диск за ~3 секунды, а раз в минуту — для надёжности
         except Exception as e:
             print("база:", e)
             time.sleep(1.5)
 
-# изменения уходят на диск за 3 секунды, а раз в минуту для надёжности
+
 def wait_loaded(timeout=8.0):
     t = time.time()
     while not S["loaded"] and time.time() - t < timeout:
         time.sleep(0.1)
     return S["loaded"]
 
+
 def game_url():
-    """Ссылка на игру: бот сам передаёт игре свой адрес (?api...), v= сбрасывает старый кэш."""
+    """Ссылка на игру: бот сам передаёт игре свой адрес (?api=...), v= сбрасывает старый кэш."""
     api = os.environ.get('RENDER_EXTERNAL_URL', '')
     if not api:
         return WEB_APP_URL
     sep = '&' if '?' in WEB_APP_URL else '?'
     return f"{WEB_APP_URL}{sep}api={quote(api, safe='')}&v=7"
 
+
 @app.route('/')
 def home():
     return "BRAINROT CASE Backend is running!"
+
 
 @app.route('/ping')
 def ping():
     # лёгкий адрес для cron-job: отвечает мгновенно и не трогает базу
     return "pong"
 
+
 @app.route('/api/health')
 def api_health():
     """Открой в браузере https://ТВОЙ-СЕРВИС.onrender.com/api/health — покажет, что работает, а что нет."""
-    out = {"bot": "ok", "loaded": S["loaded"], "players": len(USERS), "promos": len(PROMOS), "banner": None}
+    out = {"bot": "ok", "loaded": S["loaded"], "closed": META["closed"], "players": len(USERS), "promos": len(PROMOS), "banner": None}
     try:
-        out["banner"] = http.get(SHARE_IMAGE, timeout=8).status_code  # 200 = картинка на месте
+        out["banner"] = http.get(SHARE_IMAGE, timeout=8).status_code     # 200 = картинка на месте
     except Exception as e:
         out["banner"] = str(e)[:80]
     return jsonify(out)
+
 
 @app.route('/api/user/<int:user_id>', methods=['GET', 'POST'])
 def handle_user(user_id):
@@ -185,9 +208,11 @@ def handle_user(user_id):
             return jsonify({"status": "success", "saved": data})
         return jsonify({"status": "error", "message": "No data provided"}), 400
 
-# работа с записями игроков
+
+# ---------- работа с записями игроков ----------
 def name_of(user):
     return user.get("username") or user.get("first_name") or "Player"
+
 
 def get_rec(user):
     """Запись игрока (создаётся, если её нет). Вызывать под state_lock."""
@@ -198,22 +223,39 @@ def get_rec(user):
         mark()
     return rec
 
-def compute_inc(rec, seen):
-    """Что игрок ещё не забрал: счётчики растут только вверх, игра хранит «забрал до ...», повтор запроса безопасен."""
-    seen = seen if isinstance(seen, dict) else {}
-    g, t, s, n = rec.get("grantT", 0), rec.get("tkT", 0), rec.get("shareT", 0), rec.get("giftN", 0)
-    gs = float(seen.get("grantSeen") or 0)
-    return {"grantT": g, "tkT": t,
-            "shareT": s, "giftN": n,
-            "grant": round(g - gs, 2), "tk": t - int(seen.get("tkSeen") or 0),
-            "share": s > int(seen.get("shareSeen") or 0),
-            "gifts": [x for x in (rec.get("gifts") or []) if x.get("n", 0) > int(seen.get("giftSeen") or 0)]}
 
-def my_promo(uid):
-    for k, v in PROMOS.items():
-        if v.get("owner") == uid:
-            return {"code": k, "uses": len(v.get("usedBy", []))}
-    return None
+def compute_inc(rec, seen):
+    """Что игрок ещё не забрал: счётчики растут только вверх, игра хранит «забрал до …» — повтор запроса безопасен."""
+    seen = seen if isinstance(seen, dict) else {}
+    isn = lambda k: int(seen.get(k) or 0)
+    g, t, s, n = rec.get("grantT", 0), rec.get("tkT", 0), rec.get("shareT", 0), rec.get("giftN", 0)
+    rs, cs = rec.get("resetT", 0), rec.get("clearT", 0)
+    return {"grantT": g, "tkT": t, "shareT": s, "giftN": n, "resetT": rs, "clearT": cs,
+            "grant": round(g - float(seen.get("grantSeen") or 0), 2), "tk": t - isn("tkSeen"),
+            "share": s > isn("shareSeen"), "reset": rs > isn("resetSeen"), "clear": cs > isn("clearSeen"),
+            "gifts": [x for x in (rec.get("gifts") or []) if x.get("n", 0) > isn("giftSeen")]}
+
+
+def my_promos(uid):
+    return [{"code": k, "reward": v.get("reward", 0), "max": v.get("max", 0), "used": len(v.get("usedBy", []))}
+            for k, v in PROMOS.items() if v.get("owner") == uid]
+
+
+def find_code(code):
+    """Промокод без учёта регистра."""
+    if code in PROMOS:
+        return code
+    low = code.lower()
+    return next((k for k in PROMOS if k.lower() == low), None)
+
+
+def extras(user, rec, data):
+    out = {"refCount": rec.get("refCount", 0), "myPromos": my_promos(user["id"]), "closed": META["closed"]}
+    if data.get("feedV") != S["feedV"]:
+        out["feed"] = FEED[-20:][::-1]
+        out["feedV"] = S["feedV"]
+    return out
+
 
 def clean_snap(s):
     out = {}
@@ -226,11 +268,12 @@ def clean_snap(s):
             out[k] = v
     return out
 
+
 def redeem_code(user, code):
     """Промокод (из игры и из чата): мгновенно, в памяти. Возвращает {"reward": n} или {"err": текст}."""
+    uid = user["id"]
     with state_lock:
-        uid = user["id"]
-        key = code if code in PROMOS else (code.upper() if code.upper() in PROMOS else None)
+        key = find_code(code)
         if key is None:
             return {"err": "Промокод не найден"}
         info = PROMOS[key]
@@ -238,17 +281,19 @@ def redeem_code(user, code):
             return {"err": "Нельзя использовать собственный код"}
         if uid in info.get("usedBy", []):
             return {"err": "Вы уже использовали этот промокод"}
+        if info.get("max") and len(info.get("usedBy", [])) >= info["max"]:
+            return {"err": "Промокод закончился"}
         rec = get_rec(user)
         rec["grantT"] = round(rec.get("grantT", 0) + info["reward"], 2)
         info.setdefault("usedBy", []).append(uid)
         owner = USERS.get(info["owner"]) if info.get("owner") else None
-        if owner:
-            # личный промокод игрока: ему тоже награда + билет
+        if owner:                      # владельцу промокода — билет (и награда, если она задана)
             owner["grantT"] = round(owner.get("grantT", 0) + info.get("ownerReward", 0), 2)
             owner["tkT"] = owner.get("tkT", 0) + 1
             owner["refCount"] = owner.get("refCount", 0) + 1
         mark()
         return {"reward": info["reward"]}
+
 
 def touch_user(user):
     """Запоминаем любого, кто зашёл."""
@@ -257,7 +302,8 @@ def touch_user(user):
         return
     with state_lock:
         get_rec(user)
-        known_ids.add(uid)
+    known_ids.add(uid)
+
 
 def register_referral(user, payload):
     """/start ref_<id>: засчитываем только совсем нового игрока и только один раз."""
@@ -274,8 +320,10 @@ def register_referral(user, payload):
         inviter["tkT"] = inviter.get("tkT", 0) + 1
         inviter["refCount"] = inviter.get("refCount", 0) + 1
         mark()
-        known_ids.add(uid)
-    tg("sendMessage", chat_id=inviter_id, text=f"По вашей ссылке пришёл @{name_of(user)}! Вам начислен билет на реферальный кейс.")
+    known_ids.add(uid)
+    tg("sendMessage", chat_id=inviter_id,
+       text=f"🎉 По вашей ссылке пришёл @{name_of(user)}! Вам начислен 🎟️ билет на реферальный кейс.")
+
 
 def grant_share(user, via_inline):
     """Отправка сообщения друзьям подтверждена: засчитываем, если бесплатный кейс сейчас не на перезарядке."""
@@ -284,13 +332,14 @@ def grant_share(user, via_inline):
         t = now_ms()
         if t >= rec.get("freeAt", 0):
             rec["lastShare"] = t
-            if via_inline:
-                rec["shareT"] = rec.get("shareT", 0) + 1  # через игру кредит выдаёт сама игра (в ответе), через inline копим счётчик
+            if via_inline:               # через игру кредит выдаёт сама игра (в ответе), через inline — копим счётчик
+                rec["shareT"] = rec.get("shareT", 0) + 1
             mark()
             return True
-    return False
+        return False
 
-# проверка подписи Telegram
+
+# ---------- проверка подписи Telegram ----------
 def verify_init_data(init_data):
     """Возвращает данные пользователя или None."""
     try:
@@ -305,6 +354,7 @@ def verify_init_data(init_data):
         print("initData error:", e)
     return None
 
+
 def auth():
     """(данные запроса, пользователь, ошибка-ответ)."""
     data = request.get_json(silent=True) or {}
@@ -313,9 +363,12 @@ def auth():
         return data, None, (jsonify({"error": "unauthorized"}), 403)
     if not S["loaded"]:
         return data, user, (jsonify({"error": "loading"}), 503)
+    if META["closed"] and user["id"] != OWNER_ID and request.path not in ("/api/sync", "/api/poll"):
+        return data, user, (jsonify({"error": "closed", "closed": True}), 503)
     return data, user, None
 
-# API для игры (всё в памяти, отвечает за миллисекунды)
+
+# ---------- API для игры (всё в памяти — отвечает за миллисекунды) ----------
 @app.route('/api/sync', methods=['POST'])
 def api_sync():
     data, user, err = auth()
@@ -327,22 +380,26 @@ def api_sync():
         rec["username"], rec["seen"] = name_of(user), now_ms()
         out = {"ok": True}
         adopt = False
-        if data.get("first"):
-            # первый вход с этого устройства: берём из базы, если у нас пусто или там свежее
+        if data.get("first"):            # первый вход с этого устройства: берём из базы, если у нас пусто или там свежее
             if rec.get("inv") is not None and (not data.get("hadLocal") or rec.get("ts", 0) > snap.get("ts", 0)):
                 adopt = True
                 out["adopt"] = True
                 out["snap"] = {k: rec[k] for k in SNAP_KEYS if k in rec}
             elif rec.get("inv") is None and rec.get("score", 0) > snap.get("score", 0):
-                out["adoptScore"] = rec["score"]
-                snap.pop("score", None)  # запись из очень старой версии: был только баланс
-        if not adopt and snap and any(rec.get(k) != v for k, v in snap.items()):
-            rec.update(snap)
-            mark()
+                out["adoptScore"] = rec["score"]      # запись из очень старой версии: был только баланс
+                snap.pop("score", None)
+        if not adopt and snap:
+            if snap.get("resetSeen", 0) < rec.get("resetT", 0):    # админ сбросил баланс, а игра ещё не знает — не затираем сброс
+                snap.pop("score", None)
+            if snap.get("clearSeen", 0) < rec.get("clearT", 0):
+                snap.pop("inv", None)
+            if any(rec.get(k) != v for k, v in snap.items()):
+                rec.update(snap)
+                mark()
         out["inc"] = compute_inc(rec, rec if adopt else snap)
-        out["refCount"] = rec.get("refCount", 0)
-        out["myPromo"] = my_promo(user["id"])
+        out.update(extras(user, rec, data))
         return jsonify(out)
+
 
 @app.route('/api/poll', methods=['POST'])
 def api_poll():
@@ -352,7 +409,10 @@ def api_poll():
     with state_lock:
         rec = get_rec(user)
         rec["seen"] = now_ms()
-        return jsonify({"inc": compute_inc(rec, data.get("seen")), "refCount": rec.get("refCount", 0), "myPromo": my_promo(user["id"])})
+        out = {"inc": compute_inc(rec, data.get("seen"))}
+        out.update(extras(user, rec, data))
+        return jsonify(out)
+
 
 @app.route('/api/promo', methods=['POST'])
 def api_promo():
@@ -366,22 +426,74 @@ def api_promo():
         res["inc"] = compute_inc(USERS[user["id"]], data.get("seen"))
     return jsonify(res)
 
-@app.route('/api/promo/create', methods=['POST'])
-def api_promo_create():
+
+@app.route('/api/promo/new', methods=['POST'])
+def api_promo_new():
+    """Любой игрок создаёт промокод за свои монеты: монеты × активации спишутся, остаток вернётся при удалении."""
     data, user, err = auth()
     if err:
         return err
     code = str(data.get("code", "")).strip().upper()
-    if not re.fullmatch(r"[A-Z0-9_]{3,16}", code):
-        return jsonify({"err": "Код: 3-16 символов, латиница, цифры или _"})
+    if not re.fullmatch(r"[A-Z0-9]{3,16}", code):
+        return jsonify({"err": "Код: 3–16 символов, латиница и цифры"})
+    try:
+        reward, mx = round(float(data.get("reward")), 2), int(data.get("max"))
+    except Exception:
+        return jsonify({"err": "Заполните монеты и число активаций"})
+    if not (1 <= reward <= 1000000) or not (1 <= mx <= 1000):
+        return jsonify({"err": "Монеты: 1–1 000 000, активации: 1–1000"})
+    cost = round(reward * mx, 2)
     with state_lock:
-        if my_promo(user["id"]):
-            return jsonify({"err": "У вас уже есть свой промокод"})
-        if code in PROMOS:
+        rec = get_rec(user)
+        if len(my_promos(user["id"])) >= 5:
+            return jsonify({"err": "Не больше 5 своих промокодов"})
+        if find_code(code):
             return jsonify({"err": "Такой код уже занят"})
-        PROMOS[code] = {"reward": PROMO_USER_REWARD, "owner": user["id"], "ownerReward": PROMO_OWNER_REWARD, "usedBy": []}
+        have = rec.get("score", 0) + rec.get("grantT", 0) - rec.get("grantSeen", 0)
+        if have < cost:
+            return jsonify({"err": f"Не хватает монет: нужно {cost} BC"})
+        rec["grantT"] = round(rec.get("grantT", 0) - cost, 2)
+        PROMOS[code] = {"reward": reward, "max": mx, "owner": user["id"], "ownerReward": 0, "usedBy": [], "funded": True}
         mark()
-        return jsonify({"code": code})
+        return jsonify({"ok": True, "inc": compute_inc(rec, data.get("seen")), "myPromos": my_promos(user["id"])})
+
+
+@app.route('/api/promo/del', methods=['POST'])
+def api_promo_del():
+    data, user, err = auth()
+    if err:
+        return err
+    with state_lock:
+        key = find_code(str(data.get("code", "")).strip())
+        info = PROMOS.get(key) if key else None
+        if not info or info.get("owner") != user["id"]:
+            return jsonify({"err": "Промокод не найден"})
+        rec = get_rec(user)
+        if info.get("funded"):          # возвращаем монеты за неиспользованные активации
+            rec["grantT"] = round(rec.get("grantT", 0) + info.get("reward", 0) * max(0, info.get("max", 0) - len(info.get("usedBy", []))), 2)
+        del PROMOS[key]
+        mark()
+        return jsonify({"ok": True, "inc": compute_inc(rec, data.get("seen")), "myPromos": my_promos(user["id"])})
+
+
+@app.route('/api/drop', methods=['POST'])
+def api_drop():
+    """Игрок сообщает о выпавших брейнротах — лента LIVE общая для всех."""
+    data, user, err = auth()
+    if err:
+        return err
+    with state_lock:
+        for d in (data.get("drops") or [])[:10]:
+            try:
+                FEED.append({"u": name_of(user), "n": str(d["n"])[:40], "i": str(d.get("i") or "🎁")[:8],
+                             "p": float(d["p"]), "c": str(d.get("c", ""))[:30], "t": now_ms()})
+            except Exception:
+                continue
+        del FEED[:-60]
+        S["feedV"] += 1
+        mark()
+    return jsonify({"ok": True})
+
 
 def owner_only():
     data, user, err = auth()
@@ -391,87 +503,105 @@ def owner_only():
         return data, None, (jsonify({"error": "forbidden"}), 403)
     return data, user, None
 
-@app.route('/api/admin/users', methods=['POST'])
-def api_admin_users():
-    data, user, err = owner_only()
-    if err:
-        return err
-    with state_lock:
-        rows = []
-        for u in USERS.values():
-            pend = round(u.get("grantT", 0) - u.get("grantSeen", 0), 2)
-            inv = u.get("inv") or []
-            rows.append({
-                "id": u["id"],
-                "username": u.get("username"),
-                "balance": round(u.get("score", 0) + pend, 2),
-                "items": sum(g.get("count", 1) for g in inv),
-                "inv": inv[:6],
-                "seen": u.get("seen", 0)
-            })
-        rows.sort(key=lambda r: r["seen"], reverse=True)
-        return jsonify({"users": rows, "total": len(rows)})
 
-@app.route('/api/admin/promo', methods=['POST'])
-def api_admin_promo():
+def resolve(t):
+    """Игрок по @username или по ID."""
+    t = str(t or "").strip()
+    if not t:
+        return None
+    if t.isdigit():
+        return USERS.get(int(t))
+    low = t.lstrip("@").lower()
+    return next((u for u in USERS.values() if (u.get("username") or "").lower() == low), None)
+
+
+@app.route('/api/admin', methods=['POST'])
+def api_admin():
+    """Панель владельца: выдать/сбросить/очистить/закрыть сервер/промокоды."""
     data, user, err = owner_only()
     if err:
         return err
-    op, code = data.get("op"), str(data.get("code", "")).strip()
+    op = data.get("op")
     with state_lock:
-        if op == "create":
+        if op == "users":
+            rows = []
+            for u in USERS.values():
+                inv = u.get("inv") or []
+                rows.append({"id": u["id"], "username": u.get("username"), "seen": u.get("seen", 0),
+                             "balance": round(u.get("score", 0) + u.get("grantT", 0) - u.get("grantSeen", 0), 2),
+                             "items": sum(g.get("count", 1) for g in inv), "inv": inv[:6]})
+            rows.sort(key=lambda r: r["seen"], reverse=True)
+            return jsonify({"users": rows, "total": len(rows), "closed": META["closed"]})
+        if op == "promo_list":
+            return jsonify({"codes": copy.deepcopy(PROMOS), "closed": META["closed"]})
+        if op == "close":
+            META["closed"] = not META["closed"]
+            mark()
+            return jsonify({"log": "сервер закрыт для всех" if META["closed"] else "сервер открыт", "closed": META["closed"]})
+        if op == "clearall":
+            for r in USERS.values():
+                r["clearT"], r["inv"] = r.get("clearT", 0) + 1, []
+            mark()
+            return jsonify({"log": f"брейнроты очищены у всех ({len(USERS)})"})
+        if op == "resetall":
+            for r in USERS.values():
+                r["resetT"], r["score"] = r.get("resetT", 0) + 1, 0
+            mark()
+            return jsonify({"log": f"баланс сброшен у всех ({len(USERS)})"})
+        if op in ("promo_create", "promo_delete", "promo_keep"):
+            code = str(data.get("code", "")).strip()
+            if op == "promo_create":
+                try:
+                    reward, mx = float(data.get("reward")), int(data.get("max") or 0)
+                except Exception:
+                    return jsonify({"err": "Заполните код и монеты"})
+                if not re.fullmatch(r"[A-Za-z0-9]{3,16}", code) or reward <= 0:
+                    return jsonify({"err": "Код: 3–16 символов (a-z, 0-9), монеты больше нуля"})
+                PROMOS[code] = {"reward": reward, "max": max(0, mx), "usedBy": []}
+                log = f"промо {code}: {reward} BC × {mx or '∞'}"
+            elif op == "promo_delete":
+                PROMOS.pop(find_code(code) or code, None)
+                log = f"промо {code} удалён"
+            else:
+                keep = find_code(code) if code else (next(iter(PROMOS), None))
+                if keep is None:
+                    return jsonify({"err": "Такого промокода нет"})
+                PROMOS.clear()
+                PROMOS[keep] = {"reward": 0, "usedBy": []} if keep not in PROMOS else PROMOS[keep]
+                log = f"остался только {keep}"
+            mark()
+            return jsonify({"log": log, "codes": copy.deepcopy(PROMOS)})
+        rec = resolve(data.get("target"))
+        if rec is None:
+            return jsonify({"err": "Игрок не найден (он должен хотя бы раз открыть игру)"})
+        who = "@" + (rec.get("username") or str(rec["id"]))
+        if op == "grant":
             try:
-                reward = float(data.get("reward"))
+                amount = float(data.get("amount"))
             except Exception:
-                reward = 0
-            if not code or reward <= 0:
-                return jsonify({"err": "Заполните код и награду"})
-            PROMOS[code] = {"reward": reward, "usedBy": []}
-            mark()
-        elif op == "delete":
-            PROMOS.pop(code, None)
-            mark()
-        return jsonify({"codes": copy.deepcopy(PROMOS)})
-
-@app.route('/api/admin/grant', methods=['POST'])
-def api_admin_grant():
-    data, user, err = owner_only()
-    if err:
-        return err
-    try:
-        uid, amount = int(data.get("id")), float(data.get("amount"))
-    except Exception:
-        return jsonify({"err": "Неверные данные"})
-    with state_lock:
-        rec = USERS.get(uid)
-        if rec is None:
-            return jsonify({"err": "Игрок не найден"})
-        rec["grantT"] = round(rec.get("grantT", 0) + amount, 2)
+                return jsonify({"err": "Укажите сумму"})
+            rec["grantT"] = round(rec.get("grantT", 0) + amount, 2)
+            log = f"{amount:+g} BC → {who}"
+        elif op == "reset":
+            rec["resetT"], rec["score"] = rec.get("resetT", 0) + 1, 0
+            log = f"баланс сброшен → {who}"
+        elif op == "clear":
+            rec["clearT"], rec["inv"] = rec.get("clearT", 0) + 1, []
+            log = f"брейнроты очищены → {who}"
+        elif op == "give":
+            try:
+                qty, price = max(1, min(1000, int(data.get("qty") or 1))), float(data.get("price"))
+            except Exception:
+                return jsonify({"err": "Неверные данные предмета"})
+            rec["giftN"] = rec.get("giftN", 0) + 1
+            rec["gifts"] = ((rec.get("gifts") or []) + [{"n": rec["giftN"], "name": str(data.get("name", ""))[:40], "icon": str(data.get("icon") or "🎁")[:8],
+                                                          "sellPrice": price, "count": qty}])[-50:]
+            log = f"{qty}× {data.get('name')} → {who}"
+        else:
+            return jsonify({"err": "Неизвестная команда"})
         mark()
-        return jsonify({"ok": True})
+        return jsonify({"log": log})
 
-@app.route('/api/admin/gift', methods=['POST'])
-def api_admin_gift():
-    data, user, err = owner_only()
-    if err:
-        return err
-    try:
-        uid, price = int(data.get("id")), float(data.get("price"))
-    except Exception:
-        return jsonify({"err": "Неверные данные"})
-    with state_lock:
-        rec = USERS.get(uid)
-        if rec is None:
-            return jsonify({"err": "Игрок не найден"})
-        rec["giftN"] = rec.get("giftN", 0) + 1
-        rec["gifts"] = ((rec.get("gifts") or []) + [{
-            "n": rec["giftN"],
-            "name": str(data.get("name", ""))[:40],
-            "icon": str(data.get("icon") or "")[:8],
-            "sellPrice": price
-        }])[-50:]
-        mark()
-        return jsonify({"ok": True})
 
 @app.route('/api/invoice', methods=['POST'])
 def api_invoice():
@@ -487,14 +617,15 @@ def api_invoice():
     coins = round(stars * STAR_RATE, 2)
     r = http.post(f"{TELEGRAM_API_URL}/createInvoiceLink", json={
         "title": "Пополнение баланса",
-        "description": f"{stars} = {coins} BC",
+        "description": f"{stars} ⭐ = {coins} BC",
         "payload": f"topup_{stars}",
-        "currency": "XTR",
+        "currency": "XTR",            # Telegram Stars
         "prices": [{"label": "BC", "amount": stars}],
     }, timeout=10).json()
     if not r.get("ok"):
         return jsonify({"error": r.get("description", "telegram error")}), 502
     return jsonify({"link": r["result"]})
+
 
 @app.route('/api/check', methods=['POST'])
 def api_check():
@@ -502,7 +633,7 @@ def api_check():
     if err:
         return err
     name = f"{user.get('first_name', '')} {user.get('last_name', '')}".lower()
-    sub = None  # None = проверить не удалось (бот не админ канала)
+    sub = None   # None = проверить не удалось (бот не админ канала)
     try:
         m = http.get(f"{TELEGRAM_API_URL}/getChatMember", params={"chat_id": NEWS_CHAT, "user_id": user["id"]}, timeout=6).json()
         if m.get("ok"):
@@ -512,25 +643,24 @@ def api_check():
     touch_user(user)
     return jsonify({"nick": BOT_NICK in name, "sub": sub})
 
+
 def share_result(uid):
     """Сообщение для друзей: картинка сверху, текст, кнопка входа с реф-ссылкой отправителя."""
     link = f"https://t.me/{BOT_USERNAME}?start=ref_{uid}"
     return {
         "type": "photo", "id": "share",
         "photo_url": SHARE_IMAGE, "thumbnail_url": SHARE_THUMB, "photo_width": 1280, "photo_height": 714,
-        "title": "Бесплатный кейс", "description": "Отправь друзьям и забери кейс",
+        "title": "🎁 Бесплатный кейс", "description": "Отправь друзьям и забери кейс",
         "caption": SHARE_TEXT,
-        "reply_markup": {"inline_keyboard": [[{"text": "Забрать бесплатный кейс", "url": link, "style": "success"}]]},
+        "reply_markup": {"inline_keyboard": [[{"text": "🎁 Забрать бесплатный кейс", "url": link, "style": "success"}]]},
     }
+
 
 def share_article(uid):
     """Запасной вариант без картинки (если картинка недоступна Telegram)."""
-    return {
-        "type": "article", "id": "share", "title": "Бесплатный кейс",
-        "description": "Отправь друзьям и забери кейс",
-        "input_message_content": {"message_text": SHARE_TEXT},
-        "reply_markup": share_result(uid)["reply_markup"]
-    }
+    return {"type": "article", "id": "share", "title": "🎁 Бесплатный кейс", "description": "Отправь друзьям и забери кейс",
+            "input_message_content": {"message_text": SHARE_TEXT}, "reply_markup": share_result(uid)["reply_markup"]}
+
 
 def prepare_message(uid, result):
     return http.post(f"{TELEGRAM_API_URL}/savePreparedInlineMessage", json={
@@ -538,22 +668,24 @@ def prepare_message(uid, result):
         "allow_user_chats": True, "allow_group_chats": True, "allow_bot_chats": False, "allow_channel_chats": False,
     }, timeout=10).json()
 
+
 @app.route('/api/share', methods=['POST'])
 def api_share():
-    """Игра просит подготовить сообщение потом Telegram показывает «Отправить сообщение» с выбором чата."""
+    """Игра просит подготовить сообщение — потом Telegram показывает «Отправить сообщение» с выбором чата."""
     data, user, err = auth()
     if err:
         return err
     photo = True
     r = prepare_message(user["id"], share_result(user["id"]))
-    if not r.get("ok"):
-        print("savePreparedInlineMessage (photo) failed:", r)
+    if not r.get("ok"):                      # чаще всего — недоступна картинка: пробуем без неё
+        print("savePreparedInlineMessage(photo) failed:", r)
         photo = False
         r = prepare_message(user["id"], share_article(user["id"]))
-        if not r.get("ok"):
-            print("savePreparedInlineMessage (article) failed:", r)
-            return jsonify({"error": r.get("description", "telegram error")}), 502
+    if not r.get("ok"):
+        print("savePreparedInlineMessage(article) failed:", r)
+        return jsonify({"error": r.get("description", "telegram error")}), 502
     return jsonify({"id": r["result"]["id"], "photo": photo})
+
 
 @app.route('/api/shared', methods=['POST'])
 def api_shared():
@@ -565,39 +697,42 @@ def api_shared():
     with state_lock:
         return jsonify({"granted": granted, "shareT": get_rec(user).get("shareT", 0)})
 
-# Telegram
+
+# ---------- Telegram ----------
 def welcome_payload(chat_id):
     keyboard = {
         "inline_keyboard": [
             [
                 {
-                    "text": "Играть в BRAINROT CASE",
+                    "text": "🎮 Играть в BRAINROT CASE",
                     "web_app": {"url": game_url()}
                 }
             ],
             [
-                {"text": "Новости", "url": NEWS_URL},
-                {"text": "Поддержка", "url": SUPPORT_URL}
+                {"text": "📰 Новости", "url": NEWS_URL},
+                {"text": "💬 Поддержка", "url": SUPPORT_URL}
             ],
             [
-                {"text": "Ввести бонус-код", "callback_data": "promo"}
+                {"text": "🎁 Ввести бонус-код", "callback_data": "promo"}
             ]
         ]
     }
     return {"method": "sendMessage", "chat_id": chat_id, "text": WELCOME_TEXT, "reply_markup": keyboard}
 
+
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
     update = request.get_json(silent=True) or {}
-    if "pre_checkout_query" in update:  # оплата звездами: подтверждаем счёт прямо в ответе
+    if "pre_checkout_query" in update:   # оплата звёздами: подтверждаем счёт прямо в ответе
         return jsonify({"method": "answerPreCheckoutQuery", "pre_checkout_query_id": update["pre_checkout_query"]["id"], "ok": True})
     msg = update.get("message") or {}
     text = (msg.get("text") or "").strip()
     if text and text.split(" ", 1)[0].split("@")[0] == "/start":
         threading.Thread(target=process_update, args=(update, True), daemon=True).start()
-        return jsonify(welcome_payload(msg["chat"]["id"]))  # приветствие в ответе вебхука: самый быстрый путь
+        return jsonify(welcome_payload(msg["chat"]["id"]))     # приветствие — прямо в ответе вебхука: самый быстрый путь
     threading.Thread(target=process_update, args=(update, False), daemon=True).start()
     return "OK", 200
+
 
 def process_update(update, welcomed):
     try:
@@ -614,25 +749,32 @@ def process_update(update, welcomed):
     except Exception as e:
         print("handler error:", e)
 
+
 def tg(method, **payload):
     try:
         http.post(f"{TELEGRAM_API_URL}/{method}", json=payload, timeout=10)
     except Exception as e:
         print("telegram error:", e)
 
+
 def ask_promo(chat_id):
     # force_reply: ответ пользователя приходит как reply на это сообщение — работает и после перезапуска сервера
-    tg("sendMessage", chat_id=chat_id, text=PROMO_PROMPT, reply_markup={"force_reply": True, "input_field_placeholder": "Бонус-код"})
+    tg("sendMessage", chat_id=chat_id, text=PROMO_PROMPT,
+       reply_markup={"force_reply": True, "input_field_placeholder": "Бонус-код"})
+
 
 def try_redeem(chat_id, user, code):
     if not wait_loaded():
-        return tg("sendMessage", chat_id=chat_id, text="Бот только проснулся, повторите код через несколько секунд.")
+        return tg("sendMessage", chat_id=chat_id, text="⏳ Бот только проснулся — повторите код через несколько секунд.")
     res = redeem_code(user, code.strip())
-    tg("sendMessage", chat_id=chat_id, text=f"Бонус-код принят! +{res['reward']} ВС. Монеты уже начисляются в игре." if "reward" in res else f"❌ {res['err']}.")
+    tg("sendMessage", chat_id=chat_id,
+       text=f"✅ Бонус-код принят! +{res['reward']} BC. Монеты уже начисляются в игре." if "reward" in res else f"❌ {res['err']}.")
+
 
 def promo_exists(text):
     with state_lock:
         return text in PROMOS or text.upper() in PROMOS
+
 
 def on_payment(msg):
     pay = msg["successful_payment"]
@@ -643,12 +785,13 @@ def on_payment(msg):
     with state_lock:
         rec = get_rec(user)
         paid = rec.setdefault("paid", [])
-        if charge in paid:
-            return  # платёж уже зачислен
+        if charge in paid:        # платёж уже зачислен
+            return
         rec["grantT"] = round(rec.get("grantT", 0) + coins, 2)
         rec["paid"] = (paid + [charge])[-50:]
         mark()
-    tg("sendMessage", chat_id=msg["chat"]["id"], text=f"Пополнение: {stars} ⭐ = +{coins} ВС. Монеты уже в игре!")
+    tg("sendMessage", chat_id=msg["chat"]["id"], text=f"✅ Пополнение: {stars} ⭐ → +{coins} BC. Монеты уже в игре!")
+
 
 def on_message(msg, welcomed=False):
     if msg.get("successful_payment"):
@@ -677,24 +820,30 @@ def on_message(msg, welcomed=False):
         try_redeem(chat_id, user, rest) if rest else ask_promo(chat_id)
     elif text and not text.startswith("/"):
         replied = PROMO_PROMPT in ((msg.get("reply_to_message") or {}).get("text") or "")
-        if replied or (S["loaded"] and promo_exists(text)):  # код можно просто написать боту без кнопок
+        if replied or (S["loaded"] and promo_exists(text)):     # код можно просто написать боту — без кнопок
             try_redeem(chat_id, user, text)
+
 
 def on_inline_query(q):
     """Запасной путь: сообщение для друзей через выбор чата в самом Telegram."""
     tg("answerInlineQuery", inline_query_id=q["id"], results=[share_result(q["from"]["id"])], cache_time=0, is_personal=True)
+
 
 def on_chosen(c):
     if c.get("result_id") != "share" or not wait_loaded():
         return
     user = c["from"]
     ok = grant_share(user, via_inline=True)
-    tg("sendMessage", chat_id=user["id"], text="Сообщение отправлено! Бесплатный кейс ждёт тебя в игре." if ok else "Ты уже получал кейс за отправку — следующий через 12 часов.")
+    tg("sendMessage", chat_id=user["id"],
+       text="✅ Сообщение отправлено! Бесплатный кейс ждёт тебя в игре." if ok
+       else "Ты уже получал кейс за отправку — следующий через 12 часов.")
+
 
 def on_callback(q):
     tg("answerCallbackQuery", callback_query_id=q["id"])
     if q.get("data") == "promo":
         ask_promo(q["message"]["chat"]["id"])
+
 
 def keep_alive():
     """Не даём бесплатному Render засыпать: раз в 10 минут стучимся в свой /ping (вместе с cron-job)."""
@@ -706,20 +855,20 @@ def keep_alive():
         except Exception:
             pass
 
+
 def start_background():
     threading.Thread(target=persist_loop, daemon=True).start()
     threading.Thread(target=keep_alive, daemon=True).start()
 
-def on_term(*_):
-    # Render останавливает сервис при обновлении: успеваем сохранить всё из памяти
-    try:
+    def on_term(*_):          # Render останавливает сервис при обновлении: успеваем сохранить всё из памяти
         if S["loaded"]:
             flush_now()
         os._exit(0)
+    try:
+        signal.signal(signal.SIGTERM, on_term)
     except Exception:
         pass
 
-signal.signal(signal.SIGTERM, on_term)
 
 if __name__ == '__main__':
     start_background()
@@ -729,13 +878,14 @@ if __name__ == '__main__':
             "url": f"{render_url}/{TOKEN}",
             "allowed_updates": ["message", "callback_query", "pre_checkout_query", "inline_query", "chosen_inline_result"],
         }, timeout=10)
-    try:  # кнопка меню чата с ботом тоже открывает игру с адресом бота (?api=...)
-        http.post(f"{TELEGRAM_API_URL}/setChatMenuButton", json={"menu_button": {"type": "web_app", "text": "Играть", "web_app": {"url": game_url()}}}, timeout=10)
-    except Exception as e:
-        print("menu button error:", e)
+        try:   # кнопка меню чата с ботом тоже открывает игру с адресом бота (?api=...)
+            http.post(f"{TELEGRAM_API_URL}/setChatMenuButton", json={"menu_button": {"type": "web_app", "text": "Играть", "web_app": {"url": game_url()}}}, timeout=10)
+        except Exception as e:
+            print("menu button error:", e)
+
     port = int(os.environ.get('PORT', 8000))
     try:
-        from waitress import serve  # быстрее встроенного сервера Flask (если установлен)
+        from waitress import serve        # быстрее встроенного сервера Flask (если установлен)
         serve(app, host='0.0.0.0', port=port, threads=16)
     except ImportError:
         app.run(host='0.0.0.0', port=port, threaded=True)
