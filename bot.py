@@ -46,6 +46,8 @@ CORS(app)
 http = requests.Session()        # одно соединение на все запросы — быстрее
 http.mount('https://', requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=30))
 known_ids = set()
+CHECK = {}                       # кэш проверки подписки (45 сек) — не дёргаем Telegram каждый раз
+PREP = {}                        # готовое сообщение для друзей (10 мин) — окно отправки открывается мгновенно
 users_db = {}
 
 # ---------- ВСЕ данные игроков живут в памяти бота (мгновенно); npoint — только копия на диск ----------
@@ -476,6 +478,27 @@ def api_promo_del():
         return jsonify({"ok": True, "inc": compute_inc(rec, data.get("seen")), "myPromos": my_promos(user["id"])})
 
 
+@app.route('/api/profile', methods=['POST'])
+def api_profile():
+    """Профиль игрока из ленты LIVE: баланс, брейнроты, история дропов."""
+    data, user, err = auth()
+    if err:
+        return err
+    try:
+        uid = int(data.get("id"))
+    except Exception:
+        return jsonify({"err": "Игрок не найден"})
+    with state_lock:
+        rec = USERS.get(uid)
+        if rec is None:
+            return jsonify({"err": "Игрок не найден"})
+        inv = rec.get("inv") or []
+        return jsonify({"id": uid, "username": rec.get("username"),
+                        "balance": round(rec.get("score", 0) + rec.get("grantT", 0) - rec.get("grantSeen", 0), 2),
+                        "items": sum(g.get("count", 1) for g in inv),
+                        "inv": sorted(inv, key=lambda g: -g.get("sellPrice", 0))[:40], "drops": (rec.get("drops") or [])[:20]})
+
+
 @app.route('/api/drop', methods=['POST'])
 def api_drop():
     """Игрок сообщает о выпавших брейнротах — лента LIVE общая для всех."""
@@ -483,12 +506,14 @@ def api_drop():
     if err:
         return err
     with state_lock:
+        rec = get_rec(user)
         for d in (data.get("drops") or [])[:10]:
             try:
-                FEED.append({"u": name_of(user), "n": str(d["n"])[:40], "i": str(d.get("i") or "🎁")[:8],
-                             "p": float(d["p"]), "c": str(d.get("c", ""))[:30], "t": now_ms()})
+                row = {"n": str(d["n"])[:40], "i": str(d.get("i") or "🎁")[:8], "p": float(d["p"]), "c": str(d.get("c", ""))[:30], "t": now_ms()}
             except Exception:
                 continue
+            FEED.append({"u": name_of(user), "id": user["id"], **row})
+            rec["drops"] = ([row] + (rec.get("drops") or []))[:30]          # личная история дропов игрока
         del FEED[:-60]
         S["feedV"] += 1
         mark()
@@ -634,12 +659,17 @@ def api_check():
         return err
     name = f"{user.get('first_name', '')} {user.get('last_name', '')}".lower()
     sub = None   # None = проверить не удалось (бот не админ канала)
-    try:
-        m = http.get(f"{TELEGRAM_API_URL}/getChatMember", params={"chat_id": NEWS_CHAT, "user_id": user["id"]}, timeout=6).json()
-        if m.get("ok"):
-            sub = m["result"]["status"] in ("creator", "administrator", "member", "restricted")
-    except Exception as e:
-        print("getChatMember error:", e)
+    cached = CHECK.get(user["id"])
+    if cached and time.time() - cached[0] < 45:
+        sub = cached[1]
+    else:
+        try:
+            m = http.get(f"{TELEGRAM_API_URL}/getChatMember", params={"chat_id": NEWS_CHAT, "user_id": user["id"]}, timeout=6).json()
+            if m.get("ok"):
+                sub = m["result"]["status"] in ("creator", "administrator", "member", "restricted")
+        except Exception as e:
+            print("getChatMember error:", e)
+        CHECK[user["id"]] = (time.time(), sub)
     touch_user(user)
     return jsonify({"nick": BOT_NICK in name, "sub": sub})
 
@@ -675,6 +705,9 @@ def api_share():
     data, user, err = auth()
     if err:
         return err
+    cached = PREP.get(user["id"])
+    if cached and time.time() - cached[0] < 600:
+        return jsonify({"id": cached[1], "photo": cached[2]})
     photo = True
     r = prepare_message(user["id"], share_result(user["id"]))
     if not r.get("ok"):                      # чаще всего — недоступна картинка: пробуем без неё
@@ -684,6 +717,7 @@ def api_share():
     if not r.get("ok"):
         print("savePreparedInlineMessage(article) failed:", r)
         return jsonify({"error": r.get("description", "telegram error")}), 502
+    PREP[user["id"]] = (time.time(), r["result"]["id"], photo)
     return jsonify({"id": r["result"]["id"], "photo": photo})
 
 
