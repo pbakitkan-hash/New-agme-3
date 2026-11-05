@@ -7,6 +7,7 @@ import copy
 import re
 import signal
 import threading
+import random
 from urllib.parse import parse_qsl, quote
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -57,6 +58,8 @@ PROMOS = {}                      # код -> {reward, usedBy, [owner, ownerRewar
 FEED = []                        # общая лента дропов (LIVE)
 META = {"closed": False}         # сервер закрыт для всех (кроме владельца)
 TOP = {}                         # лучший дроп дня
+GIVE = {"entries": [], "winner": None, "max": 5000, "min_stars": 50}   # розыгрыш Garama среди пополнивших от 50 ⭐
+GARAMA_IMG = "https://i.ibb.co/jvNNf89p/Screenshot-20261013-024819.jpg"
 S = {"loaded": False, "dirty": False, "last_save": 0.0, "empty_seen": False, "feedV": 0}
 
 
@@ -132,6 +135,7 @@ def load_state():
         META["closed"] = bool(meta.get("closed"))
         TOP.clear()
         TOP.update(meta.get("top") or {})
+        GIVE.update(meta.get("give") or {})
         for old in [k for k in PROMOS if k.lower() in ("uuu", "admin1000")]:      # удаляем старые промокоды
             del PROMOS[old]
             promos = None
@@ -142,7 +146,7 @@ def load_state():
 
 def flush_now():
     with state_lock:
-        arr = [{"id": "__promos__", "codes": copy.deepcopy(PROMOS)}, {"id": "__feed__", "items": list(FEED)}, {"id": "__meta__", "closed": META["closed"], "top": dict(TOP)}] \
+        arr = [{"id": "__promos__", "codes": copy.deepcopy(PROMOS)}, {"id": "__feed__", "items": list(FEED)}, {"id": "__meta__", "closed": META["closed"], "top": dict(TOP), "give": GIVE}] \
               + [copy.deepcopy(u) for u in USERS.values()]
         S["dirty"] = False
     try:
@@ -179,7 +183,7 @@ def game_url():
     if not api:
         return WEB_APP_URL
     sep = '&' if '?' in WEB_APP_URL else '?'
-    return f"{WEB_APP_URL}{sep}api={quote(api, safe='')}&v=10"
+    return f"{WEB_APP_URL}{sep}api={quote(api, safe='')}&v=11"
 
 
 @app.route('/')
@@ -258,7 +262,8 @@ def find_code(code):
 
 
 def extras(user, rec, data):
-    out = {"refCount": rec.get("refCount", 0), "myPromos": my_promos(user["id"]), "closed": META["closed"], "top": dict(TOP)}
+    out = {"refCount": rec.get("refCount", 0), "myPromos": my_promos(user["id"]), "closed": META["closed"], "top": dict(TOP),
+           "give": {"count": len(GIVE["entries"]), "max": GIVE["max"], "min": GIVE["min_stars"], "mine": user["id"] in GIVE["entries"], "winner": GIVE.get("winner")}}
     if data.get("feedV") != S["feedV"]:
         out["feed"] = FEED[-20:][::-1]
         out["feedV"] = S["feedV"]
@@ -515,7 +520,7 @@ def api_drop():
         rec = get_rec(user)
         for d in (data.get("drops") or [])[:10]:
             try:
-                row = {"n": str(d["n"])[:40], "i": str(d.get("i") or "🎁")[:8], "p": float(d["p"]), "c": str(d.get("c", ""))[:30], "s": str(d.get("s", ""))[:40], "t": now_ms()}
+                row = {"n": str(d["n"])[:40], "i": str(d.get("i") or "🎁")[:8], "p": float(d["p"]), "c": str(d.get("c", ""))[:30], "s": str(d.get("s", ""))[:40], "m": str(d.get("m", ""))[:200], "t": now_ms()}
             except Exception:
                 continue
             FEED.append({"u": name_of(user), "id": user["id"], **row})
@@ -605,6 +610,19 @@ def api_admin():
                 log = f"остался только {keep}"
             mark()
             return jsonify({"log": log, "codes": copy.deepcopy(PROMOS)})
+        if op == "draw":
+            pool = [u for u in GIVE["entries"] if u in USERS]
+            if not pool:
+                return jsonify({"err": "В розыгрыше пока нет участников"})
+            wid = random.choice(pool)
+            rec = USERS[wid]
+            rec["giftN"] = rec.get("giftN", 0) + 1
+            rec["gifts"] = ((rec.get("gifts") or []) + [{"n": rec["giftN"], "name": "Garama", "icon": "🎁", "img": GARAMA_IMG, "sellPrice": 52, "count": 1}])[-50:]
+            GIVE["winner"] = {"name": rec.get("username"), "id": wid, "t": now_ms(), "of": len(pool)}
+            GIVE["entries"] = []
+            mark()
+            tg("sendMessage", chat_id=wid, text="🎉 Вы выиграли Garama в розыгрыше! Она уже в вашем инвентаре.")
+            return jsonify({"log": f"победитель @{rec.get('username')} из {len(pool)} участников"})
         rec = resolve(data.get("target"))
         if rec is None:
             return jsonify({"err": "Игрок не найден (он должен хотя бы раз открыть игру)"})
@@ -832,6 +850,9 @@ def on_payment(msg):
             return
         rec["grantT"] = round(rec.get("grantT", 0) + coins, 2)
         rec["paid"] = (paid + [charge])[-50:]
+        rec["stars"] = rec.get("stars", 0) + stars                 # всего пополнено звёзд
+        if rec["stars"] >= GIVE["min_stars"] and user["id"] not in GIVE["entries"] and len(GIVE["entries"]) < GIVE["max"]:
+            GIVE["entries"].append(user["id"])                      # участвует в розыгрыше Garama
         mark()
     tg("sendMessage", chat_id=msg["chat"]["id"], text=f"✅ Пополнение: {stars} ⭐ → +{coins} BC. Монеты уже в игре!")
 
