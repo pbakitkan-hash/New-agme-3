@@ -183,7 +183,7 @@ def game_url():
     if not api:
         return WEB_APP_URL
     sep = '&' if '?' in WEB_APP_URL else '?'
-    return f"{WEB_APP_URL}{sep}api={quote(api, safe='')}&v=11"
+    return f"{WEB_APP_URL}{sep}api={quote(api, safe='')}&v=12"
 
 
 @app.route('/')
