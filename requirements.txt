@@ -1,3 +1,5 @@
 Flask
 flask-cors
 requests
+pymongo[srv]
+waitress
