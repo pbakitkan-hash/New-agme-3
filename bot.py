@@ -71,6 +71,19 @@ def mark():
     S["dirty"] = True
 
 
+LOG_KEEP = int(os.environ.get('LOG_KEEP', '20'))        # сколько последних действий хранить у каждого игрока (видит только владелец)
+
+
+def add_log(rec, text, delta=0, bal=None, src="g"):
+    """Запись в журнал игрока. src: 's' — событие самого бота (промокод, оплата, админ), 'g' — действие из игры."""
+    row = {"t": now_ms(), "x": str(text)[:100], "d": round(float(delta or 0), 2), "s": src}
+    if bal is not None:
+        row["b"] = round(float(bal), 2)
+    log = rec.setdefault("log", [])
+    log.append(row)
+    del log[:-LOG_KEEP]
+
+
 def migrate(rec):
     """Старые поля (grant/tkAdd/shareAdd/gifts без номера) → накопительные счётчики."""
     g = rec.pop("grant", 0)
@@ -111,8 +124,63 @@ def save_npoint(arr):
     raise RuntimeError(f"npoint: запись не удалась ({last})")
 
 
+# ---------- хранилище ----------
+# Если задана переменная MONGO_URI — игроки лежат в MongoDB Atlas, каждый отдельным документом,
+# и бот записывает только тех, кто изменился (трафик в десятки раз меньше). Без MONGO_URI — по-старому, через npoint.
+MONGO_URI = os.environ.get('MONGO_URI')
+DB = None
+if MONGO_URI:
+    try:
+        from pymongo import MongoClient, ReplaceOne
+    except ImportError:
+        raise ValueError("ОШИБКА: добавь строку pymongo[srv] в requirements.txt")
+    DB = MongoClient(MONGO_URI, serverSelectionTimeoutMS=8000, connectTimeoutMS=8000, maxPoolSize=5)[os.environ.get('MONGO_DB', 'brainrot')]
+
+SAVE_EVERY = int(os.environ.get('SAVE_EVERY', '20' if DB is not None else '90'))   # не чаще раза в N секунд
+LAST_HASH = {"v": None}          # npoint: хэш всей базы
+DOC_HASH = {}                    # Atlas: хэш каждого документа — что уже записано
+META_IDS = ("__promos__", "__feed__", "__meta__")
+STATE_FLAG = {"set": False}
+
+
+def doc_json(entry):
+    return json.dumps(entry, sort_keys=True, ensure_ascii=False, default=str)
+
+
+def doc_hash(js):
+    return hashlib.md5(js.encode("utf-8")).hexdigest()
+
+
+def read_mongo():
+    """Всё из Atlas в том же виде, в каком раньше отдавал npoint (список записей)."""
+    arr = []
+    for d in DB["meta"].find({"_id": {"$in": list(META_IDS)}}):
+        d.pop("_id", None)
+        arr.append(d)
+    for d in DB["users"].find():
+        d.pop("_id", None)
+        arr.append(d)
+    return arr
+
+
 def load_state():
-    data = read_npoint()
+    migrating = False
+    if DB is not None:
+        data = read_mongo()
+        has_users = any(isinstance(e.get("id"), int) for e in data)
+        flag = DB["meta"].find_one({"_id": "__state__"})
+        STATE_FLAG["set"] = bool(flag)
+        if not has_users and not flag:      # первый запуск с Atlas: один раз переносим игроков из npoint
+            print("Atlas пуст — переношу игроков из npoint")
+            data = read_npoint()
+            migrating = True
+    else:
+        data = read_npoint()
+    hashes = {}
+    if DB is not None and not migrating:    # запоминаем, что уже лежит в Atlas, чтобы после перезапуска не писать всё заново
+        for e in data:
+            if isinstance(e, dict) and e.get("id") is not None:
+                hashes[e["id"]] = doc_hash(doc_json(e))
     users, promos, feed, meta = {}, None, [], {}
     for e in data:
         if isinstance(e, dict) and e.get("id") == "__promos__":
@@ -139,21 +207,62 @@ def load_state():
         for old in [k for k in PROMOS if k.lower() in ("uuu", "admin1000")]:      # удаляем старые промокоды
             del PROMOS[old]
             promos = None
+        DOC_HASH.clear()
+        DOC_HASH.update(hashes)
         S["loaded"] = True
-        S["dirty"] = promos is None
-    print(f"база загружена: {len(USERS)} игроков, {len(PROMOS)} промокодов")
+        S["dirty"] = promos is None or migrating
+    print(f"база загружена ({'Atlas' if DB is not None else 'npoint'}): {len(USERS)} игроков, {len(PROMOS)} промокодов")
+
+
+def flush_mongo():
+    """Записывает в Atlas только изменившиеся документы."""
+    with state_lock:
+        entries = [("__promos__", {"id": "__promos__", "codes": PROMOS}),
+                   ("__feed__", {"id": "__feed__", "items": FEED}),
+                   ("__meta__", {"id": "__meta__", "closed": META["closed"], "top": TOP, "give": GIVE})]
+        entries += [(uid, u) for uid, u in USERS.items()]
+        dumped = [(k, doc_json(v)) for k, v in entries]      # под замком — только сериализация, быстро
+        S["dirty"] = False
+    ops_meta, ops_users, new_hash = [], [], {}
+    for key, js in dumped:
+        h = doc_hash(js)
+        if DOC_HASH.get(key) == h:
+            continue
+        doc = json.loads(js)
+        doc["_id"] = key
+        (ops_meta if key in META_IDS else ops_users).append(ReplaceOne({"_id": key}, doc, upsert=True))
+        new_hash[key] = h
+    if ops_users:
+        DB["users"].bulk_write(ops_users, ordered=False)
+    if ops_meta:
+        DB["meta"].bulk_write(ops_meta, ordered=False)
+    if not STATE_FLAG["set"]:                # отметка «перенос сделан»: после неё пустой Atlas больше не заполняется из npoint
+        DB["meta"].replace_one({"_id": "__state__"}, {"_id": "__state__", "migrated": True}, upsert=True)
+        STATE_FLAG["set"] = True
+    DOC_HASH.update(new_hash)
+    return len(ops_users) + len(ops_meta)
 
 
 def flush_now():
-    with state_lock:
-        arr = [{"id": "__promos__", "codes": copy.deepcopy(PROMOS)}, {"id": "__feed__", "items": list(FEED)}, {"id": "__meta__", "closed": META["closed"], "top": dict(TOP), "give": GIVE}] \
-              + [copy.deepcopy(u) for u in USERS.values()]
-        S["dirty"] = False
     try:
+        if DB is not None:
+            flush_mongo()
+            S["last_save"] = time.time()
+            return
+        with state_lock:
+            arr = [{"id": "__promos__", "codes": copy.deepcopy(PROMOS)}, {"id": "__feed__", "items": list(FEED)}, {"id": "__meta__", "closed": META["closed"], "top": dict(TOP), "give": GIVE}] \
+                  + [copy.deepcopy(u) for u in USERS.values()]
+            S["dirty"] = False
+        h = hashlib.md5(json.dumps(arr, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+        if h == LAST_HASH["v"]:          # ничего не изменилось — ничего не отправляем
+            S["last_save"] = time.time()
+            return
         save_npoint(arr)
+        LAST_HASH["v"] = h
         S["last_save"] = time.time()
     except Exception as e:
         S["dirty"] = True
+        S["last_save"] = time.time()     # повтор через SAVE_EVERY секунд, а не каждую секунду
         print("сохранение не удалось, повторю:", e)
 
 
@@ -163,8 +272,8 @@ def persist_loop():
         try:
             if not S["loaded"]:
                 load_state()
-            elif (S["dirty"] and time.time() - S["last_save"] >= 2.5) or time.time() - S["last_save"] > 60:
-                flush_now()          # изменения уходят на диск за ~3 секунды, а раз в минуту — для надёжности
+            elif S["dirty"] and time.time() - S["last_save"] >= SAVE_EVERY:
+                flush_now()          # только если есть изменения; при остановке сервиса сохраняется сразу (SIGTERM)
         except Exception as e:
             print("база:", e)
             time.sleep(1.5)
@@ -183,7 +292,7 @@ def game_url():
     if not api:
         return WEB_APP_URL
     sep = '&' if '?' in WEB_APP_URL else '?'
-    return f"{WEB_APP_URL}{sep}api={quote(api, safe='')}&v=12"
+    return f"{WEB_APP_URL}{sep}api={quote(api, safe='')}&v=13"
 
 
 @app.route('/')
@@ -200,7 +309,10 @@ def ping():
 @app.route('/api/health')
 def api_health():
     """Открой в браузере https://ТВОЙ-СЕРВИС.onrender.com/api/health — покажет, что работает, а что нет."""
-    out = {"bot": "ok", "loaded": S["loaded"], "closed": META["closed"], "players": len(USERS), "promos": len(PROMOS), "banner": None}
+    out = {"bot": "ok", "storage": "mongo" if DB is not None else "npoint", "loaded": S["loaded"], "closed": META["closed"],
+           "players": len(USERS), "promos": len(PROMOS), "dirty": S["dirty"], "savedAgo": int(time.time() - S["last_save"]) if S["last_save"] else None, "banner": None}
+    with state_lock:
+        out["dbKB"] = round(len(json.dumps(USERS, ensure_ascii=False, default=str).encode("utf-8")) / 1024)    # размер всех игроков, КБ
     try:
         out["banner"] = http.get(SHARE_IMAGE, timeout=8).status_code     # 200 = картинка на месте
     except Exception as e:
@@ -298,12 +410,14 @@ def redeem_code(user, code):
             return {"err": "Промокод закончился"}
         rec = get_rec(user)
         rec["grantT"] = round(rec.get("grantT", 0) + info["reward"], 2)
+        add_log(rec, f"Промокод {key}", info["reward"], src="s")
         info.setdefault("usedBy", []).append(uid)
         owner = USERS.get(info["owner"]) if info.get("owner") else None
         if owner:                      # владельцу промокода — билет (и награда, если она задана)
             owner["grantT"] = round(owner.get("grantT", 0) + info.get("ownerReward", 0), 2)
             owner["tkT"] = owner.get("tkT", 0) + 1
             owner["refCount"] = owner.get("refCount", 0) + 1
+            add_log(owner, f"Твой промокод {key} активировали", info.get("ownerReward", 0), src="s")
         mark()
         return {"reward": info["reward"]}
 
@@ -409,6 +523,22 @@ def api_sync():
             if any(rec.get(k) != v for k, v in snap.items()):
                 rec.update(snap)
                 mark()
+        have = {(r.get("t"), r.get("x")) for r in rec.get("log") or []}
+        added = False
+        for e in (data.get("tx") or [])[:60]:      # журнал действий из игры: в игру не возвращается, видит только владелец
+            try:
+                row = {"t": int(e["t"]), "x": str(e["x"])[:100], "d": round(float(e["d"]), 2), "b": round(float(e["b"]), 2), "s": "g"}
+            except Exception:
+                continue
+            if (row["t"], row["x"]) in have:       # повторная отправка после сбоя связи — не дублируем
+                continue
+            have.add((row["t"], row["x"]))
+            rec.setdefault("log", []).append(row)
+            added = True
+        if added:
+            rec["log"].sort(key=lambda r: r.get("t", 0))
+            del rec["log"][:-LOG_KEEP]
+            mark()
         out["inc"] = compute_inc(rec, rec if adopt else snap)
         out.update(extras(user, rec, data))
         return jsonify(out)
@@ -618,6 +748,7 @@ def api_admin():
             rec = USERS[wid]
             rec["giftN"] = rec.get("giftN", 0) + 1
             rec["gifts"] = ((rec.get("gifts") or []) + [{"n": rec["giftN"], "name": "Garama", "icon": "🎁", "img": GARAMA_IMG, "sellPrice": 52, "count": 1}])[-50:]
+            add_log(rec, "Розыгрыш: выиграл Garama", 0, src="s")
             GIVE["winner"] = {"name": rec.get("username"), "id": wid, "t": now_ms(), "of": len(pool)}
             GIVE["entries"] = []
             mark()
@@ -627,6 +758,10 @@ def api_admin():
         if rec is None:
             return jsonify({"err": "Игрок не найден (он должен хотя бы раз открыть игру)"})
         who = "@" + (rec.get("username") or str(rec["id"]))
+        if op == "log":                  # журнал игрока — только владельцу (при жалобе)
+            rows = sorted(rec.get("log") or [], key=lambda r: r.get("t", 0), reverse=True)[:LOG_KEEP]
+            return jsonify({"rows": rows, "who": who, "balance": round(rec.get("score", 0) + rec.get("grantT", 0) - rec.get("grantSeen", 0), 2),
+                            "log": f"журнал {who}: {len(rows)} записей"})
         if op == "grant":
             try:
                 amount = float(data.get("amount"))
@@ -634,12 +769,15 @@ def api_admin():
                 return jsonify({"err": "Укажите сумму"})
             rec["grantT"] = round(rec.get("grantT", 0) + amount, 2)
             log = f"{amount:+g} BC → {who}"
+            add_log(rec, f"Админ выдал {amount:+g} BC", amount, src="s")
         elif op == "reset":
             rec["resetT"], rec["score"] = rec.get("resetT", 0) + 1, 0
             log = f"баланс сброшен → {who}"
+            add_log(rec, "Админ сбросил баланс", 0, 0, src="s")
         elif op == "clear":
             rec["clearT"], rec["inv"] = rec.get("clearT", 0) + 1, []
             log = f"брейнроты очищены → {who}"
+            add_log(rec, "Админ очистил брейнротов", 0, src="s")
         elif op == "give":
             try:
                 qty, price = max(1, min(1000, int(data.get("qty") or 1))), float(data.get("price"))
@@ -649,6 +787,7 @@ def api_admin():
             rec["gifts"] = ((rec.get("gifts") or []) + [{"n": rec["giftN"], "name": str(data.get("name", ""))[:40], "icon": str(data.get("icon") or "🎁")[:8],
                                                           "sellPrice": price, "count": qty}])[-50:]
             log = f"{qty}× {data.get('name')} → {who}"
+            add_log(rec, f"Админ выдал {data.get('name')} ×{qty}", 0, src="s")
         else:
             return jsonify({"err": "Неизвестная команда"})
         mark()
@@ -849,6 +988,7 @@ def on_payment(msg):
         if charge in paid:        # платёж уже зачислен
             return
         rec["grantT"] = round(rec.get("grantT", 0) + coins, 2)
+        add_log(rec, f"Пополнение {stars} ⭐", coins, src="s")
         rec["paid"] = (paid + [charge])[-50:]
         rec["stars"] = rec.get("stars", 0) + stars                 # всего пополнено звёзд
         if rec["stars"] >= GIVE["min_stars"] and user["id"] not in GIVE["entries"] and len(GIVE["entries"]) < GIVE["max"]:
